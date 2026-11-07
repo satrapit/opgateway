@@ -2,12 +2,10 @@
 
 ## [Unreleased]
 
-- Add internal session-bound administrator controller and strict JSON parser.
-- Add explicitly allowlisted approve-user, activate-client and approve-IP actions.
-- Reject extra payload fields and derive actor identity exclusively from session.
-- Retain existing protected DB authorization and fail-closed public routing.
-- Add JSON validation unit tests and administrator controller documentation.
-- No schema changes, new SQL, server commands or GitHub workflows.
+- Add private browser login/logout controller requiring guarded authentication, session CSRF and fresh admin authorization.
+- Add dependency-free, escaped HTML login and dashboard renderers, with tests.
+- Preserve production public routing and existing database; no new SQL or enabled admin URLs.
+- Document explicit HTTP transport and storage prerequisites before enabling the browser UI.
 
 ## [0.1.0-alpha.2] - 2026-11-07
 
