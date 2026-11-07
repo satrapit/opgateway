@@ -3,6 +3,7 @@
 !/.env.example
 /vendor/
 /.phpunit.cache/
+/.phpunit.result.cache
 /coverage/
 /storage/*
 !/storage/.gitkeep
