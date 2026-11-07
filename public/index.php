@@ -3,12 +3,13 @@
 declare(strict_types=1);
 
 use OPGateway\Config\Environment;
+use OPGateway\Http\AdministrativeWebEntry;
 use OPGateway\Http\FoundationApplication;
 use OPGateway\Http\SetupInstaller;
 
 /**
- * Split-root cPanel bootstrap. Application source and private .env remain
- * outside Document Root; setup is disabled by default.
+ * cPanel split-root entrypoint; private source and secrets remain outside
+ * Document Root. Both installer and admin UI are default-disabled.
  */
 $localRoot = dirname(__DIR__);
 $applicationRoot = is_file($localRoot . '/src/autoload.php')
@@ -19,6 +20,7 @@ try {
     if (!is_file($applicationRoot . '/src/autoload.php')) {
         throw new RuntimeException('Application bootstrap unavailable.');
     }
+
     require $applicationRoot . '/src/autoload.php';
     $config = Environment::load($applicationRoot . '/.env');
     $method = $_SERVER['REQUEST_METHOD'] ?? 'GET';
@@ -26,6 +28,8 @@ try {
 
     if ($path === '/setup/administrator') {
         $response = (new SetupInstaller($config))->handle($method, $_SERVER);
+    } elseif ($path === '/admin' || str_starts_with($path, '/admin/')) {
+        $response = (new AdministrativeWebEntry($config))->handle($method, $path, $_SERVER);
     } else {
         $result = (new FoundationApplication($config))->handle(
             $method, $path, $_SERVER['REMOTE_ADDR'] ?? '',
@@ -37,9 +41,12 @@ try {
         ];
     }
 } catch (Throwable) {
-    // Never expose configuration, filesystem, SQL or request secrets.
-    $response = ['status' => 503, 'content_type' => 'application/json; charset=utf-8',
-        'body' => '{"error":"service_unavailable"}'];
+    // Do not reflect filesystem paths, credentials, SQL or exception messages.
+    $response = [
+        'status' => 503,
+        'content_type' => 'application/json; charset=utf-8',
+        'body' => '{"error":"service_unavailable"}',
+    ];
 }
 
 http_response_code($response['status']);

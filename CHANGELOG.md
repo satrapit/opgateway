@@ -2,13 +2,11 @@
 
 ## [Unreleased]
 
-- Add explicit opt-in HTTPS/IP-restricted first administrator setup endpoint.
-- Require server-side CSRF, strict form parsing, a 256-bit out-of-band token,
-  and transactional empty-database bootstrap; no default administrator.
-- Ensure setup is 404 unless private configuration explicitly enables it.
-- Preserve protected existing MySQL tables and default-deny /v1 and /admin.
-- Add rejection tests and operator activation documentation. No new SQL,
-  GitHub workflows, Mac runtime commands, or server shell requirement.
+- Wire administrator sign-in, read-only landing page and logout through a default-disabled HTTP entry.
+- Require exact operator IP and trusted HTTPS, complete schema history and a dedicated rate-limit key.
+- Connect MySQL-backed login throttling and metadata-only security events to the private browser flow.
+- Preserve default-disabled first-admin setup and deny-by-default provider routes.
+- Add early-rejection tests and deployment guidance; no SQL, workflows or hosted shell.
 
 ## [0.1.0-alpha.2] - 2026-11-07
 
