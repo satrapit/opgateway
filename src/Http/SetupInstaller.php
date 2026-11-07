@@ -7,7 +7,10 @@ namespace OPGateway\Http;
 use OPGateway\Identity\AdministratorBootstrap;
 use OPGateway\Identity\BrowserSession;
 use OPGateway\Identity\PasswordHasher;
-use PDO;
+use OPGateway\Database\PdoConnectionFactory;
+use OPGateway\Database\Migrations\MigrationCatalog;
+use OPGateway\Database\Migrations\SchemaReadiness;
+use OPGateway\Security\PdoSetupAttemptLimiter;
 use Throwable;
 
 /**
@@ -40,7 +43,8 @@ final readonly class SetupInstaller
         }
         $origin = $this->config['APP_URL'] ?? '';
         if (!preg_match('~^https://[a-z0-9.-]+(?::[0-9]{1,5})?$~iD', $origin)
-            || !preg_match('/^[0-9a-f]{64}$/D', $this->config['SETUP_TOKEN_HASH'] ?? '')) {
+            || !preg_match('/^[0-9a-f]{64}$/D', $this->config['SETUP_TOKEN_HASH'] ?? '')
+            || !preg_match('/^[0-9a-f]{64}$/D', $this->config['SETUP_RATE_LIMIT_KEY'] ?? '')) {
             return self::error(503);
         }
 
@@ -89,12 +93,26 @@ final readonly class SetupInstaller
         }
 
         try {
-            $bootstrap = new AdministratorBootstrap(self::pdo($this->config), new PasswordHasher());
+            $pdo = PdoConnectionFactory::open($this->config);
+            if (!(new SchemaReadiness($pdo))->inspect(MigrationCatalog::all())['ready']) {
+                return self::error(503);
+            }
+            // Reserve an IP-scoped attempt BEFORE checking the setup token.
+            // A malformed/incorrect token still consumes a persistent attempt.
+            $limiter = new PdoSetupAttemptLimiter(
+                $pdo,
+                hex2bin($this->config['SETUP_RATE_LIMIT_KEY']),
+            );
+            if (!$limiter->allow((string) $server['REMOTE_ADDR'])) {
+                return self::error(429);
+            }
+            $bootstrap = new AdministratorBootstrap($pdo, new PasswordHasher());
             $bootstrap->create(
                 $form['email'], $form['password'], $form['setup_token'],
                 $this->config['SETUP_TOKEN_HASH'],
             );
         } catch (Throwable) {
+            // Do not disclose account existence or token validity.
             return self::error(403);
         }
         $session->logout();
@@ -107,26 +125,6 @@ final readonly class SetupInstaller
         $a = @inet_pton($remote);
         $b = @inet_pton($expected);
         return is_string($a) && is_string($b) && hash_equals($b, $a);
-    }
-
-    /** @param array<string,string> $config */
-    private static function pdo(array $config): PDO
-    {
-        $host = $config['DB_HOST'] ?? '';
-        $port = $config['DB_PORT'] ?? '';
-        $name = $config['DB_NAME'] ?? '';
-        $user = $config['DB_USER'] ?? '';
-        if ($host === '' || !ctype_digit($port) || $name === '' || $user === '') {
-            throw new \RuntimeException('Database configuration unavailable.');
-        }
-        return new PDO(
-            'mysql:host=' . $host . ';port=' . $port . ';dbname=' . $name . ';charset=utf8mb4',
-            $user,
-            $config['DB_PASSWORD'] ?? '',
-            [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
-             PDO::ATTR_EMULATE_PREPARES => false,
-             PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC],
-        );
     }
 
     /** @param array<string,string> $payload
@@ -146,6 +144,7 @@ final readonly class SetupInstaller
             403 => 'forbidden',
             404 => 'not_found',
             405 => 'method_not_allowed',
+            429 => 'too_many_requests',
             default => 'service_unavailable',
         }]);
     }

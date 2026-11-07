@@ -1,71 +1,80 @@
-# Operator-only initial administrator installation
+# First administrator installation: secure rollout
 
-A real but **default-disabled** `/setup/administrator` handler now exists.
-It is not a registration or public onboarding endpoint.
+The first-admin installer exists at `/setup/administrator`, but **is
+disabled by default**. Installation never runs automatically on deploy.
 
-## Security boundaries
+## Prerequisites
 
-- Route is inaccessible (404) unless private `SETUP_ENABLED=true`.
-- Requires server-confirmed `HTTPS=on`; never trusts forwarding headers.
-- Requires exact source `REMOTE_ADDR` matched against `SETUP_ALLOWED_IP`.
-- Requires `APP_URL` to be a canonical HTTPS origin, strict same-origin POST,
-  secure SameSite session, session-backed CSRF and small bounded form data.
-- Requires a random 256-bit hex setup token whose SHA-256 digest of the
-  **decoded 32 bytes** is stored privately as `SETUP_TOKEN_HASH`.
-- The underlying transactional `AdministratorBootstrap` refuses installation
-  if ANY users, roles or user-role memberships already exist.
-- No password, token, private configuration or request body is logged.
-- The route does not enable general admin login or Openprovider access.
+- The three reviewed migrations are already installed in the existing
+  production database. Do not re-import or recreate any tables.
+- PHP must receive trusted `HTTPS=on` and a direct `REMOTE_ADDR`; the
+  application deliberately ignores client-supplied forwarding headers.
+- The source IP must exactly match `SETUP_ALLOWED_IP` in private config.
+- `users`, `roles` and `user_roles` must be empty. If not empty,
+  do not delete or reset accounts. Setup aborts safely.
+- The three migration ledger rows and checksums must pass read-only
+  `SchemaReadiness` checks.
 
-## Private configuration (disabled by default)
+## Security controls
 
-Only when ready to perform a reviewed, brief operator setup window, configure
-the following in `/home/arsamnet/repositories/opgateway/.env`:
+- Session CSRF and exact same-origin POST, bounded form body and fields.
+- Setup token is 32 cryptographically random bytes, supplied as 64 lowercase
+  hex characters; store only SHA-256 of the **raw decoded bytes** in private
+  `SETUP_TOKEN_HASH`. Do not confuse this with SHA-256 of the hex text.
+- `SETUP_RATE_LIMIT_KEY` contains a **different** 32-byte random secret
+  encoded as 64 lowercase hex characters.
+- Up to five POST attempts per 15-minute fixed window, counted in the
+  already-existing `login_rate_limits` table before validating the setup
+  token. IPs are stored only as HMAC-derived buckets. MySQL errors block setup.
+- First user, admin role and role membership are written transactionally.
+  A MySQL named lock prevents concurrent setup attempts from racing.
+- Unknown or failed setup attempts receive generic responses.
 
-```
+## Private configuration
+
+In `/home/arsamnet/repositories/opgateway/.env`:
+
+```dotenv
 SETUP_ENABLED=false
 SETUP_ALLOWED_IP=
 SETUP_TOKEN_HASH=
+SETUP_RATE_LIMIT_KEY=
 ```
 
-The initial configuration MUST use `false`. Before deliberate activation,
-take a database backup, ensure `users`, `roles` and `user_roles` are
-empty, verify the actual cPanel TLS metadata and operator's direct source
-IP. Never place the setup token, digest or administrator password in Git,
-in a screenshot, or in support chat.
+Keep `SETUP_ENABLED=false` until a deliberate, time-limited installation
+window. Never include real tokens, hashes, keys, IP addresses, passwords
+or account identifiers in the Git repository.
 
-A cryptographically secure 32-byte random token is represented as 64 lowercase
-hex characters. Compute SHA-256 from the raw 32 bytes, **not** the printable
-hex string; enter only the lowercase digest in private `.env`. Keep the token
-in a private password manager for the one setup form submission.
+After operator verification, temporarily enable the route, complete setup
+from the allowlisted IP, then immediately disable setup and clear
+`SETUP_TOKEN_HASH` and `SETUP_RATE_LIMIT_KEY`. Recheck `/setup/administrator`
+responds 404. The empty-database rule prevents a second setup.
 
-When separately verified and authorized, temporarily set
-`SETUP_ENABLED=true`, navigate from the allowed IP to
-`https://opgateway.arsamnet.com/setup/administrator`, submit one setup
-request, then immediately set `SETUP_ENABLED=false` and DELETE the private
-`SETUP_TOKEN_HASH` value. A second bootstrap cannot pass the database
-empty-state checks even if the config toggle is accidentally left enabled.
+## Operational steps on this cPanel hosting
 
-**Do not enable the route yet without live testing of the HTTPS and IP
-boundaries.** The setup form is usable only if the cPanel configuration reports
-a trusted direct HTTPS connection. Do not weaken the check to trust user
-provided `X-Forwarded-Proto` or `X-Forwarded-For`.
+1. On the MacBook, use Git only:
+   `git pull --ff-only origin main` and inspect `git status --short --branch`.
+2. In cPanel Git Version Control, update and deploy the current HEAD.
+   The deployment copies only `public/index.php` and does not modify
+   cPanel-managed `.htaccess`.
+3. Keep setup disabled and verify:
+   `/health` returns 200, `/setup/administrator` returns 404,
+   `/admin/login` returns 404 and `/v1` returns 503.
+4. Before enabling anything, independently test and confirm the server's
+   PHP HTTPS and source IP metadata; never bypass the security checks.
+5. Once these conditions are verified, create the one-time random token
+   and an independent random throttle key. Use a trusted password manager's
+   cryptographic generator; do not send either secret in chat.
+6. Temporarily set the private config values, perform first setup, and
+   immediately reset the switch to false and remove sensitive values.
 
-## Operational steps
+## Limitations and next verification
 
-- Three migrations (001, 002, 003) already imported: no new SQL.
-- Existing database must not be recreated, re-imported or manually changed.
-- MacBook: use Git only, pull the new commit from main.
-- cPanel: Update from Remote then Deploy HEAD Commit; existing .cpanel.yml
-  copies ONLY public/index.php. .htaccess stays under cPanel's control.
-- After deployment while setup is disabled, /setup/administrator stays 404,
-  /health stays 200, /v1 stays 503.
-- The admin login/dashboard routes remain unavailable; enable only after
-  their security dependencies and integration tests are complete.
+Do not assume installation worked merely because the code deployed.
+The new MySQL-backed setup throttle and full browser request flow have not
+been exercised in an actual hosted integration test. The form uses inline
+HTML, and strict CSP intentionally blocks third-party scripts. The login
+interface stays off until the administrator has been provisioned and verified.
 
-## Caveat
-
-The installer has a default-deny boundary and tests for its early rejection
-cases, but an actual hosted MySQL/TLS/session integration test is still needed.
-Treat this as an explicit opt-in installation feature, not an automatic or
-already-proven production setup.
+The installer is operator-only, not a public registration or account recovery
+path. Never reset the production database to make setup pass.

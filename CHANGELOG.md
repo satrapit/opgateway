@@ -2,11 +2,13 @@
 
 ## [Unreleased]
 
-- Wire administrator sign-in, read-only landing page and logout through a default-disabled HTTP entry.
-- Require exact operator IP and trusted HTTPS, complete schema history and a dedicated rate-limit key.
-- Connect MySQL-backed login throttling and metadata-only security events to the private browser flow.
-- Preserve default-disabled first-admin setup and deny-by-default provider routes.
-- Add early-rejection tests and deployment guidance; no SQL, workflows or hosted shell.
+- Harden first-admin setup with atomic MySQL attempt throttling: maximum five
+  attempts per source IP in 15 minutes, before setup-token validation.
+- Reject incomplete schema history before installation.
+- Require a separate high-entropy setup rate-limit key in private .env.
+- Reuse the already installed login_rate_limits table; no database migration
+  or SQL import required.
+- Leave installer and admin UI disabled by default; provider routes blocked.
 
 ## [0.1.0-alpha.2] - 2026-11-07
 
