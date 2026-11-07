@@ -2,12 +2,11 @@
 
 ## [Unreleased]
 
-- Implement internal transactional email verification and one-time token consumption.
-- Add verified-admin-only pending account approval service.
-- Add fail-closed exact IP policy for active API clients with verified owners.
-- Add unit test for token issuing and one-time consumption.
-- Keep all identity/admin/API endpoints disabled until transport authentication and anti-abuse controls are complete.
-- Leave the confirmed initial database and schema ledger unchanged.
+- Add high-entropy API credential generation, hashed storage and one-time issue semantics.
+- Add SQL-enforced owner-scoped credential issuance and revocation.
+- Add fail-closed authentication checking active client/owner and approved IP whitelist.
+- Add unit tests and API credential security documentation.
+- No schema changes, hosted CLI, public endpoints or GitHub workflows introduced.
 
 ## [0.1.0-alpha.2] - 2026-11-07
 

@@ -7,12 +7,12 @@ namespace OPGateway\Security;
 use PDO;
 
 /**
- * Deny-by-default IPv4/IPv6 allowlist lookup for enabled API clients.
+ * Exact binary IPv4/IPv6 match; missing/disabled IPs are always rejected.
  *
- * Call only with the server-verified source IP (REMOTE_ADDR or trusted,
- * correctly configured proxy resolution), never arbitrary forwarded headers.
+ * Source IP must be resolved at the trusted server edge. Raw client-supplied
+ * forwarded headers are never acceptable here.
  */
-final readonly class ApiClientIpPolicy
+final readonly class ApiClientIpPolicy implements ClientIpAccessPolicy
 {
     public function __construct(private PDO $pdo)
     {
