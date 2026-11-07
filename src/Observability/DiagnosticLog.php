@@ -22,6 +22,7 @@ final class DiagnosticLog
     /** Only the following context values can enter a diagnostic record. */
     private const SAFE_CONTEXT_VALUES = [
         'driver' => ['mysql', 'unavailable'],
+        'probe_result' => ['driver_unavailable', 'invalid_config', 'connected', 'authentication_rejected', 'access_denied', 'unknown_database', 'connection_failure', 'unclassified'],
         'schema' => ['ready', 'incomplete', 'invalid'],
         'operation' => ['connect', 'migration_check', 'identity_check', 'session', 'provision'],
     ];

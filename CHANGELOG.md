@@ -2,15 +2,16 @@
 
 ## [Unreleased]
 
-- Recover allowlisted MySQL native error numbers from the strict PDO\n  constructor-time SQLSTATE prefix when errorInfo is unavailable, without\n  recording the exception text or disclosing credentials.\n- Add tests for connection/authentication prefixes and redaction.\n
-- Add stage-specific MySQL diagnostics separating driver availability, PDO
-  connection, migration inspection, and identity lookup failures.
-- Add reviewed MySQL errno and SQLSTATE-class classifications without
-  logging raw exceptions, credentials, SQL, IPs, headers or payloads.
-- Preserve correlation through X-Request-ID and private JSONL log.
-- Add tests for classification and redaction and update CloudLinux PHP
-  Selector troubleshooting documentation.
-- No new SQL, migration, workflow or default-enabled public endpoint.
+- Add a PHP 8.3 Doctrine DBAL factory with `pdo_mysql` and `mysqli`
+  drivers plus DBAL login, registration and administrator-authorization
+  adapters using strictly parameterized queries.
+- Add default-disabled, read-only native MySQLi connection probe gated
+  behind setup's existing HTTPS, IP and private configuration checks.
+- Log only a finite probe result alongside existing PDO connection
+  diagnostics, with no credentials or SQL exposed.
+- Keep all live PDO routes unchanged until Composer dependencies, lockfile
+  and cPanel vendor package can be verified.
+- No SQL migration, workflow or automatic production activation.
 
 ## [0.1.0-alpha.2] - 2026-11-07
 

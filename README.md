@@ -19,7 +19,7 @@ The Mac is used for Git operations only in the deployment procedure.
 - `.cpanel.yml` copies **only** `public/index.php`; it preserves
   cPanel-managed `.htaccess`, `php.ini` and `.user.ini`.
 - Schema installation: select `arsamnet_opgateway_db` in phpMyAdmin and
-  import `database/sql/202611070001_create_identity_tables.sql` **once**.
+  import `database/sql/opgateway_full_schema.sql` **once** into an empty database.
   Never import into a non-empty or incorrect database.
 
 No database operations run during Git deployment. Do not attempt to use the
@@ -34,5 +34,7 @@ See [phpMyAdmin installation](docs/phpmyadmin-install.md).
 - [Security](docs/security.md)
 - [API compatibility](docs/api-compatibility.md)
 - [cPanel deployment](docs/cpanel-deployment.md)
+- [Staged Doctrine DBAL migration and mysqli diagnosis](docs/doctrine-dbal-migration.md)
+- [Private diagnostic logs](docs/diagnostic-logging.md)
 
 No secrets, GitHub Actions, or CI/CD workflows are included.

@@ -8,6 +8,7 @@ use OPGateway\Identity\AdministratorBootstrap;
 use OPGateway\Identity\BrowserSession;
 use OPGateway\Identity\PasswordHasher;
 use OPGateway\Database\PdoConnectionFactory;
+use OPGateway\Database\MysqliConnectionProbe;
 use OPGateway\Database\Migrations\MigrationCatalog;
 use OPGateway\Database\Migrations\SchemaReadiness;
 use PDO;
@@ -69,6 +70,15 @@ final readonly class SetupInstaller
             DiagnosticLog::record('setup.database_connection_failed', 503, $exception, [
                 'operation' => 'connect',
             ]);
+
+            // Explicit operator-only, read-only diagnostic. This never
+            // substitutes mysqli for the transactional PDO bootstrap.
+            if (($this->config['DB_DIAGNOSTIC_MYSQLI_ENABLED'] ?? 'false') === 'true') {
+                $outcome = MysqliConnectionProbe::inspect($this->config);
+                DiagnosticLog::record('setup.mysqli_connection_probe', 503, null, [
+                    'probe_result' => $outcome,
+                ]);
+            }
             return self::error(503);
         }
 
