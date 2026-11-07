@@ -2,17 +2,17 @@
 
 ## [Unreleased]
 
-- Prevent cPanel deployments from overwriting the server-managed `.htaccess`.
-- Require the deployed `.htaccess` to exist before deploying the public entrypoint.
-- Clarify ownership and protection of cPanel PHP INI settings and error logs.
+- Add validated MySQL/MariaDB connection settings and an on-demand PDO factory.
+- Add tests for DSN construction and malicious/invalid configuration values.
+- Document the shared-hosting database strategy and planned protected migrations.
+- Preserve cPanel-managed `.htaccess` and PHP settings during deployment.
 
 ## [0.1.0-alpha.2] - 2026-11-07
 
-- Add a manual cPanel deployment manifest for the split repository and public Document Root.
-- Adapt HTTP bootstrap for separate deployed Document Root and private source repository.
-- Ignore PHPUnit result cache and remove the redundant Composer version field.
-- Add a Composer lockfile for repeatable dependency installation.
-- Verify application bootstrap and fail-closed upstream routes on the target shared hosting.
+- Add manual cPanel deployment manifest for split repository/Document Root.
+- Adapt bootstrap for private application source.
+- Add repeatable Composer lockfile, secure defaults and local tests.
+- Verify health endpoint and denied upstream access on shared hosting.
 
 ## [0.1.0-alpha.1] - 2026-11-07
 
