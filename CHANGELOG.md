@@ -2,10 +2,10 @@
 
 ## [Unreleased]
 
-- Add migration ledger runner with MySQL advisory lock, checksums and interrupted-DDL detection (not wired to HTTP).
-- Add checksum tests and an operator-only installer security checklist.
-- Define initial identity schema migrations without executing production SQL.
-- Preserve cPanel-managed `.htaccess` and PHP settings.
+- Add an explicit disposable MySQL 8.0 integration test for the migration runner.
+- Test actual schema creation, no-op repeat execution, and advisory lock contention.
+- Document local Docker database setup without storing secrets.
+- Keep installer and production migration execution disabled.
 
 ## [0.1.0-alpha.2] - 2026-11-07
 
