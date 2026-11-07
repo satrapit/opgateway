@@ -15,7 +15,7 @@ final class MysqliConnectionProbe
 {
     /**
      * @param array<string,string> $config
-     * @return 'driver_unavailable'|'invalid_config'|'connected'|'authentication_rejected'|'access_denied'|'unknown_database'|'connection_failure'|'unclassified'
+     * @return 'driver_unavailable'|'invalid_config'|'connected'|'authentication_rejected'|'access_denied'|'unknown_database'|'connection_failure'|'connection_limit'|'authentication_plugin'|'unclassified'
      */
     public static function inspect(array $config): string
     {
@@ -36,6 +36,7 @@ final class MysqliConnectionProbe
         $originalMode = $driver->report_mode;
         mysqli_report(MYSQLI_REPORT_OFF);
 
+        $connection = null;
         try {
             $connection = @mysqli_init();
             if (!$connection instanceof \mysqli) {
@@ -52,7 +53,10 @@ final class MysqliConnectionProbe
                     (int) $port,
                 );
                 if (!$ok) {
-                    return self::reason((int) mysqli_connect_errno());
+                    // On some mysqlnd builds the global errno is zero even
+                    // when this particular connection reports a failure.
+                    $errno = (int) $connection->connect_errno;
+                    return self::reason($errno !== 0 ? $errno : (int) mysqli_connect_errno());
                 }
 
                 $result = @$connection->query('SELECT 1');
@@ -62,21 +66,31 @@ final class MysqliConnectionProbe
                 $result->free();
                 return 'connected';
             } finally {
-                @$connection->close();
+                try {
+                    @$connection->close();
+                } catch (\Throwable) {
+                    // Closing a failed connection must never mask diagnostics.
+                }
             }
+        } catch (\mysqli_sql_exception $exception) {
+            // The numeric driver code is safe to classify; its free-form
+            // message can contain host/user data and must never be logged.
+            return self::reason((int) $exception->getCode());
         } catch (\Throwable) {
-            return self::reason((int) mysqli_connect_errno());
+            return 'unclassified';
         } finally {
             mysqli_report($originalMode);
         }
     }
 
-    private static function reason(int $code): string
+    public static function reason(int $code): string
     {
         return match ($code) {
             1045 => 'authentication_rejected',
-            1044, 1142, 1143 => 'access_denied',
+            1044, 1142, 1143, 1227 => 'access_denied',
             1049 => 'unknown_database',
+            1040, 1203 => 'connection_limit',
+            2054 => 'authentication_plugin',
             2002, 2003, 2005, 2006, 2013 => 'connection_failure',
             default => 'unclassified',
         };

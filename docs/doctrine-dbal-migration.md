@@ -72,3 +72,18 @@ workflow has been introduced.
 
 Official DBAL documentation:
 https://www.doctrine-project.org/projects/doctrine-dbal/en/4.6/reference/configuration.html
+
+
+## Interpreting both connection failures
+
+The mysqli probe now reads `mysqli::connect_errno` from its own failed
+connection, with a global errno fallback, and classifies a numeric
+`mysqli_sql_exception::getCode()` if an exception is thrown. The full
+exception message and host/user/database names are never logged.
+
+A `probe_result=unclassified` is not proof of a malformed or corrupted
+schema. It can mean the driver supplied no recognized native errno.
+Ensure the new code is deployed, run one controlled GET from the
+allowlisted operator IP, then switch both diagnostic and setup flags off.
+If it persists, check MySQL account grants and the local socket/host
+settings independently; do not rebuild the schema based on this event.
