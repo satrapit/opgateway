@@ -2,11 +2,11 @@
 
 ## [Unreleased]
 
-- Add internal MySQL-backed pre-login throttling with per-IP and per-identity HMAC counters.
-- Add allowlisted, metadata-only security event logging.
-- Add guarded login orchestration with tests that ensure throttling precedes password verification.
-- Stage separate phpMyAdmin SQL for future security support tables; no automatic or production import.
-- Keep login and provider API routes disabled until administration and security controls are complete.
+- Add first-administrator bootstrap services that refuse nonempty user/role tables.
+- Guard setup with an out-of-band 256-bit secret digest, MySQL advisory lock and transaction.
+- Add tests for valid, invalid and missing bootstrap secrets.
+- Keep bootstrap unexposed: no default admin, public installer, or hardcoded secrets.
+- Existing production database and cPanel deployment behavior remain unchanged.
 
 ## [0.1.0-alpha.2] - 2026-11-07
 
