@@ -2,10 +2,10 @@
 
 ## [Unreleased]
 
-- Add an explicit disposable MySQL 8.0 integration test for the migration runner.
-- Test actual schema creation, no-op repeat execution, and advisory lock contention.
-- Document local Docker database setup without storing secrets.
-- Keep installer and production migration execution disabled.
+- Add a versioned, import-once phpMyAdmin SQL bundle matching the first PHP migration checksum.
+- Document cPanel-only hosting workflow and eliminate Docker/Terminal dependencies from the deployment instructions.
+- Retain Git deployment as code-only; never run database migrations automatically.
+- Keep all provider API routes blocked until authentication and tenant isolation are implemented.
 
 ## [0.1.0-alpha.2] - 2026-11-07
 
