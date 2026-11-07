@@ -1,60 +1,52 @@
-# Manual first-time database setup using phpMyAdmin
+# Fresh OPGateway database installation in cPanel / phpMyAdmin
 
-## Hosting constraints
+The ONLY repository SQL import for a clean installation is
+`database/sql/opgateway_full_schema.sql`. It consolidates all three
+immutable PHP migrations and registers their existing matching checksums.
 
-Target hosting offers cPanel Git Version Control, File Manager, MultiPHP INI
-Editor and phpMyAdmin. It has **no Terminal or Docker**. Developers using the
-Mac in this workflow need only run Git commands. There is no need to run
-MySQL or PHP CLI on either machine.
+## Before a rebuild
 
-## Before import
+This is NOT a repair for an HTTP 503 with a PDO database error.
+Verify database credentials, grants, DB host/port and PHP `pdo_mysql`
+before replacing an already-created database. A database may be perfectly
+intact while the PHP process cannot connect to it.
 
-1. Confirm cPanel → Manage My Databases includes database
-   `arsamnet_opgateway_db`, associated user `arsamnet_opgateway_user`,
-   and suitable permissions.
-2. Put the user password only in the server's private `.env`:
-   `DB_HOST=localhost`, `DB_PORT=3306`,
-   `DB_NAME=arsamnet_opgateway_db`, `DB_USER=arsamnet_opgateway_user`,
-   and `DB_PASSWORD` (real password; do not share it).
-3. In cPanel → phpMyAdmin, explicitly select **arsamnet_opgateway_db**
-   in the left navigation. Confirm it is EMPTY; if any tables already exist,
-   **stop**, inspect and do not run the import.
-4. Export a backup before importing if there is any existing data.
-5. Download `database/sql/202611070001_create_identity_tables.sql` from
-   the repository. Import this exact SQL file under phpMyAdmin → Import.
-   Do not edit its version or checksum.
+If a full reinstall is intentionally required, export a verified backup
+of `arsamnet_opgateway_db` from phpMyAdmin. Record any data that must
+be retained; rebuilding loses existing accounts, roles, client records,
+API keys and tokens. Disable the installer and admin UI in the private
+`.env` before altering schema. Ensure the target database is EMPTY
+using cPanel / phpMyAdmin; the SQL does not drop any existing tables.
 
-## Expected result
+## Import
 
-Seven tables: `schema_migrations`, `users`, `roles`, `user_roles`,
-`api_clients`, `api_credentials`, `client_ip_whitelists`.
-There are **no seeded users, roles, API keys or trusted IP addresses**.
+1. In cPanel > Manage My Databases, prepare the intended database
+   and assign the existing MySQL user with required privileges.
+2. Select the EMPTY target database in phpMyAdmin.
+3. Import `database/sql/opgateway_full_schema.sql` once.
+   Do NOT import into the existing 10-table database.
+4. Inspect ALL SQL messages. Stop on any failure; MySQL DDL is
+   not completely rollback-safe, so do not blindly re-import.
+5. Verify 10 tables, three rows in `schema_migrations` all
+   `completed`, and empty `users`, `roles` and `user_roles`.
 
-In phpMyAdmin's SQL tab run:
+Expected immutable migration checksums:
+- 001 `fee0c5fbfd548e1cddb985befd9bd8a9a10ffb5b5255ac767b0432ca9e12c1a0`
+- 002 `0bc2e4471188fb379f737af925ebce4dcfc00537ef7b7992b17d2153b57e7727`
+- 003 `a2932ddac794ac00993a4077dd67d7ca4dd94ec9df971d81cf15b4518342d070`
 
-```sql
-SELECT version, status, checksum FROM schema_migrations;
-SHOW TABLES;
-```
+## Connection after installation
 
-Expected ledger row: version `202611070001_create_identity_tables`,
-status `completed`, checksum
-`fee0c5fbfd548e1cddb985befd9bd8a9a10ffb5b5255ac767b0432ca9e12c1a0`.
+Existing private configuration remains at
+`/home/arsamnet/repositories/opgateway/.env`.
+Verify `DB_HOST`, `DB_PORT`, `DB_NAME`, `DB_USER`,
+`DB_PASSWORD`, and MySQL user permissions separately.
+Never commit credentials or upload .env to the public Document Root.
 
-**Import exactly once**. A partial failure may leave tables and a
-`running` ledger row. MySQL DDL cannot be reliably rolled back in an
-import. If any statement errors or final status is not `completed`, STOP,
-save the error and request an explicit recovery plan; **do not rerun, DROP
-tables or manually change the ledger**. phpMyAdmin may continue processing
-after some SQL errors, so check both the import messages and schema integrity.
+No user/admin account is seeded. The first administrator must be
+created through the separately protected setup process when safe.
 
-## Deployment separation
-
-Database import is deliberately **manual**. The `.cpanel.yml` Git deployment
-must never auto-run DDL or modify database state. This avoids destructive
-side effects on production and protects cPanel-managed PHP configuration.
-An authenticated operator-only web migration UI may be introduced later
-with a controlled preflight and one-time setup lock. No public installer exists.
-
-The included Docker integration test is optional for outside contributors;
-it is NOT a requirement or step for this hosting installation.
+MacBook: Git only (`git pull --ff-only origin main`).
+cPanel: Git Version Control > Update from Remote / Deploy HEAD Commit.
+Deploying code does not execute this SQL. Do not use GitHub workflows
+or hosting terminal.

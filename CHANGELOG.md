@@ -2,12 +2,13 @@
 
 ## [Unreleased]
 
-- Add private, metadata-only JSONL diagnostic logging for setup/admin and
-  unhandled HTTP exceptions, correlated with the X-Request-ID header.
-- Distinguish setup config, database/schema, session and provisioning
-  failure stages without writing exception messages or secrets.
-- Add redaction test and cPanel File Manager instructions.
-- No database changes, new migrations or GitHub workflows.
+- Consolidate all initial PHP migration SQL into one empty-database import
+  with ten tables and three preserved migration ledger/checksum entries.
+- Delete obsolete individual import and legacy preflight SQL files.
+- Document safe cPanel database rebuilding and warning that PDO
+  connectivity problems are not fixed by rebuilding the schema.
+- Add source-level test comparing the full SQL with immutable migrations.
+- No production database action, credentials or GitHub workflows.
 
 ## [0.1.0-alpha.2] - 2026-11-07
 

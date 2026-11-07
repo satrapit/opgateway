@@ -1,8 +1,7 @@
 # Create the first Administrator (operator procedure)
 
 This is a one-time, carefully limited operation for the production
-cPanel instance. Existing schema migrations 001, 002 and 003 have been
-imported. **Do not run any new SQL schema file.**
+cPanel instance. A new empty database is initialized with `database/sql/opgateway_full_schema.sql`. Never reimport it into a populated database.
 
 The system does not ship a default account or password, and no GitHub
 commit can create a user in the production database.
