@@ -1,61 +1,83 @@
 # Production diagnostic logging
 
-The original foundation suppressed exception details in public responses
-but did not persist diagnostic metadata. This was a genuine observability
-gap. This change adds a JSON Lines diagnostic sink at
+OPGateway writes one JSON object per diagnostic event to the private
 `/home/arsamnet/repositories/opgateway/storage/logs/opgateway.jsonl`.
+Create the `storage/logs` directory with cPanel File Manager and keep
+it writable by PHP but **outside the public Document Root**. Restrict
+directory permissions to 0700 when the hosting account supports it.
+Never make this log file available through HTTP.
 
-## Operator setup in cPanel File Manager
+Every entry contains `timestamp_utc`, `request_id`, `event`,
+`http_status`, and `error_category`. A PDOException also adds a
+`database` object with `reason`, allowlisted `mysql_errno`, and
+allowlisted two-character `sqlstate_class`. Unsupported codes are
+replaced by null and `unclassified`. An optional `context` object
+contains only fixed enum values. The corresponding response header is
+`X-Request-ID`.
 
-1. Open the PRIVATE source tree (not Document Root):
-   `/home/arsamnet/repositories/opgateway/storage/`.
-2. Create a directory `logs` if absent. Set directory permissions to
-   `0700` where supported; it must be writable by the PHP account.
-3. Ensure the file is not served publicly or symlinked into Document Root.
-   The logger creates `opgateway.jsonl` on first recorded event.
-4. Never give the logger write permission to a public directory.
-5. Rotate or archive logs through File Manager as needed; logging is not
-   a substitute for an automated retention policy.
-
-## Recorded fields
-
-Each line is one JSON object with the following fixed metadata:
-`timestamp_utc`, `request_id`, `event`, `http_status`,
-`error_category`. The public response carries the same request ID in
-the `X-Request-ID` HTTP header.
-
-For example, a redacted synthetic event might look like:
+For example (synthetic, no real server information):
 
 ```json
-{"timestamp_utc":"2026-11-07T18:00:00Z","request_id":"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa","event":"setup.database_preflight_failed","http_status":503,"error_category":"database"}
+{"timestamp_utc":"2026-11-07T19:00:00Z","request_id":"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa","event":"setup.database_connection_failed","http_status":503,"error_category":"database","database":{"reason":"authentication_rejected","mysql_errno":1045,"sqlstate_class":"28"},"context":{"operation":"connect"}}
 ```
 
-The application never persists the raw exception message, exception
-stack, file path, SQL, IP, email, setup token, passwords, headers or body.
+Never log the raw PDO message, SQL, credentials, connection DSN, IP,
+account email, token, cookie, request payload, stack trace or
+environment values. No raw user-controlled context is accepted.
 
-## Diagnostic events
+## Error stages
 
-- `setup.configuration_invalid`: malformed/missing setup origin, token
-  digest, or setup rate limit key.
-- `setup.database_preflight_failed`: failed database connection, schema
-  query, or mismatched migration checksum; category distinguishes PDO
-  exceptions from other runtime errors.
-- `setup.schema_incomplete`: one or more required migrations are absent.
-- `setup.already_initialized`: a user/role already exists.
-- `setup.rate_limited`: the setup attempt limit was exceeded.
-- `setup.provisioning_failed`: bootstrap creation denied or failed.
-- `setup.session_start_failed` / `setup.session_cleanup_failed`:
-  server-side PHP session problem.
-- `http.unhandled_exception`: exception escaped controller handling.
-- `admin.configuration_invalid` / `admin.schema_incomplete`:
-  private admin login preflight failures.
+- `setup.configuration_invalid`: missing or invalid setup flags/keys.
+- `setup.database_driver_unavailable`: PDO MySQL driver missing.
+- `setup.database_connection_failed`: PDO connection/config exception.
+- `setup.schema_inspection_failed`: ledger query or checksum verification.
+- `setup.schema_incomplete`: a required migration is not marked completed.
+- `setup.identity_state_query_failed`: read-only users/roles count failed.
+- `setup.already_initialized`: some user or role already exists.
+- `setup.session_start_failed`: unable to establish secure PHP session.
+- `setup.provisioning_failed`: protected first-admin mutation failed.
+- `setup.administrator_created`: first administrator successfully created.
+- `admin.database_connection_failed` and `admin.schema_inspection_failed`:
+  same boundary for separately gated private admin UI.
+- `http.unhandled_exception`: last-resort handler.
 
-When opening the admin setup form results in HTTP 503:
-(1) inspect the last JSONL record; (2) match `request_id` with the HTTP
-response header; (3) report only the `event`, `http_status` and
-`error_category`. If file creation fails, cPanel/PHP's error log may
-contain only the fixed message `OPGateway diagnostic log write unavailable.`.
+## Interpreting database.reason
 
-The logging path does not perform SQL changes, auto-enable setup or
-grant access. Keep `SETUP_ENABLED=false` until the deployment and
-diagnostic path are verified.
+- `authentication_rejected` (1045): check actual MySQL password and user
+  authentication in cPanel; avoid printing values.
+- `access_denied` (1044/1142/1143/1227): review user-to-database grants.
+- `unknown_database` (1049): verify the database name.
+- `missing_table` (1146) / `missing_column` (1054): inspect the schema
+  with phpMyAdmin; do not reimport blindly.
+- `connection_failure` (2002/2003/2005/2006/2013): verify host and
+  MySQL service availability.
+- `connection_limit` (1040/1203): check database account connection
+  limits.
+- `authentication_plugin` (2054): MySQL client plugin compatibility.
+- `unclassified`: the driver returned an unknown code; no raw details
+  are leaked.
+
+## cPanel PHP Selector
+
+On some CloudLinux/cPanel installations, `nd_pdo_mysql` is the MySQL
+PDO driver backed by mysqlnd, even when the checkbox called `pdo_mysql`
+is not selected. Therefore check the **actual active PHP runtime**
+with `PDO::getAvailableDrivers()`, rather than inferring driver support
+from checkbox names alone.
+
+Do not expose phpinfo or a diagnostic route to the public. This project
+does not need a publicly accessible troubleshooting endpoint.
+
+## Operator procedure
+
+1. Git pull on Mac, then cPanel Git Version Control Update / Deploy.
+2. Confirm private log directory exists and is writable.
+3. Keep the setup switch OFF until a controlled, HTTPS + IP-restricted
+   investigation. Request the setup GET page only once.
+4. Read the newest entry, correlate it via X-Request-ID, and report only
+   event, error_category, database reason / errno / class if present.
+5. If the cause is found, turn setup OFF while fixing it.
+
+No database migration is required for this logging improvement. Historical
+log entries cannot be retroactively expanded, so make one new controlled
+request after updating the code.

@@ -2,13 +2,14 @@
 
 ## [Unreleased]
 
-- Consolidate all initial PHP migration SQL into one empty-database import
-  with ten tables and three preserved migration ledger/checksum entries.
-- Delete obsolete individual import and legacy preflight SQL files.
-- Document safe cPanel database rebuilding and warning that PDO
-  connectivity problems are not fixed by rebuilding the schema.
-- Add source-level test comparing the full SQL with immutable migrations.
-- No production database action, credentials or GitHub workflows.
+- Add stage-specific MySQL diagnostics separating driver availability, PDO
+  connection, migration inspection, and identity lookup failures.
+- Add reviewed MySQL errno and SQLSTATE-class classifications without
+  logging raw exceptions, credentials, SQL, IPs, headers or payloads.
+- Preserve correlation through X-Request-ID and private JSONL log.
+- Add tests for classification and redaction and update CloudLinux PHP
+  Selector troubleshooting documentation.
+- No new SQL, migration, workflow or default-enabled public endpoint.
 
 ## [0.1.0-alpha.2] - 2026-11-07
 

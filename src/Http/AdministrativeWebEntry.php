@@ -16,6 +16,8 @@ use OPGateway\Identity\PdoLoginAccountRepository;
 use OPGateway\Security\PdoLoginAttemptLimiter;
 use OPGateway\Security\PdoSecurityEventRecorder;
 use OPGateway\Observability\DiagnosticLog;
+use Throwable;
+use PDO;
 
 /**
  * Opt-in admin browser HTTP entry; fail-closed until explicitly enabled.
@@ -59,8 +61,26 @@ final readonly class AdministrativeWebEntry
             return self::error(503);
         }
 
-        $pdo = PdoConnectionFactory::open($this->config);
-        $readiness = (new SchemaReadiness($pdo))->inspect(MigrationCatalog::all());
+        if (!in_array('mysql', PDO::getAvailableDrivers(), true)) {
+            DiagnosticLog::record('admin.database_driver_unavailable', 503);
+            return self::error(503);
+        }
+        try {
+            $pdo = PdoConnectionFactory::open($this->config);
+        } catch (Throwable $exception) {
+            DiagnosticLog::record('admin.database_connection_failed', 503, $exception, [
+                'operation' => 'connect',
+            ]);
+            return self::error(503);
+        }
+        try {
+            $readiness = (new SchemaReadiness($pdo))->inspect(MigrationCatalog::all());
+        } catch (Throwable $exception) {
+            DiagnosticLog::record('admin.schema_inspection_failed', 503, $exception, [
+                'operation' => 'migration_check',
+            ]);
+            return self::error(503);
+        }
         if (!$readiness['ready']) {
             DiagnosticLog::record('admin.schema_incomplete', 503);
             return self::error(503);

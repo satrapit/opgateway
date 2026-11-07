@@ -54,18 +54,47 @@ final readonly class SetupInstaller
         // Check the authoritative database state before rendering the
         // privileged setup form. The bootstrap transaction repeats this
         // check under a MySQL lock to prevent concurrent installations.
+        // Distinguish driver, connection, schema, and identity-state errors.
+        // These operations are read-only and run before opening the form.
+        if (!in_array('mysql', PDO::getAvailableDrivers(), true)) {
+            DiagnosticLog::record('setup.database_driver_unavailable', 503, null, [
+                'driver' => 'unavailable',
+            ]);
+            return self::error(503);
+        }
+
         try {
             $pdo = PdoConnectionFactory::open($this->config);
+        } catch (Throwable $exception) {
+            DiagnosticLog::record('setup.database_connection_failed', 503, $exception, [
+                'operation' => 'connect',
+            ]);
+            return self::error(503);
+        }
+
+        try {
             if (!(new SchemaReadiness($pdo))->inspect(MigrationCatalog::all())['ready']) {
-                DiagnosticLog::record('setup.schema_incomplete', 503);
+                DiagnosticLog::record('setup.schema_incomplete', 503, null, [
+                    'operation' => 'migration_check', 'schema' => 'incomplete',
+                ]);
                 return self::error(503);
             }
+        } catch (Throwable $exception) {
+            DiagnosticLog::record('setup.schema_inspection_failed', 503, $exception, [
+                'operation' => 'migration_check',
+            ]);
+            return self::error(503);
+        }
+
+        try {
             if (!self::emptyIdentity($pdo)) {
                 DiagnosticLog::record('setup.already_initialized', 404);
                 return self::error(404);
             }
         } catch (Throwable $exception) {
-            DiagnosticLog::record('setup.database_preflight_failed', 503, $exception);
+            DiagnosticLog::record('setup.identity_state_query_failed', 503, $exception, [
+                'operation' => 'identity_check',
+            ]);
             return self::error(503);
         }
 
