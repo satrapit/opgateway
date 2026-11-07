@@ -2,11 +2,10 @@
 
 ## [Unreleased]
 
-- Align the existing login security SQL with immutable PHP migration 003.
-- Register migration 003 after initial schema and email-verification migrations.
-- Add checksum and security-schema tests; update prior catalog-size expectation.
-- Keep production database unchanged: SQL is explicitly manual and conditional.
-- Keep all administrator, authentication and Openprovider routes fail-closed.
+- Add read-only production schema readiness checker that refuses unknown, incomplete, mismatched or non-sequential migrations.
+- Add read-only phpMyAdmin preflight SQL for the installed first schema and subsequent identity/security tables.
+- Document ordered, backup-first import of migrations 002 and 003 without recreating the confirmed production database.
+- Do not auto-run migrations, expose admin routes, or create any GitHub workflow.
 
 ## [0.1.0-alpha.2] - 2026-11-07
 
