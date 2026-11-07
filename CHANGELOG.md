@@ -2,11 +2,11 @@
 
 ## [Unreleased]
 
-- Add high-entropy API credential generation, hashed storage and one-time issue semantics.
-- Add SQL-enforced owner-scoped credential issuance and revocation.
-- Add fail-closed authentication checking active client/owner and approved IP whitelist.
-- Add unit tests and API credential security documentation.
-- No schema changes, hosted CLI, public endpoints or GitHub workflows introduced.
+- Add SQL-scoped API client creation, activation and disablement.
+- Add explicit administrator approval and owner revocation for exact IP entries.
+- Add canonical IPv4/IPv6 binary codec with unit tests.
+- Retain disabled-by-default client/IP states and prevent any new public routes.
+- No new schema, phpMyAdmin import, hosted shell, Docker, or workflow required.
 
 ## [0.1.0-alpha.2] - 2026-11-07
 
