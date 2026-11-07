@@ -6,6 +6,7 @@ use OPGateway\Config\Environment;
 use OPGateway\Http\AdministrativeWebEntry;
 use OPGateway\Http\FoundationApplication;
 use OPGateway\Http\SetupInstaller;
+use OPGateway\Observability\DiagnosticLog;
 
 /**
  * cPanel split-root entrypoint; private source and secrets remain outside
@@ -15,6 +16,10 @@ $localRoot = dirname(__DIR__);
 $applicationRoot = is_file($localRoot . '/src/autoload.php')
     ? $localRoot
     : '/home/arsamnet/repositories/opgateway';
+
+// Correlate HTTP responses with metadata-only diagnostics.
+$requestId = bin2hex(random_bytes(16));
+DiagnosticLog::initialize($applicationRoot . '/storage/logs/opgateway.jsonl', $requestId);
 
 try {
     if (!is_file($applicationRoot . '/src/autoload.php')) {
@@ -40,7 +45,8 @@ try {
             'body' => json_encode($result['body'], JSON_THROW_ON_ERROR | JSON_UNESCAPED_SLASHES),
         ];
     }
-} catch (Throwable) {
+} catch (Throwable $exception) {
+    DiagnosticLog::record('http.unhandled_exception', 503, $exception);
     // Do not reflect filesystem paths, credentials, SQL or exception messages.
     $response = [
         'status' => 503,
@@ -56,5 +62,5 @@ header('X-Content-Type-Options: nosniff');
 header('X-Frame-Options: DENY');
 header('Referrer-Policy: no-referrer');
 header("Content-Security-Policy: default-src 'none'; form-action 'self'; base-uri 'none'; frame-ancestors 'none'");
-header('X-Request-ID: ' . bin2hex(random_bytes(16)));
+header('X-Request-ID: ' . $requestId);
 echo $response['body'];

@@ -13,6 +13,7 @@ use OPGateway\Database\Migrations\SchemaReadiness;
 use PDO;
 use OPGateway\Security\PdoSetupAttemptLimiter;
 use Throwable;
+use OPGateway\Observability\DiagnosticLog;
 
 /**
  * Explicitly opt-in, operator-only first-admin installer.
@@ -46,6 +47,7 @@ final readonly class SetupInstaller
         if (!preg_match('~^https://[a-z0-9.-]+(?::[0-9]{1,5})?$~iD', $origin)
             || !preg_match('/^[0-9a-f]{64}$/D', $this->config['SETUP_TOKEN_HASH'] ?? '')
             || !preg_match('/^[0-9a-f]{64}$/D', $this->config['SETUP_RATE_LIMIT_KEY'] ?? '')) {
+            DiagnosticLog::record('setup.configuration_invalid', 503);
             return self::error(503);
         }
 
@@ -55,17 +57,25 @@ final readonly class SetupInstaller
         try {
             $pdo = PdoConnectionFactory::open($this->config);
             if (!(new SchemaReadiness($pdo))->inspect(MigrationCatalog::all())['ready']) {
+                DiagnosticLog::record('setup.schema_incomplete', 503);
                 return self::error(503);
             }
             if (!self::emptyIdentity($pdo)) {
+                DiagnosticLog::record('setup.already_initialized', 404);
                 return self::error(404);
             }
-        } catch (Throwable) {
+        } catch (Throwable $exception) {
+            DiagnosticLog::record('setup.database_preflight_failed', 503, $exception);
             return self::error(503);
         }
 
-        $session = new BrowserSession();
-        $session->start(true);
+        try {
+            $session = new BrowserSession();
+            $session->start(true);
+        } catch (Throwable $exception) {
+            DiagnosticLog::record('setup.session_start_failed', 503, $exception);
+            return self::error(503);
+        }
         if ($method === 'GET') {
             $csrf = htmlspecialchars($session->csrfToken(), ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
             $html = '<!doctype html><html lang="en"><head><meta charset="utf-8">'
@@ -116,6 +126,7 @@ final readonly class SetupInstaller
                 hex2bin($this->config['SETUP_RATE_LIMIT_KEY']),
             );
             if (!$limiter->allow((string) $server['REMOTE_ADDR'])) {
+                DiagnosticLog::record('setup.rate_limited', 429);
                 return self::error(429);
             }
             $bootstrap = new AdministratorBootstrap($pdo, new PasswordHasher());
@@ -123,11 +134,19 @@ final readonly class SetupInstaller
                 $form['email'], $form['password'], $form['setup_token'],
                 $this->config['SETUP_TOKEN_HASH'],
             );
-        } catch (Throwable) {
-            // Do not disclose account existence or token validity.
+        } catch (Throwable $exception) {
+            // Diagnostic metadata only; never log setup token or password.
+            DiagnosticLog::record('setup.provisioning_failed', 403, $exception);
             return self::error(403);
         }
-        $session->logout();
+        try {
+            $session->logout();
+        } catch (Throwable $exception) {
+            DiagnosticLog::record('setup.session_cleanup_failed', 503, $exception);
+            // The account may have been created: never recommend retry.
+            return self::error(503);
+        }
+        DiagnosticLog::record('setup.administrator_created', 201);
         return self::json(201, ['status' => 'administrator_created',
             'next' => 'Disable setup and remove its token digest from private configuration.']);
     }

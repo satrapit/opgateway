@@ -2,13 +2,12 @@
 
 ## [Unreleased]
 
-- Check all three schema migrations and the empty first-admin identity
-  state before rendering the opt-in installation form.
-- Preserve transactional repeat checks under the MySQL installation lock.
-- Add a private, documented one-time setup procedure with macOS secure
-  token generation and post-install read-only verification SQL.
-- No additional migrations, database changes or GitHub workflows.
-- Installer and admin routes remain default-disabled; /v1 remains blocked.
+- Add private, metadata-only JSONL diagnostic logging for setup/admin and
+  unhandled HTTP exceptions, correlated with the X-Request-ID header.
+- Distinguish setup config, database/schema, session and provisioning
+  failure stages without writing exception messages or secrets.
+- Add redaction test and cPanel File Manager instructions.
+- No database changes, new migrations or GitHub workflows.
 
 ## [0.1.0-alpha.2] - 2026-11-07
 

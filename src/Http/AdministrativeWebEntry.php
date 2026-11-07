@@ -15,6 +15,7 @@ use OPGateway\Identity\PdoAdministratorAuthorization;
 use OPGateway\Identity\PdoLoginAccountRepository;
 use OPGateway\Security\PdoLoginAttemptLimiter;
 use OPGateway\Security\PdoSecurityEventRecorder;
+use OPGateway\Observability\DiagnosticLog;
 
 /**
  * Opt-in admin browser HTTP entry; fail-closed until explicitly enabled.
@@ -54,12 +55,14 @@ final readonly class AdministrativeWebEntry
         $key = $this->config['LOGIN_RATE_LIMIT_KEY'] ?? '';
         if (!preg_match('~^https://[a-z0-9.-]+(?::[0-9]{1,5})?$~iD', $origin)
             || !preg_match('/^[0-9a-f]{64}$/D', $key)) {
+            DiagnosticLog::record('admin.configuration_invalid', 503);
             return self::error(503);
         }
 
         $pdo = PdoConnectionFactory::open($this->config);
         $readiness = (new SchemaReadiness($pdo))->inspect(MigrationCatalog::all());
         if (!$readiness['ready']) {
+            DiagnosticLog::record('admin.schema_incomplete', 503);
             return self::error(503);
         }
 
