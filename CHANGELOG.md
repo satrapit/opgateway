@@ -2,11 +2,10 @@
 
 ## [Unreleased]
 
-- Add first-administrator bootstrap services that refuse nonempty user/role tables.
-- Guard setup with an out-of-band 256-bit secret digest, MySQL advisory lock and transaction.
-- Add tests for valid, invalid and missing bootstrap secrets.
-- Keep bootstrap unexposed: no default admin, public installer, or hardcoded secrets.
-- Existing production database and cPanel deployment behavior remain unchanged.
+- Add internal HTTP admission policy for HTTPS, authenticated admin role, same-origin POST, bounded JSON and CSRF checks.
+- Add database-backed administrator authorization recheck on every privileged request.
+- Add unit tests for rejected/allowed request policy decisions.
+- Leave public routes and cPanel-managed configuration unchanged; no new SQL required.
 
 ## [0.1.0-alpha.2] - 2026-11-07
 
