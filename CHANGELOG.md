@@ -2,11 +2,11 @@
 
 ## [Unreleased]
 
-- Add private browser route dispatcher for sign-in, admin landing and sign-out.
-- Add strict URL-encoded form decoding and bounded request stream handling.
-- Add unit tests rejecting duplicate parameters and malformed Content-Length.
-- Keep public entrypoint unchanged; no admin endpoints activated.
-- No new schema, manual SQL import or hosting CLI requirements.
+- Align the existing login security SQL with immutable PHP migration 003.
+- Register migration 003 after initial schema and email-verification migrations.
+- Add checksum and security-schema tests; update prior catalog-size expectation.
+- Keep production database unchanged: SQL is explicitly manual and conditional.
+- Keep all administrator, authentication and Openprovider routes fail-closed.
 
 ## [0.1.0-alpha.2] - 2026-11-07
 

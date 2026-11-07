@@ -1,47 +1,45 @@
-# Login protection foundation — not exposed publicly
+# Login security and migration readiness
 
-## Internal safeguards
+## Implemented internal components
 
-`GuardedLoginService` coordinates request reservation, password verification
-and a restricted security event. An HTTP controller must NEVER invoke
-`LoginAuthenticator` directly.
+- GuardedLoginService reserves limits before checking credentials.
+- PdoLoginAttemptLimiter uses MySQL counters for a 15-minute window with
+  conservative per-IP and per-identity limits.
+- Bucket keys are HMAC-SHA-256 digests based on a private, random
+  application key (at least 32 bytes); never commit the key.
+- PdoSecurityEventRecorder writes only a restricted event code, random
+  request correlation ID and timestamp, with no personal data or secrets.
+- Security components fail closed on database errors.
 
-`PdoLoginAttemptLimiter` uses atomic MySQL upserts to reserve fixed-window
-counters for both the transport-verified IP and normalized identity. It
-rejects malformed addresses, uses HMAC-SHA-256 bucket identifiers and
-requires an application-specific high-entropy key supplied privately (not
-in the source tree). Current provisional limits are 30 attempts/IP and
-8 attempts/identity in a 15-minute window; these require abuse testing.
+## Installation state
 
-`PdoSecurityEventRecorder` writes only preapproved event codes, a
-server-generated correlation ID and timestamp. It never persists passwords,
-bearer credentials, emails, raw addresses, request bodies or headers.
+The original seven-table production database and migration 001 are already
+confirmed. **This commit does not import, alter, or recreate any table.**
+The presence of migration 002 (email verification) has NOT been confirmed.
 
-Database failures throw and must be handled at the HTTP edge as generic
-service errors. Do not bypass the limiter or event recorder on failure.
+There are now three ordered immutable PHP migration definitions.
+A reviewed version-003 SQL artifact is available at
+`database/sql/202611070003_login_security.sql`, which creates only
+`login_rate_limits` and `security_events`.
 
-## cPanel database installation (deferred)
+**Do not import migration 003 unless 002 is already installed and completed.**
+Before any import: inspect the target schema and existing ledger, take a
+backup, and verify the tables are absent. Stop on any error. Because MySQL
+DDL implicitly commits, never blindly rerun an import. Future deployment
+instructions must respect the existing manually imported schema.
 
-These internal classes require two **additional** tables:
-`login_rate_limits` and `security_events`. A reviewed SQL draft is in
-`database/sql/202611070003_login_security.sql`; it is not automatically
-installed through Git deployment. The existing seven-table database and
-first Migration ledger row are already verified and must not be recreated.
+Migration 003's SHA-256 checksum is
+`a2932ddac794ac00993a4077dd67d7ca4dd94ec9df971d81cf15b4518342d070`, corresponding exactly to the ordered DDL statements
+in `CreateLoginSecurityTables::statements()`.
 
-**Do not import the draft SQL yet.** It is intentionally independent of the
-migration ledger pending alignment with the canonical migration catalog.
-A consistent versioned migration bundle and operational preflight will be
-prepared before activating the login controller.
+## Still required before public login
 
-## Still needed before public login
+1. Safe administrator provisioning and one-time setup disablement.
+2. Trustworthy HTTPS/session and CSRF integration at the real HTTP edge.
+3. Application-specific rate-limit key loaded from private environment.
+4. Integration tests for concurrent rate-limit updates and audit persistence.
+5. Bounded data retention / pruning strategy for old counters and events.
+6. Complete browser flow and generic non-enumerating error responses.
 
-- HTTPS-only controller, strict request/body limits and same-origin checks.
-- Server-managed session initialization and CSRF verification.
-- Admin bootstrap that cannot be repeated after setup.
-- Safe password reset, account recovery and session revocation.
-- Database tests for concurrent rate-limit claims and audit delivery.
-- Persistent cleanup strategy for old counters/events (without cron).
-- Email ownership verification and proper administrator account approval.
-
-Production routes remain fail-closed and no live login request can reach
-these internal classes until all prerequisites pass.
+No public endpoint is enabled by this change. Code deployment needs no
+server shell, Docker, Composer invocation, GitHub workflow, or Mac PHP CLI.

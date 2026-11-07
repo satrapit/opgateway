@@ -7,15 +7,21 @@ namespace OPGateway\Database\Migrations;
 use LogicException;
 
 /**
- * Explicit, ordered allowlist of reviewed migrations.
- * No database I/O occurs when reading the catalog.
+ * Explicit allowlist of immutable schema changes in ascending order.
+ *
+ * This catalog performs no I/O; deployments never auto-apply migrations.
  */
 final class MigrationCatalog
 {
     /** @return list<Migration> */
     public static function all(): array
     {
-        $migrations = [new CreateIdentityTables(), new CreateEmailVerificationTokens()];
+        $migrations = [
+            new CreateIdentityTables(),
+            new CreateEmailVerificationTokens(),
+            new CreateLoginSecurityTables(),
+        ];
+
         $versions = array_map(static fn (Migration $migration): string => $migration->version(), $migrations);
         $sorted = $versions;
         sort($sorted, SORT_STRING);
