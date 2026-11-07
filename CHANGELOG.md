@@ -2,10 +2,13 @@
 
 ## [Unreleased]
 
-- Add read-only production schema readiness checker that refuses unknown, incomplete, mismatched or non-sequential migrations.
-- Add read-only phpMyAdmin preflight SQL for the installed first schema and subsequent identity/security tables.
-- Document ordered, backup-first import of migrations 002 and 003 without recreating the confirmed production database.
-- Do not auto-run migrations, expose admin routes, or create any GitHub workflow.
+- Add explicit opt-in HTTPS/IP-restricted first administrator setup endpoint.
+- Require server-side CSRF, strict form parsing, a 256-bit out-of-band token,
+  and transactional empty-database bootstrap; no default administrator.
+- Ensure setup is 404 unless private configuration explicitly enables it.
+- Preserve protected existing MySQL tables and default-deny /v1 and /admin.
+- Add rejection tests and operator activation documentation. No new SQL,
+  GitHub workflows, Mac runtime commands, or server shell requirement.
 
 ## [0.1.0-alpha.2] - 2026-11-07
 
