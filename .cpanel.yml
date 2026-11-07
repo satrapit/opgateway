@@ -1,11 +1,12 @@
 ---
-# Only these public entrypoint files may be deployed into the document root.
-# Never copy the repository root, .env, .git, src, tests, or storage.
+# The cPanel-managed .htaccess, php.ini and .user.ini stay on the server.
+# Deploy only the explicitly approved application entrypoint.
+# No secrets, runtime logs, private source code, or Git metadata are copied.
 deployment:
   tasks:
     - export DEPLOYPATH=/home/arsamnet/opgateway.arsamnet.com
     - /bin/test -d "$DEPLOYPATH"
+    - /bin/test -f "$DEPLOYPATH/.htaccess"
     - /bin/test -f public/index.php
-    - /bin/test -f public/.htaccess
+    - /bin/test ! -L "$DEPLOYPATH/index.php"
     - /bin/cp -f public/index.php "$DEPLOYPATH/index.php"
-    - /bin/cp -f public/.htaccess "$DEPLOYPATH/.htaccess"

@@ -2,19 +2,21 @@
 
 ## [Unreleased]
 
-### Deployment improvements (candidate for v0.1.0-alpha.2)
+- Prevent cPanel deployments from overwriting the server-managed `.htaccess`.
+- Require the deployed `.htaccess` to exist before deploying the public entrypoint.
+- Clarify ownership and protection of cPanel PHP INI settings and error logs.
 
-- Add explicit cPanel deployment manifest for the arsamnet source/webroot split.
+## [0.1.0-alpha.2] - 2026-11-07
+
+- Add a manual cPanel deployment manifest for the split repository and public Document Root.
 - Adapt HTTP bootstrap for separate deployed Document Root and private source repository.
-- Ignore PHPUnit's result cache and remove redundant Composer version field.
-- Document manual update/deployment and security checks.
-
-This change has not been verified on the target cPanel instance. No new release tag should be created until local tests and initial cPanel deployment checks pass.
+- Ignore PHPUnit result cache and remove the redundant Composer version field.
+- Add a Composer lockfile for repeatable dependency installation.
+- Verify application bootstrap and fail-closed upstream routes on the target shared hosting.
 
 ## [0.1.0-alpha.1] - 2026-11-07
 
 - Initial fail-closed PHP 8.3 foundation with local test scaffolding.
 - Baseline architecture, security and API-compatibility documentation.
-- Documented manual Git Version Control update process for cPanel.
 
 **Not production-ready:** no upstream proxy, authentication or tenant isolation.
