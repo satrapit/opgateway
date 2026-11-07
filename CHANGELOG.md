@@ -2,11 +2,11 @@
 
 ## [Unreleased]
 
-- Add internal PDO-backed login eligibility and password authentication.
-- Add secure browser session initialization, session ID rotation and CSRF support.
-- Recheck account status during protected session access; expire authentication after 30 minutes.
-- Add login authentication unit tests and security integration documentation.
-- Preserve all existing schemas, cPanel configuration and fail-closed API routes.
+- Add internal MySQL-backed pre-login throttling with per-IP and per-identity HMAC counters.
+- Add allowlisted, metadata-only security event logging.
+- Add guarded login orchestration with tests that ensure throttling precedes password verification.
+- Stage separate phpMyAdmin SQL for future security support tables; no automatic or production import.
+- Keep login and provider API routes disabled until administration and security controls are complete.
 
 ## [0.1.0-alpha.2] - 2026-11-07
 
