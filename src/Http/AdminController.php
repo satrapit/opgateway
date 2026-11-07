@@ -6,7 +6,7 @@ namespace OPGateway\Http;
 
 use OPGateway\Identity\BrowserSession;
 use OPGateway\Identity\LoginAccountRepository;
-use OPGateway\Identity\PdoAdministratorAuthorization;
+use OPGateway\Identity\AdministratorAuthorization;
 
 /**
  * Private session-bound controller, NOT connected to public/index.php.
@@ -20,7 +20,7 @@ final readonly class AdminController
     public function __construct(
         private BrowserSession $session,
         private LoginAccountRepository $accounts,
-        private PdoAdministratorAuthorization $administrators,
+        private AdministratorAuthorization $administrators,
         private AdminRequestPolicy $policy,
         private AdminActions $actions,
     ) {

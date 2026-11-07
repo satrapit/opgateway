@@ -12,7 +12,7 @@ New opt-in source adapters:
   forces the connection to open and validates all connection fields.
 - `DbalLoginAccountRepository` implements LoginAccountRepository.
 - `DbalUserRepository` implements UserRepository.
-- `DbalAdministratorAuthorization` revalidates privileged membership.
+- `DbalAdministratorAuthorization` revalidates privileged membership.\n  Both implementations share `AdministratorAuthorization`, keeping HTTP\n  controllers independent from the selected database adapter.
 - `MysqliConnectionProbe` provides a safe native mysqli diagnostic that
   does not need Composer and is inactive by default.
 

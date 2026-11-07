@@ -7,7 +7,7 @@ namespace OPGateway\Http;
 use OPGateway\Identity\BrowserSession;
 use OPGateway\Identity\GuardedLoginService;
 use OPGateway\Identity\LoginAccountRepository;
-use OPGateway\Identity\PdoAdministratorAuthorization;
+use OPGateway\Identity\AdministratorAuthorization;
 use RuntimeException;
 
 /**
@@ -25,7 +25,7 @@ final readonly class BrowserAuthController
         private BrowserSession $session,
         private GuardedLoginService $login,
         private LoginAccountRepository $accounts,
-        private PdoAdministratorAuthorization $admins,
+        private AdministratorAuthorization $admins,
         private string $canonicalOrigin,
     ) {
         if (!preg_match('/^https:\/\/[a-z0-9.-]+(?::[0-9]{1,5})?$/iD', $canonicalOrigin)) {

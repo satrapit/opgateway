@@ -11,7 +11,7 @@ use Doctrine\DBAL\ParameterType;
  * DBAL-backed authorization rechecks active/approved/verified state and
  * admin role on every protected request. A session ID alone is not enough.
  */
-final readonly class DbalAdministratorAuthorization
+final readonly class DbalAdministratorAuthorization implements AdministratorAuthorization
 {
     public function __construct(private Connection $connection)
     {

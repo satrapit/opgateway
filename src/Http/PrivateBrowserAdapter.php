@@ -6,7 +6,7 @@ namespace OPGateway\Http;
 
 use OPGateway\Identity\BrowserSession;
 use OPGateway\Identity\LoginAccountRepository;
-use OPGateway\Identity\PdoAdministratorAuthorization;
+use OPGateway\Identity\AdministratorAuthorization;
 
 /**
  * Prepared browser route dispatcher; never registered by the public bootstrap.
@@ -22,7 +22,7 @@ final readonly class PrivateBrowserAdapter
         private BrowserSession $session,
         private BrowserAuthController $auth,
         private LoginAccountRepository $accounts,
-        private PdoAdministratorAuthorization $administrators,
+        private AdministratorAuthorization $administrators,
     ) {
     }
 

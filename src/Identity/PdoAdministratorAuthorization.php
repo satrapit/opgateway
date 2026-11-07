@@ -10,7 +10,7 @@ use PDO;
  * Revalidates an administrator's privileges directly from the database.
  * A session user ID alone is never sufficient for administrator access.
  */
-final readonly class PdoAdministratorAuthorization
+final readonly class PdoAdministratorAuthorization implements AdministratorAuthorization
 {
     public function __construct(private PDO $pdo)
     {
