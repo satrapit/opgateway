@@ -2,11 +2,12 @@
 
 ## [Unreleased]
 
-- Add cryptographic email verification token generation and hashed-token schema.
-- Provide a second versioned phpMyAdmin-only import for shared cPanel hosting.
-- Add unit tests for token format, hashing and SQL migration checksum.
-- Keep email sending, registration/login routes and account activation disabled.
-- Preserve cPanel-managed PHP configuration and code-only manual Git deployment.
+- Implement internal transactional email verification and one-time token consumption.
+- Add verified-admin-only pending account approval service.
+- Add fail-closed exact IP policy for active API clients with verified owners.
+- Add unit test for token issuing and one-time consumption.
+- Keep all identity/admin/API endpoints disabled until transport authentication and anti-abuse controls are complete.
+- Leave the confirmed initial database and schema ledger unchanged.
 
 ## [0.1.0-alpha.2] - 2026-11-07
 

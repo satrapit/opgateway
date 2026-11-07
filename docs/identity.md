@@ -1,39 +1,43 @@
-# Identity foundation (not exposed)
+# Identity and client access foundations
 
-The initial registration layer is implemented as **internal PHP services only**.
-There is **no registration/login endpoint**, no admin bootstrap user, no session
-authentication, no email verification sender and no account approval controller.
-All Openprovider routes remain blocked.
+These services are **private PHP code only**: no public registration, login,
+email verification, administrator approval or API proxy routes are active.
 
-## Registration rules
+## Email ownership verification
 
-- Normalize email to trimmed, lowercase ASCII and validate syntax/length.
-- Require a password of 12–1024 bytes, rejecting NUL bytes. Future iterations
-  must assess Unicode normalization and leaked-password screening.
-- Hash with PHP `password_hash(PASSWORD_DEFAULT)` and verify with
-  `password_verify`; never store passwords in plaintext.
-- Insert the new user with status `pending`, no `email_verified_at`, and no
-  `approved_at`. Pending accounts have no privileges.
-- Let the database enforce a unique email and propagate duplicate-key errors
-  **only inside trusted application code**. Public registration must later
-  return a non-enumerating response.
-- Use database parameter binding; never interpolate user input into SQL.
+- Generate 256-bit secrets using `random_bytes(32)`; store SHA-256 hashes only.
+- 30-minute token expiry and atomic one-time consumption under an InnoDB lock.
+- Successful verification updates `users.email_verified_at`; it does **not**
+  approve the user or grant access.
+- Consuming a valid token also invalidates remaining tokens for that user.
+- The table `email_verification_tokens` belongs to the second schema migration,
+  and is **not yet assumed present in the confirmed initial seven-table DB**.
+  Do not instantiate the PDO verification repository until that schema revision
+  has been applied via the reviewed phpMyAdmin SQL package.
+- No raw tokens in logs, query analytics, request history or error output.
 
-## Required security controls before any public endpoint
+## Administrator approval
 
-1. Per-IP and per-identity throttling, request-size limits and bot-abuse resistance.
-2. Strict Content-Type parsing, HTTPS, appropriate CSRF protection for
-   cookie/session-based forms and secure session cookies.
-3. Email ownership confirmation with short-lived, single-use hashed tokens.
-4. Administrator approval performed only by an authorized account.
-5. A safe, one-time administrator bootstrap process on shared cPanel hosting.
-6. Account lockout/recovery, generic login and registration errors,
-   password rehashing and authenticated session rotation.
-7. Authorization checks, audited state changes and tested tenant boundaries.
+`AccountApprovalService` authorizes the actor from DB state on each action:
+active and verified account plus membership in the `admin` role. It permits
+approval only of a distinct, verified pending user. This service **does not**
+create the initial administrator or grant admin roles. Production provisioning
+and action audit logs will be designed separately.
 
-The Mac workflow requires only Git. No terminal, Docker or executable
-processes are required on the hosting account. New schema changes must use
-versioned, reviewed phpMyAdmin imports. This change requires **no new SQL**.
+## API client IP allowlisting
 
-Do not deploy registration to production traffic until the above controls
-and server-side test coverage are complete.
+`ApiClientIpPolicy` compares the exact 4- or 16-byte address from
+`inet_pton` to `VARBINARY(16)` stored data. Authorization also requires
+an active API client, an active verified approved owner, an explicitly enabled
+IP entry and an approval timestamp. An empty list denies access.
+
+This policy is not yet connected to request middleware. Before exposing any
+API endpoint, enforce authenticated credentials, IP restrictions, operation
+permissions, tenant ownership, anti-abuse controls and safe request auditing.
+
+## Deployment requirements
+
+Only Git on the Mac and standard cPanel/phpMyAdmin on the shared server.
+No Terminal, Docker, background workers, Composer on the server, or automatic
+SQL migrations are required. The existing first seven tables are confirmed and
+must not be re-imported. Code deployment does not change the schema.
