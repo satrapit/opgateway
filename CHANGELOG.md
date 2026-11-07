@@ -2,10 +2,11 @@
 
 ## [Unreleased]
 
-- Add a versioned, import-once phpMyAdmin SQL bundle matching the first PHP migration checksum.
-- Document cPanel-only hosting workflow and eliminate Docker/Terminal dependencies from the deployment instructions.
-- Retain Git deployment as code-only; never run database migrations automatically.
-- Keep all provider API routes blocked until authentication and tenant isolation are implemented.
+- Add internal registration data validation, password hashing, and PDO-backed pending-user insertion.
+- Add unit tests for email normalization, hashing and invalid input.
+- Keep registration and login HTTP endpoints disabled pending email verification, abuse prevention, and administrator approval.
+- Provide a versioned, import-once phpMyAdmin SQL bundle for the initial database schema.
+- Preserve cPanel-managed PHP and htaccess configuration during manual Git deployment.
 
 ## [0.1.0-alpha.2] - 2026-11-07
 
