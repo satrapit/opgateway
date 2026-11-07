@@ -7,15 +7,15 @@ namespace OPGateway\Database\Migrations;
 use LogicException;
 
 /**
- * Explicit allowlist of migration definitions, ordered by version.
- * Nothing in this class performs database I/O.
+ * Explicit, ordered allowlist of reviewed migrations.
+ * No database I/O occurs when reading the catalog.
  */
 final class MigrationCatalog
 {
     /** @return list<Migration> */
     public static function all(): array
     {
-        $migrations = [new CreateIdentityTables()];
+        $migrations = [new CreateIdentityTables(), new CreateEmailVerificationTokens()];
         $versions = array_map(static fn (Migration $migration): string => $migration->version(), $migrations);
         $sorted = $versions;
         sort($sorted, SORT_STRING);

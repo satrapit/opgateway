@@ -2,11 +2,11 @@
 
 ## [Unreleased]
 
-- Add internal registration data validation, password hashing, and PDO-backed pending-user insertion.
-- Add unit tests for email normalization, hashing and invalid input.
-- Keep registration and login HTTP endpoints disabled pending email verification, abuse prevention, and administrator approval.
-- Provide a versioned, import-once phpMyAdmin SQL bundle for the initial database schema.
-- Preserve cPanel-managed PHP and htaccess configuration during manual Git deployment.
+- Add cryptographic email verification token generation and hashed-token schema.
+- Provide a second versioned phpMyAdmin-only import for shared cPanel hosting.
+- Add unit tests for token format, hashing and SQL migration checksum.
+- Keep email sending, registration/login routes and account activation disabled.
+- Preserve cPanel-managed PHP configuration and code-only manual Git deployment.
 
 ## [0.1.0-alpha.2] - 2026-11-07
 
