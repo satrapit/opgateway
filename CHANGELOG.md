@@ -2,21 +2,21 @@
 
 ## [Unreleased]
 
-- Add first reviewed identity/API-client SQL schema as migration definitions only.
-- Keep database migrations disabled until a secure operator-only installer and recovery mechanism exist.
-- Add migration structure and deny-by-default schema tests.
+- Add migration ledger runner with MySQL advisory lock, checksums and interrupted-DDL detection (not wired to HTTP).
+- Add checksum tests and an operator-only installer security checklist.
+- Define initial identity schema migrations without executing production SQL.
 - Preserve cPanel-managed `.htaccess` and PHP settings.
 
 ## [0.1.0-alpha.2] - 2026-11-07
 
 - Add manual cPanel deployment manifest for split repository/Document Root.
 - Adapt bootstrap for private application source.
-- Add repeatable Composer lockfile, secure defaults and local tests.
-- Verify health endpoint and denied upstream access on shared hosting.
+- Add Composer lockfile and foundational tests.
+- Verify health endpoint and denied upstream routes on shared hosting.
 
 ## [0.1.0-alpha.1] - 2026-11-07
 
-- Initial fail-closed PHP 8.3 foundation with local test scaffolding.
+- Initial fail-closed PHP 8.3 foundation.
 - Baseline architecture, security and API-compatibility documentation.
 
-**Not production-ready:** no upstream proxy, authentication or tenant isolation.
+**Not production-ready:** no authenticated client API or upstream transport.
