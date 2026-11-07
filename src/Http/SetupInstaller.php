@@ -10,6 +10,7 @@ use OPGateway\Identity\PasswordHasher;
 use OPGateway\Database\PdoConnectionFactory;
 use OPGateway\Database\Migrations\MigrationCatalog;
 use OPGateway\Database\Migrations\SchemaReadiness;
+use PDO;
 use OPGateway\Security\PdoSetupAttemptLimiter;
 use Throwable;
 
@@ -45,6 +46,21 @@ final readonly class SetupInstaller
         if (!preg_match('~^https://[a-z0-9.-]+(?::[0-9]{1,5})?$~iD', $origin)
             || !preg_match('/^[0-9a-f]{64}$/D', $this->config['SETUP_TOKEN_HASH'] ?? '')
             || !preg_match('/^[0-9a-f]{64}$/D', $this->config['SETUP_RATE_LIMIT_KEY'] ?? '')) {
+            return self::error(503);
+        }
+
+        // Check the authoritative database state before rendering the
+        // privileged setup form. The bootstrap transaction repeats this
+        // check under a MySQL lock to prevent concurrent installations.
+        try {
+            $pdo = PdoConnectionFactory::open($this->config);
+            if (!(new SchemaReadiness($pdo))->inspect(MigrationCatalog::all())['ready']) {
+                return self::error(503);
+            }
+            if (!self::emptyIdentity($pdo)) {
+                return self::error(404);
+            }
+        } catch (Throwable) {
             return self::error(503);
         }
 
@@ -93,10 +109,6 @@ final readonly class SetupInstaller
         }
 
         try {
-            $pdo = PdoConnectionFactory::open($this->config);
-            if (!(new SchemaReadiness($pdo))->inspect(MigrationCatalog::all())['ready']) {
-                return self::error(503);
-            }
             // Reserve an IP-scoped attempt BEFORE checking the setup token.
             // A malformed/incorrect token still consumes a persistent attempt.
             $limiter = new PdoSetupAttemptLimiter(
@@ -118,6 +130,22 @@ final readonly class SetupInstaller
         $session->logout();
         return self::json(201, ['status' => 'administrator_created',
             'next' => 'Disable setup and remove its token digest from private configuration.']);
+    }
+
+    /**
+     * An existing identity, role, or role assignment permanently closes
+     * the first-time installer. Never delete users to reopen setup.
+     */
+    private static function emptyIdentity(PDO $pdo): bool
+    {
+        foreach (['users', 'roles', 'user_roles'] as $table) {
+            // Table names are fixed internal literals, never user input.
+            $stmt = $pdo->query('SELECT 1 FROM ' . $table . ' LIMIT 1');
+            if ($stmt->fetchColumn() !== false) {
+                return false;
+            }
+        }
+        return true;
     }
 
     private static function allowedIp(string $remote, string $expected): bool

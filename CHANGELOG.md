@@ -2,13 +2,13 @@
 
 ## [Unreleased]
 
-- Harden first-admin setup with atomic MySQL attempt throttling: maximum five
-  attempts per source IP in 15 minutes, before setup-token validation.
-- Reject incomplete schema history before installation.
-- Require a separate high-entropy setup rate-limit key in private .env.
-- Reuse the already installed login_rate_limits table; no database migration
-  or SQL import required.
-- Leave installer and admin UI disabled by default; provider routes blocked.
+- Check all three schema migrations and the empty first-admin identity
+  state before rendering the opt-in installation form.
+- Preserve transactional repeat checks under the MySQL installation lock.
+- Add a private, documented one-time setup procedure with macOS secure
+  token generation and post-install read-only verification SQL.
+- No additional migrations, database changes or GitHub workflows.
+- Installer and admin routes remain default-disabled; /v1 remains blocked.
 
 ## [0.1.0-alpha.2] - 2026-11-07
 

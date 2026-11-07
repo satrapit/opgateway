@@ -30,4 +30,15 @@ final class SetupInstallerTest extends TestCase
             ['HTTPS' => 'on', 'REMOTE_ADDR' => '198.51.100.2',
              'HTTP_X_FORWARDED_FOR' => '192.0.2.10'])['status']);
     }
+
+    public function testMissingSetupConfigFailsClosedBeforeSession(): void
+    {
+        $installer = new SetupInstaller([
+            'SETUP_ENABLED' => 'true',
+            'SETUP_ALLOWED_IP' => '192.0.2.10',
+            'APP_URL' => 'https://opgateway.example.org',
+        ]);
+        self::assertSame(503, $installer->handle('GET',
+            ['HTTPS' => 'on', 'REMOTE_ADDR' => '192.0.2.10'])['status']);
+    }
 }
