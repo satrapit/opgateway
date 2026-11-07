@@ -2,10 +2,12 @@
 
 ## [Unreleased]
 
-- Add internal HTTP admission policy for HTTPS, authenticated admin role, same-origin POST, bounded JSON and CSRF checks.
-- Add database-backed administrator authorization recheck on every privileged request.
-- Add unit tests for rejected/allowed request policy decisions.
-- Leave public routes and cPanel-managed configuration unchanged; no new SQL required.
+- Add internal session-bound administrator controller and strict JSON parser.
+- Add explicitly allowlisted approve-user, activate-client and approve-IP actions.
+- Reject extra payload fields and derive actor identity exclusively from session.
+- Retain existing protected DB authorization and fail-closed public routing.
+- Add JSON validation unit tests and administrator controller documentation.
+- No schema changes, new SQL, server commands or GitHub workflows.
 
 ## [0.1.0-alpha.2] - 2026-11-07
 
