@@ -19,14 +19,13 @@ $applicationRoot = is_file($localRoot . '/src/autoload.php')
 
 // Correlate HTTP responses with metadata-only diagnostics.
 $requestId = bin2hex(random_bytes(16));
-DiagnosticLog::initialize($applicationRoot . '/storage/logs/opgateway.jsonl', $requestId);
-
 try {
     if (!is_file($applicationRoot . '/src/autoload.php')) {
         throw new RuntimeException('Application bootstrap unavailable.');
     }
 
     require $applicationRoot . '/src/autoload.php';
+    DiagnosticLog::initialize($applicationRoot . '/storage/logs/opgateway.jsonl', $requestId);
     $config = Environment::load($applicationRoot . '/.env');
     $method = $_SERVER['REQUEST_METHOD'] ?? 'GET';
     $path = parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH) ?: '/';
@@ -46,7 +45,11 @@ try {
         ];
     }
 } catch (Throwable $exception) {
-    DiagnosticLog::record('http.unhandled_exception', 503, $exception);
+    if (class_exists(DiagnosticLog::class)) {
+        DiagnosticLog::record('http.unhandled_exception', 503, $exception);
+    } else {
+        error_log('OPGateway bootstrap unavailable.');
+    }
     // Do not reflect filesystem paths, credentials, SQL or exception messages.
     $response = [
         'status' => 503,
