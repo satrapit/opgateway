@@ -2,11 +2,11 @@
 
 ## [Unreleased]
 
-- Add SQL-scoped API client creation, activation and disablement.
-- Add explicit administrator approval and owner revocation for exact IP entries.
-- Add canonical IPv4/IPv6 binary codec with unit tests.
-- Retain disabled-by-default client/IP states and prevent any new public routes.
-- No new schema, phpMyAdmin import, hosted shell, Docker, or workflow required.
+- Add internal PDO-backed login eligibility and password authentication.
+- Add secure browser session initialization, session ID rotation and CSRF support.
+- Recheck account status during protected session access; expire authentication after 30 minutes.
+- Add login authentication unit tests and security integration documentation.
+- Preserve all existing schemas, cPanel configuration and fail-closed API routes.
 
 ## [0.1.0-alpha.2] - 2026-11-07
 
