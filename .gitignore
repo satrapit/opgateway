@@ -1,0 +1,12 @@
+/.env
+/.env.*
+!/.env.example
+/vendor/
+/.phpunit.cache/
+/coverage/
+/storage/*
+!/storage/.gitkeep
+*.log
+.DS_Store
+.idea/
+.vscode/
