@@ -10,8 +10,7 @@ Never make this log file available through HTTP.
 Every entry contains `timestamp_utc`, `request_id`, `event`,
 `http_status`, and `error_category`. A PDOException also adds a
 `database` object with `reason`, allowlisted `mysql_errno`, and
-allowlisted two-character `sqlstate_class`. Unsupported codes are
-replaced by null and `unclassified`. An optional `context` object
+allowlisted two-character `sqlstate_class`. For constructor-time PDO exceptions without `errorInfo`, only a strict\n`SQLSTATE[XXXXX] [NNNN]` **numeric prefix** can be parsed; the rest of\nthe message is discarded without writing it anywhere. Unsupported codes\nare replaced by null and `unclassified`. An optional `context` object
 contains only fixed enum values. The corresponding response header is
 `X-Request-ID`.
 

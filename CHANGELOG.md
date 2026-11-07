@@ -2,6 +2,7 @@
 
 ## [Unreleased]
 
+- Recover allowlisted MySQL native error numbers from the strict PDO\n  constructor-time SQLSTATE prefix when errorInfo is unavailable, without\n  recording the exception text or disclosing credentials.\n- Add tests for connection/authentication prefixes and redaction.\n
 - Add stage-specific MySQL diagnostics separating driver availability, PDO
   connection, migration inspection, and identity lookup failures.
 - Add reviewed MySQL errno and SQLSTATE-class classifications without

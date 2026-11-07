@@ -28,6 +28,15 @@ final class DatabaseFailure
         $info = $error->errorInfo;
         $number = isset($info[1]) && (is_int($info[1]) || ctype_digit((string) $info[1]))
             ? (int) $info[1] : null;
+
+        // PDO's constructor can throw before errorInfo is populated.
+        // PHP often embeds the driver errno in the strictly structured
+        // prefix "SQLSTATE[HY000] [2002]". Extract ONLY that numeric prefix;
+        // never serialize, retain or log the message's free-form remainder.
+        if ($number === null
+            && preg_match('/^SQLSTATE\\[[A-Z0-9]{5}\\] \\[([0-9]{3,5})\\](?:\\s|$)/D', $error->getMessage(), $matches) === 1) {
+            $number = (int) $matches[1];
+        }
         $safeNumber = $number !== null && in_array($number, [
             1040, 1044, 1045, 1049, 1054, 1062, 1142, 1143, 1146, 1203,
             1227, 2002, 2003, 2005, 2006, 2013, 2054,

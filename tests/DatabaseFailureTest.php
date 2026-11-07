@@ -21,6 +21,34 @@ final class DatabaseFailureTest extends TestCase
         self::assertSame('28', $result['sqlstate_class']);
     }
 
+    public function testExtractsAllowlistedErrnoFromPdoConnectionPrefixOnly(): void
+    {
+        $exception = new PDOException(
+            'SQLSTATE[HY000] [2002] socket=/private/secret/mysql.sock'
+        );
+        $exception->errorInfo = [];
+        $result = DatabaseFailure::classify($exception);
+        self::assertSame('connection_failure', $result['reason']);
+        self::assertSame(2002, $result['mysql_errno']);
+        self::assertSame('HY', $result['sqlstate_class']);
+    }
+
+    public function testClassifiesMysqlAuthenticationErrorWithoutErrorInfo(): void
+    {
+        $exception = new PDOException('SQLSTATE[HY000] [1045] Access denied');
+        $exception->errorInfo = [];
+        self::assertSame('authentication_rejected', DatabaseFailure::classify($exception)['reason']);
+    }
+
+    public function testIgnoresUntrustedNumericTokensOutsideOfficialPrefix(): void
+    {
+        $exception = new PDOException('password=2002 SQLSTATE[HY000] [1045]');
+        $exception->errorInfo = [];
+        $result = DatabaseFailure::classify($exception);
+        self::assertNull($result['mysql_errno']);
+        self::assertSame('unclassified', $result['reason']);
+    }
+
     public function testUnknownErrorCodeIsRedacted(): void
     {
         $exception = new PDOException('do not record this');
