@@ -36,5 +36,6 @@ See [phpMyAdmin installation](docs/phpmyadmin-install.md).
 - [cPanel deployment](docs/cpanel-deployment.md)
 - [Staged Doctrine DBAL migration and mysqli diagnosis](docs/doctrine-dbal-migration.md)
 - [Private diagnostic logs](docs/diagnostic-logging.md)
+- [Temporary database connection test](docs/db-connection-test.md)
 
 No secrets, GitHub Actions, or CI/CD workflows are included.

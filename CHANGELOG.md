@@ -2,6 +2,11 @@
 
 ## [Unreleased]
 
+- Add an opt-in, IP- and HTTPS-restricted temporary database-only
+  connection test for cPanel File Manager deployment (not auto-published).
+- Test private .env PDO and native MySQLi connectivity with SELECT 1;
+  never expose raw connection errors, credentials or request data.
+
 - Add a PHP 8.3 Doctrine DBAL factory with `pdo_mysql` and `mysqli`
   drivers plus DBAL login, registration and administrator-authorization
   adapters using strictly parameterized queries.
