@@ -34,11 +34,11 @@ secret or password into this chat, GitHub, or issue trackers.
 setup_token="$(openssl rand -hex 32)"
 setup_digest="$(printf '%s' "$setup_token" | xxd -r -p | shasum -a 256 | awk '{print $1}')"
 rate_key="$(openssl rand -hex 32)"
+printf '%s' "$setup_token" | pbcopy
 printf 'SETUP_TOKEN_HASH=%s\nSETUP_RATE_LIMIT_KEY=%s\n' "$setup_digest" "$rate_key"
 ```
 
-Keep the `setup_token` only in your private password manager; it is
-the token entered in the setup form. The printed digest is safe to
+The command copies `setup_token` to the macOS clipboard without printing it.\nPaste it immediately into a private password manager and clear the clipboard\nafterward. It is the token entered in the setup form. The printed digest is safe to
 configure but must not be committed. The separate rate key is also
 secret and must remain only in the server's private .env.
 
