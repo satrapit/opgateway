@@ -1,37 +1,33 @@
-# Database foundation — design stage
+# Database foundation — migration planning
 
-## Runtime and credentials
+## cPanel environment
 
-The target is MySQL or MariaDB under cPanel with PHP 8.3 and `pdo_mysql`.
-Create the database and dedicated user through cPanel Database Wizard.
-Only the private `/home/arsamnet/repositories/opgateway/.env` may contain
-database credentials. Never commit or paste real credentials.
+This deployment uses a database named `arsamnet_opgateway_db` and a dedicated user named `arsamnet_opgateway_user`. These names are identifiers, not credentials. Only the private `/home/arsamnet/repositories/opgateway/.env` holds the database password. Assign the user to the database in cPanel MySQL Database Wizard. Do not paste credentials into issues, logs, commits or ChatGPT.
 
-`DatabaseConfig` validates connection parameters and builds an `utf8mb4`
-DSN. `PdoConnectionFactory` uses native prepared statements, no persistent
-connections and exception-based PDO handling. It connects only when explicitly
-called, never as a side effect of `/health`.
+Configuration keys: `DB_HOST=localhost`, `DB_PORT=3306`, `DB_NAME`, `DB_USER`, `DB_PASSWORD`.
 
-## Migration strategy — not implemented yet
+`DatabaseConfig` validates the settings and `PdoConnectionFactory` constructs an on-demand MySQL PDO connection with native prepared statements. The public health endpoint does not connect to the database.
 
-Do **not** execute migrations during a normal HTTP request or cPanel deploy.
-A future operator-only web installer must use a one-time out-of-band bootstrap
-credential, HTTPS, CSRF protection, session authentication, explicit confirmation,
-concurrency locks, a migration ledger and a post-install disable switch.
-It must reject arbitrary SQL from request input and never expose database
-errors or secrets. cPanel shared hosting cannot assume Terminal access.
+## Initial schema (defined, not installed)
 
-MySQL/MariaDB DDL may implicitly commit; backup and idempotence checks are
-required before migrations run. Do not claim transactional DDL rollback.
+The first SQL migration is `202611070001_create_identity_tables`. It defines:
 
-## Planned schema
+- `users`: unique email, password hash, pending account status, verification and approval timestamps.
+- `roles` and `user_roles`: separate roles and user membership.
+- `api_clients`: distinct applications owned by a user; disabled by default.
+- `api_credentials`: credential prefix and securely hashed secret, expiry and revocation.
+- `client_ip_whitelists`: binary IPv4/IPv6 addresses; disabled until approved.
 
-Initial entities: `schema_migrations`, `users`, `roles`, `user_roles`,
-`permissions`, `role_permissions`, `api_clients`, `api_credentials`,
-`client_ip_whitelists`, `client_permissions`, `security_events`,
-`audit_events`, `resource_ownership`, `operations` and
-`operation_attempts`. Enforce foreign keys and uniqueness. Store credentials
-as appropriate hashes; resolve IP addresses safely; reject cross-tenant
-operations without independently verified ownership.
+All tables use InnoDB and `utf8mb4`, with foreign keys and uniqueness where needed. No default users, administrator accounts, API credentials, IP addresses or upstream permissions are inserted. Other required tables (permissions, audit, operations, resource ownership) will be introduced in reviewed subsequent migrations.
 
-**No schema migration, web installer or database connection has been executed.**
+## Safety and execution
+
+**The migrations are definitions only: no database migration has been executed and no web installer is exposed.** Never connect schema changes to ordinary `/health` requests or the cPanel deployment task.
+
+The future protected installer will need a one-time bootstrap secret, strict HTTPS, rate limits, an authenticated operator session, explicit confirmation, a migration ledger, a database advisory lock and an irreversible installation lock. Operators must take a database backup before schema changes.
+
+MySQL/MariaDB DDL may implicitly commit and a partial failure requires an explicit recovery procedure. Migration version history alone does not guarantee transactional atomicity. The migration engine must refuse to proceed on uncertain or partially applied states; it must never automatically reset tables.
+
+## Testing
+
+Run `php scripts/lint.php` and `composer test` locally. Migration tests inspect schema definitions without needing MySQL or production credentials. Database integration tests against a disposable local database must precede any production execution.

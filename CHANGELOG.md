@@ -2,10 +2,10 @@
 
 ## [Unreleased]
 
-- Add validated MySQL/MariaDB connection settings and an on-demand PDO factory.
-- Add tests for DSN construction and malicious/invalid configuration values.
-- Document the shared-hosting database strategy and planned protected migrations.
-- Preserve cPanel-managed `.htaccess` and PHP settings during deployment.
+- Add first reviewed identity/API-client SQL schema as migration definitions only.
+- Keep database migrations disabled until a secure operator-only installer and recovery mechanism exist.
+- Add migration structure and deny-by-default schema tests.
+- Preserve cPanel-managed `.htaccess` and PHP settings.
 
 ## [0.1.0-alpha.2] - 2026-11-07
 
