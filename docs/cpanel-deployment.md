@@ -7,24 +7,27 @@
 - Secrets: private checkout `.env`, outside Document Root.
 - Diagnostics: private `storage/logs/opgateway.jsonl`, writable by PHP, never public.
 
-The versioned `.cpanel.yml` **only copies `public/index.php`**. It checks the destination exists, `.htaccess` exists and the target index is not a symlink. It **does not delete or clean up any deployed files**. The cPanel-managed `.htaccess`, `php.ini` and `.user.ini` are not overwritten. Old standalone files, if any, must be audited and removed deliberately via File Manager, not by future deployment scripts.
+The reviewed UI branch's versioned `.cpanel.yml` copies **only `public/index.php` and the allowlisted compiled admin assets** (`public/assets/admin.css`, `public/assets/admin.js`, `public/assets/theme-init.js`). Missing assets or public symlink destinations make deployment fail rather than silently serving incomplete UI. It checks the destination exists, `.htaccess` exists and the target index is not a symlink. It **does not delete or clean up any deployed files**. The cPanel-managed `.htaccess`, `php.ini` and `.user.ini` are not overwritten. Old standalone files, if any, must be audited and removed deliberately via File Manager, not by future deployment scripts.
 
 ## Manual deployment
 
-1. Locally run `php scripts/lint.php`, `composer test`, `php scripts/smoke.php` and `composer validate --strict --no-check-publish`.
-2. Commit and push reviewed changes to `main`; never commit real `.env`.
-3. cPanel → Git Version Control → **Update from Remote**, verify commit → **Deploy HEAD Commit**.
-4. Confirm `https://opgateway.arsamnet.com/health` returns HTTP 200 and `{"status":"ok"}`.
-5. Confirm `/v1/domains` remains HTTP 503 with `gateway_not_configured`.
-6. Check private URLs (`/.env`, `/src/autoload.php`, `/composer.json`, `/.git/config`, `/storage/`) do not return HTTP 200.
-7. Confirm deployed rewrite rules and existing cPanel PHP handler remain intact.
-8. Test admin browser login/dashboard/logout from the allowed IP only when `ADMIN_UI_ENABLED=true`.
+1. On a trusted local Mac with PHP 8.3/Composer, run `composer update twig/twig --with-dependencies` **once** to update and commit `composer.lock`. Then run `composer install --no-dev --prefer-dist --optimize-autoloader` for a reviewed private production vendor tree. Never copy vendor to Document Root.
+2. Under `frontend/`, run `npm install` **once** to create and commit `package-lock.json`. Then `npm ci && npm run check && npm run build`, verifying all three real files exist under `public/assets/`. Do not run NPM on cPanel.
+3. Locally run `php scripts/lint.php`, `composer test`, `./vendor/bin/phpunit --display-phpunit-notices`, `php scripts/smoke.php` and `composer validate --strict --no-check-publish`.
+4. Review compiled bundles for unexpected imports, runtime CDNs, secrets and sourcemaps; run responsive/mobile/keyboard/theme browser checks. Deploy private PHP vendor dependencies **to the private checkout path** through an approved cPanel File Manager/transfer workflow. Confirm Twig classes load before changing public entrypoint.
+5. Commit reviewed `composer.lock`, `frontend/package-lock.json`, and three built assets; push approved changes to `main`. Never commit real `.env`.
+6. cPanel → Git Version Control → **Update from Remote**, verify commit → **Deploy HEAD Commit**.
+7. Confirm `https://opgateway.arsamnet.com/health` returns HTTP 200 and `{"status":"ok"}`.
+8. Confirm `/v1/domains` remains HTTP 503 with `gateway_not_configured`.
+9. Check private URLs (`/.env`, `/src/autoload.php`, `/composer.json`, `/.git/config`, `/storage/`) do not return HTTP 200.
+10. Confirm deployed rewrite rules and existing cPanel PHP handler remain intact.
+11. Test admin browser login/dashboard/logout from the allowed IP only when `ADMIN_UI_ENABLED=true`.
 
 No server-side shell, automated migration, Docker, cron, GitHub Actions or CI workflow is required. Roll back by a reviewed revert commit and the same manual deployment, not by resetting the deployed Git checkout.
 
 ## PHP and .htaccess
 
-Set production `display_errors=Off`, `log_errors=On` and `APP_DEBUG=false`. Keep cPanel-generated PHP sections untouched. The application emits no-store, frame-denial, nosniff, CSP and same-origin referrer headers. Admin authentication relies on session CSRF, not on the browser `Origin` header.
+Set production `display_errors=Off`, `log_errors=On` and `APP_DEBUG=false`. Keep cPanel-generated PHP sections untouched. The application emits no-store, frame-denial, nosniff, CSP and same-origin referrer headers. Admin pages use CSP `script-src 'self'; style-src 'self'` for built local assets without `unsafe-eval`; the unchanged owner portal retains its existing inline-style allowance until a separately reviewed owner UI migration. Admin authentication relies on session CSRF, not on the browser `Origin` header.
 
 For site routing, retain `DirectoryIndex index.php`, `Options -Indexes` and the existing rewrite of virtual paths to `index.php` when the request does not map to a file. Source `public/.htaccess` is only a reference, not deployed automatically.
 
