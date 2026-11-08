@@ -1,0 +1,23 @@
+{% extends 'layouts/base.html.twig' %}
+
+{% block body %}
+<div class="flex min-h-screen flex-col lg:flex-row">
+  <main class="flex w-full items-center justify-center px-4 py-12 sm:px-8 lg:w-1/2 lg:px-12" id="main">
+    <div class="w-full max-w-md">
+      <a href="/admin/login" class="mb-10 inline-flex items-center gap-3 text-xl font-semibold tracking-tight text-gray-900 dark:text-white" aria-label="OPGateway administrator sign in">
+        <span class="flex size-11 items-center justify-center rounded-xl bg-brand-500 text-sm font-bold text-white shadow-theme-sm" aria-hidden="true">OP</span>
+        OPGateway
+      </a>
+      {% block auth_content %}{% endblock %}
+      <p class="mt-10 text-center text-xs text-gray-500 dark:text-gray-400">Restricted administrator access · Protected by HTTPS and IP allowlisting</p>
+    </div>
+  </main>
+  <aside class="hidden items-center justify-center bg-brand-950 px-14 text-center text-white lg:flex lg:w-1/2" aria-label="Product information">
+    <div class="max-w-md">
+      <div class="mx-auto mb-8 flex size-20 items-center justify-center rounded-3xl border border-white/20 bg-white/10 text-3xl font-bold" aria-hidden="true">OP</div>
+      <h2 class="mb-4 text-3xl font-semibold">A secure gateway for your API operations.</h2>
+      <p class="text-base leading-7 text-brand-200">Manage approved accounts, API clients and trusted IP addresses from one focused workspace.</p>
+    </div>
+  </aside>
+</div>
+{% endblock %}
