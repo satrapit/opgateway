@@ -25,6 +25,7 @@ final readonly class PrivateBrowserAdapter
         private AdministratorAuthorization $administrators,
         private ?AdminOverviewRepository $overview = null,
         private ?AdminReviewService $review = null,
+        private bool $twigEnabled = false,
     ) {
     }
 
@@ -44,8 +45,11 @@ final readonly class PrivateBrowserAdapter
             return self::error(403);
         }
 
+        // Keep the tested legacy renderer active until UI opt-in is explicit.
+        $views = $this->twigEnabled ? TwigBrowserViews::class : BrowserViews::class;
+
         if ($path === '/admin/login' && $method === 'GET') {
-            return self::html(BrowserViews::login($this->session->csrfToken()));
+            return self::html($views::login($this->session->csrfToken()));
         }
 
         if ($path === '/admin/login' && $method === 'POST') {
@@ -60,7 +64,7 @@ final readonly class PrivateBrowserAdapter
             if ($result['status'] === 200) {
                 return self::redirect('/admin');
             }
-            return self::html(BrowserViews::login($this->session->csrfToken(), true), $result['status']);
+            return self::html($views::login($this->session->csrfToken(), true), $result['status']);
         }
 
         if ($path === '/admin' && $method === 'GET') {
@@ -74,7 +78,7 @@ final readonly class PrivateBrowserAdapter
             // Role and account eligibility have been rechecked before
             // querying any personally identifying review data.
             $pending = $this->overview?->pending();
-            return self::html(BrowserViews::dashboard(
+            return self::html($views::dashboard(
                 $this->session->csrfToken(), 'Administrator', $pending,
                 $this->review !== null,
             ));
