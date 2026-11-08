@@ -7,6 +7,7 @@ namespace OPGateway\Http;
 use OPGateway\Identity\BrowserSession;
 use OPGateway\Identity\LoginAccountRepository;
 use OPGateway\Identity\AdministratorAuthorization;
+use OPGateway\View\AdminPageRenderer;
 
 /**
  * Private browser route dispatcher with IP/HTTPS-gated entrypoint.
@@ -25,6 +26,7 @@ final readonly class PrivateBrowserAdapter
         private AdministratorAuthorization $administrators,
         private ?AdminOverviewRepository $overview = null,
         private ?AdminReviewService $review = null,
+        private ?AdminPageRenderer $pages = null,
     ) {
     }
 
@@ -45,7 +47,8 @@ final readonly class PrivateBrowserAdapter
         }
 
         if ($path === '/admin/login' && $method === 'GET') {
-            return self::html(BrowserViews::login($this->session->csrfToken()));
+            return self::html($this->pages?->login($this->session->csrfToken())
+                ?? BrowserViews::login($this->session->csrfToken()));
         }
 
         if ($path === '/admin/login' && $method === 'POST') {
@@ -60,7 +63,8 @@ final readonly class PrivateBrowserAdapter
             if ($result['status'] === 200) {
                 return self::redirect('/admin');
             }
-            return self::html(BrowserViews::login($this->session->csrfToken(), true), $result['status']);
+            return self::html($this->pages?->login($this->session->csrfToken(), true)
+                ?? BrowserViews::login($this->session->csrfToken(), true), $result['status']);
         }
 
         if ($path === '/admin' && $method === 'GET') {
@@ -74,7 +78,10 @@ final readonly class PrivateBrowserAdapter
             // Role and account eligibility have been rechecked before
             // querying any personally identifying review data.
             $pending = $this->overview?->pending();
-            return self::html(BrowserViews::dashboard(
+            return self::html($this->pages?->dashboard(
+                $this->session->csrfToken(), 'Administrator', $pending,
+                $this->review !== null,
+            ) ?? BrowserViews::dashboard(
                 $this->session->csrfToken(), 'Administrator', $pending,
                 $this->review !== null,
             ));

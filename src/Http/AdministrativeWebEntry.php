@@ -22,6 +22,8 @@ use OPGateway\Security\PdoSecurityEventRecorder;
 use OPGateway\Observability\DiagnosticLog;
 use Throwable;
 use PDO;
+use OPGateway\View\TwigRenderer;
+use OPGateway\View\TwigAdminPageRenderer;
 
 /**
  * Opt-in admin browser HTTP entry; fail-closed until explicitly enabled.
@@ -123,9 +125,16 @@ final readonly class AdministrativeWebEntry
             )
             : null;
 
+        // Opt-in view migration. The legacy renderer remains intact if
+        // Twig or compiled assets have not yet been deployed.
+        $twigEnabled = ($this->config['ADMIN_TWIG_UI_ENABLED'] ?? '') === 'true';
+        $pages = $twigEnabled
+            ? new TwigAdminPageRenderer(new TwigRenderer(dirname(__DIR__, 2) . '/templates'))
+            : null;
+
         $adapter = new PrivateBrowserAdapter(
             $session, $auth, $accounts, $admins,
-            new AdminOverviewRepository($pdo), $review,
+            new AdminOverviewRepository($pdo), $review, $pages,
         );
 
         $body = null;
@@ -145,7 +154,7 @@ final readonly class AdministrativeWebEntry
             }
         }
 
-        return $adapter->dispatch(
+        $response = $adapter->dispatch(
             $method,
             $path,
             true,
@@ -154,6 +163,15 @@ final readonly class AdministrativeWebEntry
             bin2hex(random_bytes(16)),
             $body,
         );
+
+        // Only Twig HTML pages need local scripts and styles. Existing
+        // owner/legacy browser CSP is untouched.
+        if ($twigEnabled && str_starts_with($response['content_type'], 'text/html')) {
+            $response['csp'] = "default-src 'none'; style-src 'self'; script-src 'self'; "
+                . "img-src 'self' data:; font-src 'self'; form-action 'self'; "
+                . "base-uri 'none'; frame-ancestors 'none'; object-src 'none'";
+        }
+        return $response;
     }
 
     private static function exactIp(string $actual, string $allowed): bool

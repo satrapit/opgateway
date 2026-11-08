@@ -1,0 +1,20 @@
+{# All form names match strict server-side decoders. No permission decisions are made here. #}
+{% macro review(csrf, action, target_id, title, destructive = false) %}
+<form method="post" action="/admin/review" class="inline-flex" {% if destructive %}data-confirm="Confirm {{ title }}? This change may immediately affect access."{% endif %}>
+  <input type="hidden" name="_csrf" value="{{ csrf }}">
+  <input type="hidden" name="action" value="{{ action }}">
+  <input type="hidden" name="target_id" value="{{ target_id }}">
+  <button type="submit" class="{{ destructive ? 'opg-danger-button' : 'opg-small-button' }}">{{ title }}</button>
+</form>
+{% endmacro %}
+
+{% macro provision(csrf, action, target_id, title, label, placeholder, maxlength = 128) %}
+<form method="post" action="/admin/provision" class="opg-provision-form">
+  <input type="hidden" name="_csrf" value="{{ csrf }}">
+  <input type="hidden" name="action" value="{{ action }}">
+  <input type="hidden" name="target_id" value="{{ target_id }}">
+  <label class="opg-sr-only" for="opg-{{ action }}-{{ target_id }}">{{ label }}</label>
+  <input class="opg-small-input" id="opg-{{ action }}-{{ target_id }}" name="value" type="text" maxlength="{{ maxlength }}" placeholder="{{ placeholder }}" required>
+  <button type="submit" class="opg-small-button">{{ title }}</button>
+</form>
+{% endmacro %}

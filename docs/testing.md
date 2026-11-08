@@ -11,7 +11,7 @@ php scripts/smoke.php
 composer validate --strict --no-check-publish
 ```
 
-The last user-verified baseline before owner credential portal work was **105 PHPUnit tests / 439 assertions, zero notices**, and **10/10 smoke checks**. A new baseline must be recorded only after running the expanded suite; do not infer test success from code review.
+The latest user-verified baseline before the Twig/TailAdmin admin UI refactor was **131 PHPUnit tests / 609 assertions, zero notices**, and **10/10 smoke checks**. A new baseline must be recorded only after running the expanded suite; do not infer test success from code review.
 
 Smoke tests confirm `/health`, deny-by-default `/v1`, IP helper behavior and safe metadata; they **do not** prove live authentication, schema compatibility, ownership enforcement or upstream connectivity. Test administrator login/logout and the separately disabled owner account/credential routes over HTTPS in a real browser; unit tests do not substitute for real MySQL authorization or key handling.
 
@@ -38,3 +38,7 @@ unset OPGATEWAY_TEST_MYSQL_PASSWORD
 ```
 
 Keep all test credentials disposable; never run `set -x` when passing secrets. No GitHub workflow is used for tests.
+
+## Twig/TailAdmin test gates
+
+`AdminViewMigrationTest` tests the existing adapter's role/session boundary with an injected renderer, even when Twig is not installed. `TwigAdminPageRendererTest` checks a fail-closed missing-dependency path or, once Twig is installed, real template rendering and escaping. This is not a substitute for a real Twig test run. After the local lock/build step, use `npm run lint && npm run build` in `frontend/`, PHP lint/PHPUnit/smoke tests at repository root, and manually test 320/375/390/768/1024/1440px, dark/light/system, Keyboard Tab/Escape, denied IP/role/CSRF, CSP console warnings and zero HTTP requests to external CDNs. Do not report these as passing until completed.

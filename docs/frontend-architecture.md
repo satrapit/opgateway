@@ -6,6 +6,9 @@ OPGateway at commit `8f8ab330145b05c7dbd0dd8dd9ff1b8e73771bb7` uses two PHP HTML
 ## TailAdmin Free baseline
 Reference: [TailAdmin Free source](https://github.com/TailAdmin/tailadmin-free-tailwind-dashboard-template) (MIT, copyright 2023 TailAdmin). The reviewed `package.json` identifies itself as version 2.4.0, Tailwind CSS `^4.3.3`, Alpine `^3.17.2`, Webpack 5 and `@tailwindcss/postcss`. The README separately describes a 2.5.0 changelog; never infer the package version from that prose alone. Source `src/css/style.css` uses `brand-500 #465fff`, a neutral grayscale, `Outfit` typography and muted shadows. Use no Google Fonts runtime request; use a local font only if separately licensed and bundled. Preserve TailAdmin MIT notice for copied substantial assets.
 
+## Current implementation status (staged, not validated)
+The private `src/View/` Twig renderer, `templates/layouts`, login/dashboard Twig templates, reusable POST form macros, default-off `ADMIN_TWIG_UI_ENABLED` switch, separate CSP selection and `frontend/` Tailwind/Alpine CSP source have been authored. Existing domain services and strict POST contracts remain in place. **Twig has not been installed in this execution environment, the Composer lock is not yet updated, and the production assets have not been built or deployed.** These steps are required before enabling Twig; the current legacy admin HTML remains functional while the new flag is false.
+
 ## Incremental migration
 1. Add root `AGENTS.md` and project-specific UI design/architecture docs, identify route contracts and security boundaries.
 2. Integrate Twig 3 via Composer locally; commit a resolved, reproducible `composer.lock` **before** enabling any Twig route. Add a strict autoescaping renderer and shared layouts/components.
@@ -31,3 +34,25 @@ Search/filtering over unseen results, pagination, global metrics, API request lo
 
 ## Verification
 Run `php scripts/lint.php`, `./vendor/bin/phpunit --display-phpunit-notices`, `php scripts/smoke.php`, `composer validate --strict --no-check-publish`, `npm ci`, `npm run build`; then browser-test 320, 375, 390, 768, 1024, 1440px, keyboard, system/light/dark, form CSRF, allowed/disallowed IP, escaping and deployment paths. Mark every result as **unverified** until actually executed.
+
+## Required local dependency and asset finalization
+
+On the developer's trusted Mac (PHP 8.3+, Composer and Node 20+):
+
+```bash
+cd ~/Sites/opgateway
+git pull --ff-only origin main
+composer update twig/twig --with-all-dependencies
+cd frontend
+npm install
+npm run lint
+npm run build
+cd ..
+php scripts/lint.php
+./vendor/bin/phpunit --display-phpunit-notices
+php scripts/smoke.php
+composer validate --strict --no-check-publish
+git status --short
+```
+
+Review and commit the generated `composer.lock`, `frontend/package-lock.json` and **only** `public/assets/admin/app.css`, `app.js`, `theme-init.js` after checking for `sourceMappingURL`, third-party runtime URLs and secrets. Do not enable `ADMIN_TWIG_UI_ENABLED` before these artifacts are committed and a restricted cPanel asset deployment allowlist has been added and verified. No server-side npm/composer commands may be required. On cPanel, private `vendor/` must be prepared from the lock on a matching PHP environment and transferred to the private checkout via File Manager or other approved out-of-band process, never to Document Root. The static bundles must be staged in a controlled allowlist. In local testing, the new flag can be enabled only after the dependencies and asset files are ready; test separately from Production.

@@ -4,6 +4,8 @@ A security-first PHP 8.3 / MySQL gateway foundation for the Openprovider API on 
 
 **Status:** Administrator login/logout, bounded review queues and an independently gated approved-owner portal with one-time API key issuance/revocation are available when explicitly enabled. Seven administrator lifecycle operations (approve user/client/IP, create client, request IP, disable client, revoke IP) are implemented but independently disabled by default; the client and credential management modules enforce ownership checks, but **all public `/v1` provider routes remain disabled (HTTP 503)**. This is not a production-ready upstream proxy.
 
+**Admin UI migration (in progress):** A TailAdmin Free/Twig 3 first vertical slice is in the repository behind an additional **default-off** `ADMIN_TWIG_UI_ENABLED` switch. Until Composer lock resolution, local webpack build, static asset deployment and browser/security verification are complete, keep this switch **false** in all environments. Legacy admin HTML remains the runtime default.
+
 ## Hosting model
 
 - Private source and `.env`: `/home/arsamnet/repositories/opgateway`
@@ -28,6 +30,8 @@ There is no public setup endpoint or automated schema migration on deploy.
 
 - [Architecture and current feature boundaries](docs/architecture.md)
 - [Administration and login](docs/admin.md)
+- [Frontend migration and build plan](docs/frontend-architecture.md)
+- [TailAdmin Free design tokens](docs/ui-design-system.md)
 - [Approved account portal and API keys](docs/account.md)
 - [Database and first-administrator SQL](docs/database.md)
 - [Security and API credential rules](docs/security.md)
