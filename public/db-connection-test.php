@@ -14,8 +14,6 @@ use OPGateway\Config\Environment;
 use OPGateway\Database\PdoConnectionFactory;
 use OPGateway\Observability\DatabaseFailure;
 use OPGateway\Observability\DiagnosticLog;
-use PDO;
-use PDOException;
 
 header('Cache-Control: no-store, private');
 header('Content-Type: application/json; charset=utf-8');
