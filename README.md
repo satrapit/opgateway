@@ -40,4 +40,4 @@ See [phpMyAdmin installation](docs/phpmyadmin-install.md).
 
 No secrets, GitHub Actions, or CI/CD workflows are included.
 
-**Dependency deployment:** Install Composer dependencies locally with `composer update catfan/medoo doctrine/dbal --with-all-dependencies` (removing Doctrine and installing Medoo), commit the updated `composer.lock`, and deploy the matching private `vendor` directory before deploying the PHP connection changes. Never deploy a mixed lock/vendor state.
+**Dependency deployment:** Install Composer dependencies locally with `composer update --with-all-dependencies`, commit the generated `composer.lock` and matching `vendor` tree, and verify the package contains Medoo but no Doctrine before deploying PHP changes. Never deploy a mixed lock/vendor state.
