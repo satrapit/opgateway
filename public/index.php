@@ -70,6 +70,11 @@ header('X-Frame-Options: DENY');
 // Preserve browser Origin on same-origin form POST while suppressing
 // cross-origin referrer disclosures.
 header('Referrer-Policy: same-origin');
-header("Content-Security-Policy: default-src 'none'; style-src 'unsafe-inline'; form-action 'self'; base-uri 'none'; frame-ancestors 'none'");
+// The existing account UI uses inline CSS and is intentionally not reworked in
+// this admin-only slice. Admin templates use local assets and a stricter CSP.
+$isAdminBrowser = isset($path) && ($path === '/admin' || str_starts_with($path, '/admin/'));
+header($isAdminBrowser
+    ? "Content-Security-Policy: default-src 'none'; script-src 'self'; style-src 'self'; form-action 'self'; base-uri 'none'; frame-ancestors 'none'"
+    : "Content-Security-Policy: default-src 'none'; style-src 'unsafe-inline'; form-action 'self'; base-uri 'none'; frame-ancestors 'none'");
 header('X-Request-ID: ' . $requestId);
 echo $response['body'];
