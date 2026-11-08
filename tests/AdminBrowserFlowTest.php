@@ -88,6 +88,11 @@ final class AdminBrowserFlowTest extends TestCase
 
         $logoutCsrf = $session->csrfToken();
         self::assertNotSame($initialCsrf, $logoutCsrf);
+        $invalidLogout = $adapter->dispatch('POST', '/admin/logout', true,
+            'application/x-www-form-urlencoded', '192.0.2.3', str_repeat('1', 32),
+            http_build_query(['_csrf' => str_repeat('0', 64)]));
+        self::assertSame(403, $invalidLogout['status']);
+        self::assertSame(17, $session->currentUserId($accounts));
         $logout = $adapter->dispatch('POST', '/admin/logout', true,
             'application/x-www-form-urlencoded', '192.0.2.3', str_repeat('f', 32),
             http_build_query(['_csrf' => $logoutCsrf]));
@@ -95,4 +100,62 @@ final class AdminBrowserFlowTest extends TestCase
         self::assertSame('/admin/login', $logout['location']);
         self::assertSame(PHP_SESSION_NONE, session_status());
     }
+
+    #[RunInSeparateProcess]
+    #[PreserveGlobalState(false)]
+    public function testWrongPasswordAndNonAdminAccountCannotSignIn(): void
+    {
+        $session = new BrowserSession();
+        $session->start(true);
+        $csrf = $session->csrfToken();
+
+        $accounts = $this->createMock(LoginAccountRepository::class);
+        $accounts->method('findEligibleByEmail')->willReturn([
+            'id' => 17,
+            'password_hash' => password_hash('correct-password-123', PASSWORD_DEFAULT),
+        ]);
+        $admins = $this->createMock(AdministratorAuthorization::class);
+        $admins->method('isAdministrator')->willReturn(false);
+        $limits = $this->createMock(LoginAttemptLimiter::class);
+        $limits->method('allow')->willReturn(true);
+        $events = $this->createMock(SecurityEventRecorder::class);
+        $controller = new BrowserAuthController(
+            $session,
+            new GuardedLoginService(
+                new LoginAuthenticator($accounts, new PasswordHasher()),
+                $limits,
+                $events,
+            ),
+            $accounts,
+            $admins,
+        );
+        $adapter = new PrivateBrowserAdapter($session, $controller, $accounts, $admins);
+
+        $wrongPassword = $adapter->dispatch(
+            'POST', '/admin/login', true, 'application/x-www-form-urlencoded',
+            '192.0.2.3', str_repeat('2', 32),
+            http_build_query([
+                '_csrf' => $csrf,
+                'email' => 'admin@example.com',
+                'password' => 'wrong-password-123',
+            ]),
+        );
+        self::assertSame(401, $wrongPassword['status']);
+        self::assertStringContainsString('Sign-in was not successful.', $wrongPassword['body']);
+        self::assertArrayNotHasKey('opgateway_user_id', $_SESSION);
+
+        $notAdmin = $adapter->dispatch(
+            'POST', '/admin/login', true, 'application/x-www-form-urlencoded',
+            '192.0.2.3', str_repeat('3', 32),
+            http_build_query([
+                '_csrf' => $csrf,
+                'email' => 'admin@example.com',
+                'password' => 'correct-password-123',
+            ]),
+        );
+        self::assertSame(401, $notAdmin['status']);
+        self::assertArrayNotHasKey('opgateway_user_id', $_SESSION);
+        self::assertTrue(session_destroy());
+    }
+
 }
