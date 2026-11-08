@@ -6,7 +6,7 @@ namespace OPGateway\Http;
 
 use OPGateway\Database\Migrations\MigrationCatalog;
 use OPGateway\Database\Migrations\SchemaReadiness;
-use OPGateway\Database\PdoConnectionFactory;
+use OPGateway\Database\MedooConnectionFactory;
 use OPGateway\Identity\BrowserSession;
 use OPGateway\Identity\GuardedLoginService;
 use OPGateway\Identity\LoginAuthenticator;
@@ -66,7 +66,7 @@ final readonly class AdministrativeWebEntry
             return self::error(503);
         }
         try {
-            $pdo = PdoConnectionFactory::open($this->config);
+            $pdo = MedooConnectionFactory::pdo($this->config);
         } catch (Throwable $exception) {
             DiagnosticLog::record('admin.database_connection_failed', 503, $exception, [
                 'operation' => 'connect',

@@ -11,8 +11,7 @@ declare(strict_types=1);
  * No SQL changes, secrets or raw errors are emitted.
  */
 use OPGateway\Config\Environment;
-use OPGateway\Database\PdoConnectionFactory;
-use OPGateway\Database\MysqliConnectionProbe;
+use OPGateway\Database\MedooConnectionFactory;
 use OPGateway\Observability\DatabaseFailure;
 use OPGateway\Observability\DiagnosticLog;
 use PDO;
@@ -82,7 +81,7 @@ if (!in_array('mysql', PDO::getAvailableDrivers(), true)) {
     $pdoResult = ['status' => 'failed', 'reason' => 'driver_unavailable'];
 } else {
     try {
-        $pdo = PdoConnectionFactory::open($config);
+        $pdo = MedooConnectionFactory::pdo($config);
         $statement = $pdo->query('SELECT 1');
         if ($statement !== false && (int) $statement->fetchColumn() === 1) {
             $pdoResult = ['status' => 'connected'];
@@ -104,29 +103,10 @@ if (!in_array('mysql', PDO::getAvailableDrivers(), true)) {
     }
 }
 
-// The native MySQLi probe executes only SELECT 1 using the same private
-// credentials; it never mutates database content.
-try {
-    $mysqliDiagnostic = MysqliConnectionProbe::inspectDetailed($config);
-} catch (Throwable) {
-    $mysqliDiagnostic = ['reason' => 'unclassified', 'stage' => 'init', 'mysql_errno' => null];
-}
-
-$mysqliResult = $mysqliDiagnostic['reason'] === 'connected'
-    ? ['status' => 'connected']
-    : [
-        'status' => 'failed',
-        'reason' => $mysqliDiagnostic['reason'],
-        'stage' => $mysqliDiagnostic['stage'],
-        'mysql_errno' => $mysqliDiagnostic['mysql_errno'],
-    ];
-
-$ok = $pdoResult['status'] === 'connected'
-    && $mysqliResult['status'] === 'connected';
+$ok = $pdoResult['status'] === 'connected';
 http_response_code($ok ? 200 : 503);
 DiagnosticLog::record($ok ? 'db_test.success' : 'db_test.connection_failed', $ok ? 200 : 503);
 echo json_encode([
     'request_id' => $requestId,
-    'pdo' => $pdoResult,
-    'mysqli' => $mysqliResult,
+    'medoo_pdo' => $pdoResult,
 ], JSON_THROW_ON_ERROR | JSON_UNESCAPED_SLASHES);

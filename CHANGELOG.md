@@ -2,6 +2,14 @@
 
 ## [Unreleased]
 
+- Replace the optional Doctrine DBAL path with one Medoo/PDO connection
+  provider, reused by the existing transactional PDO repositories.
+- Remove obsolete DBAL adapters and the secondary MySQLi diagnostic.
+- Retain a single IP-gated, disabled-by-default Medoo connection test.
+- Requires a matching locally generated Composer lock and vendor install
+  before production deployment; not an authentication-plugin fix.
+
+
 - Preserve valid numeric MySQL errors even when their codes are not in
   the categorized allowlist; return MySQLi failure stage and code for
   gated, read-only diagnostics without raw exception messages.
