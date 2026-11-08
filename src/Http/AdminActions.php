@@ -11,8 +11,9 @@ use OPGateway\Identity\AccountApprovalService;
  * Minimal explicit allowlist of server-side administrator actions.
  *
  * Called ONLY after session revalidation, live administrator role lookup,
- * same-origin HTTPS, content/body limits and valid CSRF. The actor identifier
- * is supplied by trusted session state, never taken from JSON input.
+ * verified HTTPS, IP allowlisting, bounded form parsing and valid session
+ * CSRF. The actor identifier comes from trusted session state, never input.
+ * Domain services recheck the administrator role in their SQL mutations.
  */
 final readonly class AdminActions
 {

@@ -19,6 +19,13 @@ final readonly class PdoSecurityEventRecorder implements SecurityEventRecorder
         'login_allowed',
         'login_denied',
         'login_throttled',
+        'admin_review_throttled',
+        'admin_approve_user_allowed',
+        'admin_approve_user_denied',
+        'admin_activate_client_allowed',
+        'admin_activate_client_denied',
+        'admin_approve_ip_allowed',
+        'admin_approve_ip_denied',
     ];
 
     public function __construct(private PDO $pdo)

@@ -7,12 +7,15 @@ namespace OPGateway\Http;
 use OPGateway\Database\Migrations\MigrationCatalog;
 use OPGateway\Database\Migrations\SchemaReadiness;
 use OPGateway\Database\PdoConnectionFactory;
+use OPGateway\Clients\ClientManagementService;
+use OPGateway\Identity\AccountApprovalService;
 use OPGateway\Identity\BrowserSession;
 use OPGateway\Identity\GuardedLoginService;
 use OPGateway\Identity\LoginAuthenticator;
 use OPGateway\Identity\PasswordHasher;
 use OPGateway\Identity\PdoAdministratorAuthorization;
 use OPGateway\Identity\PdoLoginAccountRepository;
+use OPGateway\Security\PdoAdminActionLimiter;
 use OPGateway\Security\PdoLoginAttemptLimiter;
 use OPGateway\Security\PdoSecurityEventRecorder;
 use OPGateway\Observability\DiagnosticLog;
@@ -22,8 +25,9 @@ use PDO;
 /**
  * Opt-in admin browser HTTP entry; fail-closed until explicitly enabled.
  *
- * This endpoint only supports sign in, read-only landing page and sign out.
- * It does not expose the admin action dispatcher or provider proxy.
+ * Sign-in and read-only review are gated by ADMIN_UI_ENABLED. Three
+ * administrative mutations are gated independently by ADMIN_ACTIONS_ENABLED.
+ * No provider proxy is routed through this entrypoint.
  *
  * Trust: HTTPS and REMOTE_ADDR must be supplied by the actual web server,
  * not X-Forwarded-For or X-Forwarded-Proto request headers.
@@ -105,8 +109,21 @@ final readonly class AdministrativeWebEntry
             $accounts,
             $admins,
         );
+        $review = ($this->config['ADMIN_ACTIONS_ENABLED'] ?? '') === 'true'
+            ? new AdminReviewService(
+                $pdo,
+                new AdminActions(
+                    new AccountApprovalService($pdo),
+                    new ClientManagementService($pdo),
+                ),
+                new PdoAdminActionLimiter($pdo, hex2bin($key)),
+                new PdoSecurityEventRecorder($pdo),
+            )
+            : null;
+
         $adapter = new PrivateBrowserAdapter(
-            $session, $auth, $accounts, $admins, new AdminOverviewRepository($pdo),
+            $session, $auth, $accounts, $admins,
+            new AdminOverviewRepository($pdo), $review,
         );
 
         $body = null;

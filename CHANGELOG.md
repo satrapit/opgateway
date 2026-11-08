@@ -2,6 +2,9 @@
 
 ## [Unreleased]
 
+- Add optional, default-disabled administrator review actions for verified user approval, eligible client activation and pending IP approval, using CSRF-protected forms and live role checks.
+- Add HMAC-isolated MySQL mutation throttling and transactional metadata-only security audit, with fail-closed errors and no schema change.
+
 - Add bounded, read-only administrator review queues for pending verified users, inactive clients and pending IP allowlist requests; keep state-changing administrative operations unrouted.
 
 - Simplify cPanel deployment to copy only the entrypoint; remove obsolete automatic deletion of database test scripts.

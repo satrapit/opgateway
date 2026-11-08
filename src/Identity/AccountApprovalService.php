@@ -41,6 +41,7 @@ WHERE target.id = ?
     WHERE admin.id = ?
       AND admin.status = 'active'
       AND admin.email_verified_at IS NOT NULL
+      AND admin.approved_at IS NOT NULL
       AND r.role_key = 'admin'
   )
 SQL);

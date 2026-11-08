@@ -46,7 +46,12 @@ HTML;
      *   ips:list<array{id:int,client_label:string,address:string}>
      * }|null $pending
      */
-    public static function dashboard(string $csrfToken, string $email, ?array $pending = null): string
+    public static function dashboard(
+        string $csrfToken,
+        string $email,
+        ?array $pending = null,
+        bool $actionsEnabled = false,
+    ): string
     {
         self::assertCsrf($csrfToken);
         if (strlen($email) > 254) {
@@ -54,12 +59,17 @@ HTML;
         }
         $token = self::escape($csrfToken);
         $displayEmail = self::escape($email);
-        $overview = $pending === null ? '' : self::pendingLists($pending);
+        $overview = $pending === null
+            ? ''
+            : self::pendingLists($pending, $token, $actionsEnabled);
+        $reviewMessage = $pending === null
+            ? 'Management features are not yet configured.'
+            : ($actionsEnabled ? 'Review actions are enabled.' : 'Review queues are read-only.');
         $content = <<<HTML
 <main>
   <h1>OPGateway administration</h1>
   <p>Signed in as {$displayEmail}</p>
-  <p>Review queues are read-only. Approval actions are not enabled yet.</p>
+  <p>{$reviewMessage}</p>
   {$overview}
   <form method="post" action="/admin/logout">
     <input type="hidden" name="_csrf" value="{$token}">
@@ -81,31 +91,47 @@ HTML;
      *   ips:list<array{id:int,client_label:string,address:string}>
      * } $pending
      */
-    private static function pendingLists(array $pending): string
+    private static function pendingLists(array $pending, string $token, bool $actionsEnabled): string
     {
         $users = [];
         foreach ($pending['users'] as $item) {
             $users[] = '<li>#' . (int) $item['id'] . ' — '
-                . self::escape($item['email']) . '</li>';
+                . self::escape($item['email'])
+                . ($actionsEnabled ? self::reviewForm($token, 'approve_user', (int) $item['id'], 'Approve user') : '')
+                . '</li>';
         }
 
         $clients = [];
         foreach ($pending['clients'] as $item) {
             $clients[] = '<li>#' . (int) $item['id'] . ' — '
                 . self::escape($item['label'])
-                . ' (owner: ' . self::escape($item['owner_email']) . ')</li>';
+                . ' (owner: ' . self::escape($item['owner_email']) . ')'
+                . ($actionsEnabled ? self::reviewForm($token, 'activate_client', (int) $item['id'], 'Activate client') : '')
+                . '</li>';
         }
 
         $ips = [];
         foreach ($pending['ips'] as $item) {
             $ips[] = '<li>#' . (int) $item['id'] . ' — '
                 . self::escape($item['address']) . ' (client: '
-                . self::escape($item['client_label']) . ')</li>';
+                . self::escape($item['client_label']) . ')'
+                . ($actionsEnabled ? self::reviewForm($token, 'approve_ip', (int) $item['id'], 'Approve IP') : '')
+                . '</li>';
         }
 
         return self::listSection('Verified users awaiting approval', $users)
             . self::listSection('Inactive clients eligible for review', $clients)
             . self::listSection('Pending IP allowlist requests', $ips);
+    }
+
+    /** Form actions are selected only from hardcoded allowlisted values. */
+    private static function reviewForm(string $token, string $action, int $targetId, string $label): string
+    {
+        return '<form class="review-form" method="post" action="/admin/review">'
+            . '<input type="hidden" name="_csrf" value="' . $token . '">'
+            . '<input type="hidden" name="action" value="' . self::escape($action) . '">'
+            . '<input type="hidden" name="target_id" value="' . $targetId . '">'
+            . '<button type="submit">' . self::escape($label) . '</button></form>';
     }
 
     /** @param list<string> $escapedItems */
@@ -150,6 +176,8 @@ HTML;
     button { margin-top: 1.5rem; padding: .7rem 1rem; font: inherit; cursor: pointer; }
     section { border-top: 1px solid #d7dfe6; margin-top: 1.5rem; padding-top: .75rem; overflow-wrap: anywhere; }
     section h2 { font-size: 1.1rem; }
+    .review-form { display: inline-block; margin-left: .75rem; }
+    .review-form button { margin: .4rem 0; padding: .3rem .6rem; }
     .hint { font-size: .85rem; color: #596579; }
     :focus-visible { outline: 3px solid #125ab5; outline-offset: 2px; }
   </style>

@@ -8,7 +8,7 @@ Browser/operator → gateway; API client → gateway; gateway → database; gate
 - Users require active status, verified email and administrator approval before login or client access.
 - Browser password hashes use PHP `password_hash`/`password_verify`; session IDs rotate on login. Session cookies are Secure, HttpOnly and SameSite=Strict.
 - Email verification tokens are high-entropy, single-use and SHA-256 hashed in storage; email verification does not imply admin approval. There is no public verification or signup route yet.
-- Administrative approval and client operations are private services today; mutation routes must enforce fresh role checks, separate action policies and audit before release.
+- Only three administrator mutations can be routed, behind the additional default-off `ADMIN_ACTIONS_ENABLED` flag. They enforce live role and owner checks, strict session CSRF, action- and IP-scoped limits, bounded form input and audit in the same transaction as the SQL state change.
 
 ## Client credential and IP policy
 

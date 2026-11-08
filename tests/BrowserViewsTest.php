@@ -65,4 +65,27 @@ final class BrowserViewsTest extends TestCase
         self::assertSame(3, substr_count($html, 'None awaiting review.'));
     }
 
+    public function testReviewFormsAreShownOnlyWhenActionsEnabled(): void
+    {
+        $pending = [
+            'users' => [['id' => 2, 'email' => 'review@example.com']],
+            'clients' => [['id' => 3, 'label' => 'Test Client',
+                'owner_email' => 'owner@example.com']],
+            'ips' => [['id' => 4, 'client_label' => 'Test Client',
+                'address' => '192.0.2.3']],
+        ];
+
+        $readOnly = BrowserViews::dashboard(self::TOKEN, 'Administrator', $pending);
+        self::assertStringNotContainsString('action="/admin/review"', $readOnly);
+        self::assertStringContainsString('read-only', $readOnly);
+
+        $enabled = BrowserViews::dashboard(self::TOKEN, 'Administrator', $pending, true);
+        self::assertSame(3, substr_count($enabled, 'action="/admin/review"'));
+        self::assertStringContainsString('name="action" value="approve_user"', $enabled);
+        self::assertStringContainsString('name="action" value="activate_client"', $enabled);
+        self::assertStringContainsString('name="action" value="approve_ip"', $enabled);
+        self::assertStringContainsString('name="_csrf" value="' . self::TOKEN . '"', $enabled);
+        self::assertStringContainsString('name="target_id" value="4"', $enabled);
+    }
+
 }
