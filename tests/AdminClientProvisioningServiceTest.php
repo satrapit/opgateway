@@ -110,7 +110,9 @@ final class AdminClientProvisioningServiceTest extends TestCase
         $limiter = $this->createStub(AdminActionLimiter::class);
         $limiter->method('allow')->willReturn(true);
         $events = $this->createMock(SecurityEventRecorder::class);
-        $events->method('record')->willThrowException(new RuntimeException('Simulated audit failure'));
+        $events->expects(self::once())->method('record')
+            ->with('admin_request_ip_allowed', str_repeat('b', 32))
+            ->willThrowException(new RuntimeException('Simulated audit failure'));
         $actions = new AdminActions(new AccountApprovalService($pdo), new ClientManagementService($pdo));
         $review = new AdminReviewService($pdo, $actions, $limiter, $events,
             new AdminClientProvisioningService($pdo));
