@@ -1,51 +1,52 @@
-{% extends 'layouts/base.html.twig' %}
-{% block body %}
-<a href="#main" class="sr-only rounded bg-brand-500 px-3 py-2 text-white focus:not-sr-only focus:absolute focus:top-2 focus:left-2 focus:z-50">Skip to content</a>
-<div class="min-h-screen xl:flex">
-  <button type="button" data-sidebar-overlay hidden aria-label="Close navigation" tabindex="-1" class="fixed inset-0 z-30 bg-gray-900/60 xl:hidden"></button>
-  <aside id="admin-sidebar" data-sidebar class="fixed inset-y-0 start-0 z-40 flex w-72 -translate-x-full flex-col border-e border-gray-200 bg-white transition-transform duration-200 xl:sticky xl:top-0 xl:h-screen xl:translate-x-0 dark:border-gray-800 dark:bg-gray-900" aria-label="Main navigation">
-    <div class="flex h-20 items-center justify-between border-b border-gray-100 px-6 dark:border-gray-800">
-      <a href="/admin" class="flex items-center gap-3 text-lg font-semibold tracking-tight text-gray-900 dark:text-white">
-        <span class="flex size-10 items-center justify-center rounded-lg bg-brand-500 text-sm font-bold text-white" aria-hidden="true">OP</span>OPGateway
+{% extends 'layouts/auth.html.twig' %}
+{% block title %}Dashboard{% endblock %}
+{% block content %}
+<div class="opg-shell min-h-screen lg:flex" x-data="adminShell">
+  <div class="opg-backdrop" x-show="backdropVisible" x-on:click="closeSidebar" x-cloak aria-hidden="true"></div>
+  <aside id="admin-sidebar" class="opg-sidebar" x-ref="sidebar" x-bind:class="sidebarClass" aria-label="Main navigation" tabindex="-1">
+    <div class="flex items-center justify-between gap-3 border-b border-gray-200 px-6 py-6 dark:border-gray-800">
+      <a class="inline-flex items-center gap-3 font-semibold text-gray-900 dark:text-white" href="/admin#overview">
+        <span class="flex size-10 shrink-0 items-center justify-center rounded-xl bg-brand-500 text-lg font-bold text-white" aria-hidden="true">O</span>
+        <span class="text-xl tracking-tight">OPGateway</span>
       </a>
-      <button type="button" data-sidebar-close class="flex size-11 items-center justify-center rounded-lg text-gray-500 hover:bg-gray-100 xl:hidden dark:hover:bg-white/5" aria-label="Close navigation">✕</button>
+      <button type="button" class="opg-icon-button lg:hidden" x-on:click="closeSidebar" aria-label="Close navigation">
+        <span aria-hidden="true">✕</span>
+      </button>
     </div>
-    <nav class="min-h-0 flex-1 space-y-2 overflow-y-auto px-4 py-6" aria-label="Administration sections">
-      <p class="px-3 pb-2 text-xs font-semibold tracking-widest text-gray-400 uppercase">Workspace</p>
-      <a href="/admin" aria-current="page" class="menu-item menu-item-active"><span aria-hidden="true">▦</span> Overview</a>
-      {% if has_overview %}
-        <p class="px-3 pt-6 pb-2 text-xs font-semibold tracking-widest text-gray-400 uppercase">Management</p>
-        <a href="#users" class="menu-item menu-item-inactive"><span aria-hidden="true">◎</span> Pending users</a>
-        <a href="#owners" class="menu-item menu-item-inactive"><span aria-hidden="true">♙</span> Account owners</a>
-        <a href="#clients" class="menu-item menu-item-inactive"><span aria-hidden="true">▣</span> API clients</a>
-        <a href="#ips" class="menu-item menu-item-inactive"><span aria-hidden="true">◇</span> IP requests</a>
-        {% if show_approved_ips %}
-          <a href="#approved-ips" class="menu-item menu-item-inactive"><span aria-hidden="true">✓</span> Approved IPs</a>
-        {% endif %}
-      {% endif %}
+    <nav class="space-y-1 px-4 py-6" aria-label="Administrator sections">
+      <p class="px-3 pb-2 text-xs font-semibold uppercase tracking-widest text-gray-400">Workspace</p>
+      <a class="opg-nav-link" href="#overview" aria-current="page"><span aria-hidden="true">▦</span> Overview</a>
+      <a class="opg-nav-link" href="#users"><span aria-hidden="true">◉</span> User approvals</a>
+      <a class="opg-nav-link" href="#owners"><span aria-hidden="true">♙</span> Account owners</a>
+      <a class="opg-nav-link" href="#clients"><span aria-hidden="true">▤</span> API clients</a>
+      <a class="opg-nav-link" href="#pending-ips"><span aria-hidden="true">◎</span> Pending IPs</a>
+      <a class="opg-nav-link" href="#approved-ips"><span aria-hidden="true">◈</span> Approved IPs</a>
     </nav>
-    <div class="border-t border-gray-100 p-4 text-xs leading-5 text-gray-500 dark:border-gray-800 dark:text-gray-400">Administrator workspace<br>Security checks remain enforced by the server.</div>
+    <div class="mt-auto border-t border-gray-200 px-6 py-4 text-xs leading-5 text-gray-500 dark:border-gray-800 dark:text-gray-400">
+      Managed API access · Private operator area
+    </div>
   </aside>
-  <div class="min-w-0 flex-1">
-    <header class="sticky top-0 z-20 flex min-h-18 items-center gap-3 border-b border-gray-200 bg-white px-4 shadow-theme-xs sm:px-6 xl:px-8 dark:border-gray-800 dark:bg-gray-900">
-      <button type="button" data-sidebar-toggle aria-controls="admin-sidebar" aria-expanded="false" aria-label="Open navigation" class="flex size-11 shrink-0 items-center justify-center rounded-lg border border-gray-200 text-xl text-gray-700 xl:hidden dark:border-gray-700 dark:text-gray-200">☰</button>
-      <div class="hidden min-w-0 flex-1 sm:block">
-        <p class="truncate text-sm font-medium text-gray-900 dark:text-white">Administration</p>
-        <p class="truncate text-xs text-gray-500 dark:text-gray-400">OPGateway / Overview</p>
+  <div class="min-w-0 flex-1 lg:ms-[18rem]">
+    <header class="sticky top-0 z-20 flex min-h-20 items-center justify-between gap-4 border-b border-gray-200 bg-white/95 px-4 shadow-sm backdrop-blur sm:px-6 lg:px-8 dark:border-gray-800 dark:bg-gray-900/95">
+      <div class="flex min-w-0 items-center gap-3">
+        <button type="button" class="opg-icon-button lg:hidden" x-on:click="openSidebar" x-bind:aria-expanded="sidebarOpen" aria-controls="admin-sidebar" aria-label="Open navigation"><span aria-hidden="true">☰</span></button>
+        <div class="hidden min-w-0 sm:block">
+          <p class="text-xs font-medium tracking-wide text-gray-500 dark:text-gray-400">OPGateway / Administration</p>
+          <h1 class="truncate text-lg font-semibold text-gray-900 dark:text-white">Workspace overview</h1>
+        </div>
       </div>
-      <label for="theme-preference" class="sr-only">Theme preference</label>
-      <select id="theme-preference" data-theme-preference class="min-h-11 max-w-24 rounded-lg border border-gray-200 bg-white px-2 text-sm text-gray-700 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200" aria-label="Theme preference">
-        <option value="system">System</option>
-        <option value="light">Light</option>
-        <option value="dark">Dark</option>
-      </select>
-      <form method="post" action="/admin/logout" class="shrink-0">
-        <input type="hidden" name="_csrf" value="{{ csrf_token }}">
-        <button type="submit" class="min-h-11 rounded-lg border border-gray-200 px-3 text-sm font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-700 dark:text-gray-200 dark:hover:bg-gray-800">Sign out</button>
-      </form>
+      <div class="flex items-center gap-2 sm:gap-3">
+        <button type="button" class="opg-icon-button min-w-24" x-on:click="cycleTheme" aria-label="Change color theme" title="Change color theme"><span x-text="themeLabel">System</span></button>
+        <div class="hidden max-w-48 truncate text-sm font-medium text-gray-700 sm:block dark:text-gray-300">{{ administrator_label }}</div>
+        <form method="post" action="/admin/logout">
+          <input type="hidden" name="_csrf" value="{{ csrf_token }}">
+          <button type="submit" class="opg-secondary-button">Sign out</button>
+        </form>
+      </div>
     </header>
-    <main id="main" class="mx-auto w-full max-w-screen-2xl px-4 py-6 sm:px-6 xl:px-8 xl:py-8">
-      {% block admin_content %}{% endblock %}
+    <main id="main-content" class="mx-auto w-full max-w-screen-2xl px-4 py-6 sm:px-6 lg:px-8 lg:py-8">
+      {% block dashboard_content %}{% endblock %}
+      <footer class="pb-5 pt-8 text-center text-xs text-gray-500 dark:text-gray-400">OPGateway · Security-sensitive administrator workspace</footer>
     </main>
   </div>
 </div>

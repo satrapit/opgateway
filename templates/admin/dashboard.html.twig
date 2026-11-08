@@ -1,43 +1,189 @@
 {% extends 'layouts/admin.html.twig' %}
-{% block title %}Administration{% endblock %}
-{% block admin_content %}
-<header class="mb-7">
-  <h1 class="text-2xl font-semibold tracking-tight text-gray-900 sm:text-3xl dark:text-white">OPGateway administration</h1>
-  <p class="mt-2 text-sm text-gray-500 dark:text-gray-400">Signed in as {{ display_email }}</p>
-</header>
+{% import 'components/forms.html.twig' as action %}
+{% block dashboard_content %}
+<section id="overview" aria-labelledby="overview-title">
+  <div class="mb-6 flex flex-wrap items-end justify-between gap-4">
+    <div>
+      <p class="mb-1 text-sm font-medium text-brand-600 dark:text-brand-300">Administrator overview</p>
+      <h2 id="overview-title" class="text-2xl font-semibold tracking-tight text-gray-900 sm:text-3xl dark:text-white">Access management</h2>
+      <p class="mt-2 text-sm text-gray-500 dark:text-gray-400">Review real, authorized records. Each listing is limited to 50 visible rows.</p>
+    </div>
+    <span class="opg-badge {{ actions_enabled ? 'opg-badge-green' : 'opg-badge-neutral' }}">{{ actions_enabled ? 'Review actions enabled' : 'Read-only mode' }}</span>
+  </div>
 
-{% if not has_overview %}
-  <div role="status" class="rounded-xl border border-gray-200 bg-white p-6 text-sm text-gray-700 dark:border-gray-800 dark:bg-gray-900 dark:text-gray-200">Management features are not yet configured.</div>
-{% else %}
-  <div class="mb-7 grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
-    {% for metric in [
-      { label: 'Pending users', count: queues.users|length, target: '#users' },
-      { label: 'Account owners', count: queues.owners|length, target: '#owners' },
-      { label: 'API clients', count: queues.clients|length, target: '#clients' },
-      { label: 'Pending IPs', count: queues.ips|length, target: '#ips' }
+  {% if not review_available %}
+    <div class="opg-alert" role="status">Management data is not configured. No records are displayed.</div>
+  {% else %}
+  <div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
+    {% set cards = [
+      {name:'Pending users', value:visible_counts.pending_users, anchor:'#users', symbol:'U'},
+      {name:'Approved owners', value:visible_counts.owners, anchor:'#owners', symbol:'O'},
+      {name:'API clients', value:visible_counts.clients, anchor:'#clients', symbol:'C'},
+      {name:'Pending IP requests', value:visible_counts.pending_ips, anchor:'#pending-ips', symbol:'P'},
+      {name:'Approved IPs', value:visible_counts.approved_ips, anchor:'#approved-ips', symbol:'IP'}
     ] %}
-      <a href="{{ metric.target }}" class="rounded-2xl border border-gray-200 bg-white p-4 shadow-theme-xs transition-shadow hover:shadow-theme-sm focus-visible:outline-3 focus-visible:outline-brand-500 sm:p-5 dark:border-gray-800 dark:bg-gray-900">
-        <p class="text-xs font-medium text-gray-500 sm:text-sm dark:text-gray-400">{{ metric.label }}</p>
-        <p class="mt-3 text-2xl font-semibold text-gray-900 sm:text-3xl dark:text-white">{{ metric.count }}</p>
-        <p class="mt-2 text-xs text-gray-400">Records shown · max 50</p>
-      </a>
+    {% for card in cards %}
+    <a href="{{ card.anchor }}" class="opg-stat-card group">
+      <div class="mb-5 flex items-center justify-between">
+        <span class="inline-flex size-11 items-center justify-center rounded-xl bg-brand-50 text-sm font-semibold text-brand-600 dark:bg-brand-500/15 dark:text-brand-300" aria-hidden="true">{{ card.symbol }}</span>
+        <span class="text-sm text-gray-400 transition-transform group-hover:translate-x-0.5" aria-hidden="true">↗</span>
+      </div>
+      <p class="text-sm font-medium text-gray-500 dark:text-gray-400">{{ card.name }}</p>
+      <p class="mt-2 text-3xl font-semibold tabular-nums text-gray-900 dark:text-white">{{ card.value }}</p>
+      <p class="mt-2 text-xs text-gray-400">Shown (max. 50)</p>
+    </a>
     {% endfor %}
   </div>
-  <div role="status" class="mb-7 rounded-xl border px-4 py-3 text-sm {{ actions_enabled ? 'border-brand-200 bg-brand-50 text-brand-800 dark:border-brand-900 dark:bg-brand-950 dark:text-brand-200' : 'border-amber-200 bg-amber-50 text-amber-800 dark:border-amber-900 dark:bg-amber-950 dark:text-amber-200' }}">
-    {% if actions_enabled %}
-      Review actions are enabled. All changes require a secure form POST and fresh server authorization.
-    {% else %}
-      Review queues are read-only. Administrative actions remain disabled by policy.
-    {% endif %}
+  {% endif %}
+</section>
+
+<section id="users" aria-labelledby="users-title" class="opg-panel mt-7">
+  <div class="opg-panel-header">
+    <div>
+      <h2 id="users-title" class="opg-section-title">Pending user approvals</h2>
+      <p class="opg-section-subtitle">Email-verified users waiting for a manual operator decision.</p>
+    </div>
+    <span class="opg-count">{{ queues.users|length }} shown</span>
   </div>
-  <div class="grid gap-6">
-    {% include 'components/admin/queue.html.twig' with { section_id: 'users', heading: 'Verified users awaiting approval', kind: 'users', items: queues.users, actions_enabled: actions_enabled, csrf_token: csrf_token } only %}
-    {% include 'components/admin/queue.html.twig' with { section_id: 'owners', heading: 'Approved account owners', kind: 'owners', items: queues.owners, actions_enabled: actions_enabled, csrf_token: csrf_token } only %}
-    {% include 'components/admin/queue.html.twig' with { section_id: 'clients', heading: 'API clients and IP provisioning', kind: 'clients', items: queues.clients, actions_enabled: actions_enabled, csrf_token: csrf_token } only %}
-    {% include 'components/admin/queue.html.twig' with { section_id: 'ips', heading: 'Pending IP allowlist requests', kind: 'ips', items: queues.ips, actions_enabled: actions_enabled, csrf_token: csrf_token } only %}
-    {% if show_approved_ips %}
-      {% include 'components/admin/queue.html.twig' with { section_id: 'approved-ips', heading: 'Approved IP allowlist entries', kind: 'approved_ips', items: queues.approved_ips, actions_enabled: actions_enabled, csrf_token: csrf_token } only %}
-    {% endif %}
+  {% if queues.users is empty %}
+  <p class="opg-empty" role="status">No verified users are currently waiting for approval.</p>
+  {% else %}
+  <div class="opg-table-wrap" tabindex="0" role="region" aria-label="Pending users table">
+    <table class="opg-table">
+      <thead><tr><th scope="col">User</th><th scope="col">Status</th><th scope="col" class="text-end">Action</th></tr></thead>
+      <tbody>
+      {% for user in queues.users %}
+      <tr>
+        <td><div class="font-medium text-gray-900 dark:text-white">{{ user.email }}</div><span class="opg-muted">User #{{ user.id }}</span></td>
+        <td><span class="opg-badge opg-badge-amber">Awaiting approval</span></td>
+        <td class="text-end">{% if actions_enabled %}{{ action.review(csrf_token, 'approve_user', user.id, 'Approve user') }}{% else %}<span class="opg-muted">Read only</span>{% endif %}</td>
+      </tr>
+      {% endfor %}
+      </tbody>
+    </table>
   </div>
-{% endif %}
+  {% endif %}
+</section>
+
+<section id="owners" aria-labelledby="owners-title" class="opg-panel mt-7">
+  <div class="opg-panel-header">
+    <div>
+      <h2 id="owners-title" class="opg-section-title">Approved account owners</h2>
+      <p class="opg-section-subtitle">Create a disabled client for an approved owner. Activation is a separate step.</p>
+    </div>
+    <span class="opg-count">{{ queues.owners|length }} shown</span>
+  </div>
+  {% if queues.owners is empty %}
+  <p class="opg-empty" role="status">No approved account owners were found in this listing.</p>
+  {% else %}
+  <div class="opg-table-wrap" tabindex="0" role="region" aria-label="Approved owners table">
+    <table class="opg-table">
+      <thead><tr><th scope="col">Account owner</th><th scope="col">Status</th><th scope="col">Client provisioning</th></tr></thead>
+      <tbody>
+      {% for owner in queues.owners %}
+      <tr>
+        <td><div class="font-medium text-gray-900 dark:text-white">{{ owner.email }}</div><span class="opg-muted">User #{{ owner.id }}</span></td>
+        <td><span class="opg-badge opg-badge-green">Approved</span></td>
+        <td>{% if actions_enabled %}{{ action.provision(csrf_token, 'create_client', owner.id, 'Create client', 'Client name', 'New client label') }}{% else %}<span class="opg-muted">Read only</span>{% endif %}</td>
+      </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% endif %}
+</section>
+
+<section id="clients" aria-labelledby="clients-title" class="opg-panel mt-7">
+  <div class="opg-panel-header">
+    <div>
+      <h2 id="clients-title" class="opg-section-title">API clients</h2>
+      <p class="opg-section-subtitle">Activate or disable existing clients and request exact IPv4/IPv6 addresses.</p>
+    </div>
+    <span class="opg-count">{{ queues.clients|length }} shown</span>
+  </div>
+  {% if queues.clients is empty %}
+  <p class="opg-empty" role="status">No clients belonging to eligible owners were found.</p>
+  {% else %}
+  <div class="opg-table-wrap" tabindex="0" role="region" aria-label="API clients table">
+    <table class="opg-table">
+      <thead><tr><th scope="col">Client</th><th scope="col">Owner</th><th scope="col">Status</th><th scope="col">Access management</th></tr></thead>
+      <tbody>
+      {% for client in queues.clients %}
+      <tr>
+        <td><div class="font-semibold text-gray-900 dark:text-white">{{ client.label }}</div><span class="opg-muted">Client #{{ client.id }}</span></td>
+        <td>{{ client.owner_email }}</td>
+        <td><span class="opg-badge {{ client.status == 'active' ? 'opg-badge-green' : 'opg-badge-neutral' }}">{{ client.status == 'active' ? 'Active' : 'Disabled' }}</span></td>
+        <td>
+          {% if actions_enabled %}
+          <div class="flex flex-wrap gap-2">
+            {% if client.status == 'active' %}
+              {{ action.review(csrf_token, 'disable_client', client.id, 'Disable client', true) }}
+            {% else %}
+              {{ action.review(csrf_token, 'activate_client', client.id, 'Activate client') }}
+            {% endif %}
+          </div>
+          <div class="mt-2">{{ action.provision(csrf_token, 'request_ip', client.id, 'Request IP', 'IP address', 'Exact IPv4 or IPv6', 45) }}</div>
+          {% else %}<span class="opg-muted">Read only</span>{% endif %}
+        </td>
+      </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% endif %}
+</section>
+
+<section id="pending-ips" aria-labelledby="pending-ips-title" class="opg-panel mt-7">
+  <div class="opg-panel-header">
+    <div>
+      <h2 id="pending-ips-title" class="opg-section-title">Pending IP allowlist requests</h2>
+      <p class="opg-section-subtitle">Only exact IPv4 or IPv6 entries; approval is separate from request creation.</p>
+    </div>
+    <span class="opg-count">{{ queues.ips|length }} shown</span>
+  </div>
+  {% if queues.ips is empty %}
+  <p class="opg-empty" role="status">No pending IP requests for active clients.</p>
+  {% else %}
+  <div class="opg-table-wrap" tabindex="0" role="region" aria-label="Pending IP requests table">
+    <table class="opg-table">
+      <thead><tr><th scope="col">IP address</th><th scope="col">Client</th><th scope="col">Status</th><th scope="col" class="text-end">Action</th></tr></thead>
+      <tbody>
+      {% for ip in queues.ips %}
+      <tr>
+        <td class="font-mono text-sm">{{ ip.address }}</td><td>{{ ip.client_label }}</td><td><span class="opg-badge opg-badge-amber">Pending</span></td>
+        <td class="text-end">{% if actions_enabled %}{{ action.review(csrf_token, 'approve_ip', ip.id, 'Approve IP') }}{% else %}<span class="opg-muted">Read only</span>{% endif %}</td>
+      </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% endif %}
+</section>
+
+<section id="approved-ips" aria-labelledby="approved-ips-title" class="opg-panel mt-7">
+  <div class="opg-panel-header">
+    <div>
+      <h2 id="approved-ips-title" class="opg-section-title">Approved IP allowlist</h2>
+      <p class="opg-section-subtitle">Revoke exact entries when an address is no longer authorized.</p>
+    </div>
+    <span class="opg-count">{{ queues.approved_ips|length }} shown</span>
+  </div>
+  {% if queues.approved_ips is empty %}
+  <p class="opg-empty" role="status">There are no currently listed approved IP entries.</p>
+  {% else %}
+  <div class="opg-table-wrap" tabindex="0" role="region" aria-label="Approved IP entries table">
+    <table class="opg-table">
+      <thead><tr><th scope="col">IP address</th><th scope="col">Client</th><th scope="col">Status</th><th scope="col" class="text-end">Action</th></tr></thead>
+      <tbody>
+      {% for ip in queues.approved_ips %}
+      <tr>
+        <td class="font-mono text-sm">{{ ip.address }}</td><td>{{ ip.client_label }}</td><td><span class="opg-badge opg-badge-green">Approved</span></td>
+        <td class="text-end">{% if actions_enabled %}{{ action.review(csrf_token, 'revoke_ip', ip.id, 'Revoke IP', true) }}{% else %}<span class="opg-muted">Read only</span>{% endif %}</td>
+      </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% endif %}
+</section>
 {% endblock %}

@@ -23,3 +23,7 @@ Semantic `main`, `nav`, `header`, `table`, `th scope`, explicit inputs and label
 
 ## Legal / performance
 Keep MIT and original copyright for actual reused source. Import only tokens and core primitives; no charts, date picker, third-party map or paid components in this first slice. No CDN, tracking, network fonts or unnecessary effects.
+
+## Source and build entrypoints
+
+`frontend/src/css/app.css` imports Tailwind v4 with TailAdmin Free-compatible brand tokens and shared semantic components, `frontend/src/js/app.js` uses the Alpine CSP build for theme/drawer/confirmation behavior, and `frontend/src/js/theme-init.js` resolves the light/dark/system preference before styles. `frontend/webpack.config.cjs` builds into `public/assets/admin/`, with no external runtime CDN. These are **source artifacts** until `npm run build` has been run and the compiled files verified and committed. The admin Twig feature flag must remain off before that.

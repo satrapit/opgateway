@@ -1,36 +1,19 @@
-/* Same-origin blocking head script: apply theme before CSS paints. */
+/*
+ * Early, local, synchronous color preference. No secrets stored, no remote
+ * dependencies and no inline scripts. Loaded before CSS to avoid theme flash.
+ */
 (function () {
   'use strict';
-  const key = 'opgateway-theme';
-  const allowed = ['system', 'light', 'dark'];
-  let preference = 'system';
-
+  let choice = 'system';
   try {
-    const stored = localStorage.getItem(key);
-    if (allowed.includes(stored)) preference = stored;
+    const stored = window.localStorage.getItem('opgateway-theme');
+    if (stored === 'light' || stored === 'dark') choice = stored;
   } catch (_) {
-    // Browsers that block storage still follow the OS theme.
+    // Storage may be disabled; system preference still works.
   }
-
-  const media = window.matchMedia('(prefers-color-scheme: dark)');
-  const apply = () => {
-    const dark = preference === 'dark' || (preference === 'system' && media.matches);
-    document.documentElement.classList.toggle('dark', dark);
-    document.documentElement.setAttribute('data-color-scheme', dark ? 'dark' : 'light');
-  };
-  apply();
-
-  const onSystemChange = () => { if (preference === 'system') apply(); };
-  if (media.addEventListener) media.addEventListener('change', onSystemChange);
-  else if (media.addListener) media.addListener(onSystemChange);
-
-  window.OPGatewayTheme = {
-    getPreference: () => preference,
-    setPreference: (next) => {
-      if (!allowed.includes(next)) return;
-      preference = next;
-      try { localStorage.setItem(key, next); } catch (_) { /* Storage optional. */ }
-      apply();
-    },
-  };
+  const systemDark = window.matchMedia
+    && window.matchMedia('(prefers-color-scheme: dark)').matches;
+  const dark = choice === 'dark' || (choice === 'system' && systemDark);
+  document.documentElement.classList.toggle('dark', Boolean(dark));
+  document.documentElement.dataset.theme = choice;
 })();

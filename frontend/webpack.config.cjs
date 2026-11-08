@@ -1,47 +1,31 @@
-'use strict';
-
-const path = require('node:path');
+// OPGateway's minimal subset of TailAdmin Free's Webpack workflow.
+// Source and dependencies live outside Document Root in production.
+const path = require('path');
 const MiniCssExtractPlugin = require('mini-css-extract-plugin');
+const CopyWebpackPlugin = require('copy-webpack-plugin');
 
 module.exports = {
-  entry: {
-    admin: ['./src/js/admin.js', './src/css/admin.css'],
-    'theme-init': './src/js/theme-init.js',
-  },
-  output: {
-    path: path.resolve(__dirname, '../public/assets'),
-    filename: '[name].js',
-    publicPath: '/assets/',
-    clean: false,
-  },
+  mode: 'production',
+  entry: path.resolve(__dirname, 'src/js/app.js'),
   devtool: false,
+  output: {
+    path: path.resolve(__dirname, '../public/assets/admin'),
+    filename: 'app.js',
+    clean: true,
+    publicPath: '/assets/admin/',
+  },
   module: {
-    rules: [
-      {
-        test: /\.css$/,
-        use: [
-          MiniCssExtractPlugin.loader,
-          'css-loader',
-          {
-            loader: 'postcss-loader',
-            options: {
-              postcssOptions: {
-                plugins: {
-                  '@tailwindcss/postcss': {},
-                },
-              },
-            },
-          },
-        ],
-      },
-    ],
+    rules: [{
+      test: /\.css$/,
+      use: [MiniCssExtractPlugin.loader, 'css-loader', 'postcss-loader'],
+    }],
   },
   plugins: [
-    new MiniCssExtractPlugin({ filename: 'admin.css' }),
+    new MiniCssExtractPlugin({ filename: 'app.css' }),
+    new CopyWebpackPlugin({
+      patterns: [{ from: path.resolve(__dirname, 'src/js/theme-init.js'), to: 'theme-init.js' }],
+    }),
   ],
-  performance: {
-    hints: 'warning',
-    maxEntrypointSize: 250000,
-    maxAssetSize: 200000,
-  },
+  optimization: { minimize: true },
+  target: 'web',
 };

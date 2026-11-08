@@ -1,7 +1,6 @@
 ---
-# Manual cPanel Git Version Control deployment only; never run Composer or NPM.
-# Private vendor/, src/, templates/, frontend/, storage/, secrets and Git stay
-# outside the document root. Existing cPanel .htaccess/php.ini are untouched.
+# Manual cPanel Git Version Control deployment. Public allowlist only.
+# Do not copy private PHP source, vendor, templates, .env, logs, or Git metadata.
 deployment:
   tasks:
     - export DEPLOYPATH=/home/arsamnet/opgateway.arsamnet.com
@@ -10,19 +9,22 @@ deployment:
     - /bin/test -f public/index.php
     - /bin/test ! -L public/index.php
     - /bin/test ! -L "$DEPLOYPATH/index.php"
-    - /bin/test -f public/assets/admin.css
-    - /bin/test -f public/assets/admin.js
-    - /bin/test -f public/assets/theme-init.js
     - /bin/test ! -L public/assets
-    - /bin/test ! -L public/assets/admin.css
-    - /bin/test ! -L public/assets/admin.js
-    - /bin/test ! -L public/assets/theme-init.js
+    - /bin/test ! -L public/assets/admin
+    - /bin/test -s public/assets/admin/app.css
+    - /bin/test -s public/assets/admin/app.js
+    - /bin/test -s public/assets/admin/theme-init.js
+    - /bin/test ! -L public/assets/admin/app.css
+    - /bin/test ! -L public/assets/admin/app.js
+    - /bin/test ! -L public/assets/admin/theme-init.js
     - /bin/test ! -L "$DEPLOYPATH/assets"
     - /bin/mkdir -p "$DEPLOYPATH/assets"
-    - /bin/test ! -L "$DEPLOYPATH/assets/admin.css"
-    - /bin/test ! -L "$DEPLOYPATH/assets/admin.js"
-    - /bin/test ! -L "$DEPLOYPATH/assets/theme-init.js"
-    - /bin/cp -f public/assets/admin.css "$DEPLOYPATH/assets/admin.css"
-    - /bin/cp -f public/assets/admin.js "$DEPLOYPATH/assets/admin.js"
-    - /bin/cp -f public/assets/theme-init.js "$DEPLOYPATH/assets/theme-init.js"
+    - /bin/test ! -L "$DEPLOYPATH/assets/admin"
+    - /bin/mkdir -p "$DEPLOYPATH/assets/admin"
+    - /bin/test ! -L "$DEPLOYPATH/assets/admin/app.css"
+    - /bin/test ! -L "$DEPLOYPATH/assets/admin/app.js"
+    - /bin/test ! -L "$DEPLOYPATH/assets/admin/theme-init.js"
+    - /bin/cp -f public/assets/admin/app.css "$DEPLOYPATH/assets/admin/app.css"
+    - /bin/cp -f public/assets/admin/app.js "$DEPLOYPATH/assets/admin/app.js"
+    - /bin/cp -f public/assets/admin/theme-init.js "$DEPLOYPATH/assets/admin/theme-init.js"
     - /bin/cp -f public/index.php "$DEPLOYPATH/index.php"

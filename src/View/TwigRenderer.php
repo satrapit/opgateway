@@ -5,42 +5,38 @@ declare(strict_types=1);
 namespace OPGateway\View;
 
 use RuntimeException;
-use Twig\Environment;
+use Twig\Environment as TwigEnvironment;
 use Twig\Loader\FilesystemLoader;
 
 /**
- * Private, server-side Twig renderer. No templates or vendor files are public.
+ * Strict, autoescaping Twig 3 presentation boundary.
  *
- * Escaping and strict variable handling are mandatory. Controllers and
- * adapters must authorize and prepare safe view data before calling render.
+ * The loader's directory is private and fixed by trusted PHP code. Never
+ * accept user-defined template paths or make templates accessible as URLs.
+ * Business logic, SQL and account security decisions remain outside Twig.
  */
 final class TwigRenderer
 {
-    private static ?Environment $environment = null;
+    private TwigEnvironment $engine;
 
-    /** @param array<string,mixed> $data */
-    public static function render(string $template, array $data): string
+    public function __construct(string $templateDirectory)
     {
-        return self::environment()->render($template, $data);
-    }
-
-    private static function environment(): Environment
-    {
-        if (self::$environment !== null) {
-            return self::$environment;
-        }
-
-        $root = dirname(__DIR__, 2);
-        if (!class_exists(Environment::class)) {
-            $autoload = $root . '/vendor/autoload.php';
-            if (!is_file($autoload)) {
-                throw new RuntimeException('Twig runtime dependency is unavailable.');
-            }
+        // Production never runs Composer. Dependencies are prepared locally
+        // and placed only in the private Git checkout, outside Document Root.
+        $autoload = dirname(__DIR__, 2) . '/vendor/autoload.php';
+        if (is_file($autoload) && !is_link($autoload)) {
             require_once $autoload;
         }
+        if (!class_exists(TwigEnvironment::class)) {
+            throw new RuntimeException('The Twig 3 dependency is unavailable.');
+        }
 
-        return self::$environment = new Environment(
-            new FilesystemLoader($root . '/templates'),
+        if (!is_dir($templateDirectory) || is_link($templateDirectory)) {
+            throw new RuntimeException('Private Twig template directory unavailable.');
+        }
+
+        $this->engine = new TwigEnvironment(
+            new FilesystemLoader($templateDirectory),
             [
                 'autoescape' => 'html',
                 'strict_variables' => true,
@@ -48,5 +44,15 @@ final class TwigRenderer
                 'debug' => false,
             ],
         );
+    }
+
+    /** @param array<string,mixed> $data */
+    public function render(string $template, array $data): string
+    {
+        if (preg_match('~^(?:admin|layouts|components)/[a-z0-9/_-]+\\.html\\.twig$~D', $template) !== 1) {
+            throw new RuntimeException('Template name was not allowlisted.');
+        }
+
+        return $this->engine->render($template, $data);
     }
 }

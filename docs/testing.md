@@ -11,7 +11,7 @@ php scripts/smoke.php
 composer validate --strict --no-check-publish
 ```
 
-The last user-verified baseline before owner credential portal work was **105 PHPUnit tests / 439 assertions, zero notices**, and **10/10 smoke checks**. A new baseline must be recorded only after running the expanded suite; do not infer test success from code review.
+The latest user-verified baseline before the Twig/TailAdmin admin UI refactor was **131 PHPUnit tests / 609 assertions, zero notices**, and **10/10 smoke checks**. A new baseline must be recorded only after running the expanded suite; do not infer test success from code review.
 
 Smoke tests confirm `/health`, deny-by-default `/v1`, IP helper behavior and safe metadata; they **do not** prove live authentication, schema compatibility, ownership enforcement or upstream connectivity. Test administrator login/logout and the separately disabled owner account/credential routes over HTTPS in a real browser; unit tests do not substitute for real MySQL authorization or key handling.
 
@@ -39,25 +39,29 @@ unset OPGATEWAY_TEST_MYSQL_PASSWORD
 
 Keep all test credentials disposable; never run `set -x` when passing secrets. No GitHub workflow is used for tests.
 
-## Admin UI test gate (not yet verified)
+## Twig/TailAdmin test gates
 
-After installing Twig and building assets on the local Mac:
+`AdminViewMigrationTest` tests the existing adapter's role/session boundary with an injected renderer, even when Twig is not installed. `TwigAdminPageRendererTest` checks a fail-closed missing-dependency path or, once Twig is installed, real template rendering and escaping. This is not a substitute for a real Twig test run. After the local lock/build step, use `npm run lint && npm run build` in `frontend/`, PHP lint/PHPUnit/smoke tests at repository root, and manually test 320/375/390/768/1024/1440px, dark/light/system, Keyboard Tab/Escape, denied IP/role/CSRF, CSP console warnings and zero HTTP requests to external CDNs. Do not report these as passing until completed.
+
+## Integrated UI branch — rebuild required
+
+Commit `e5fcb72` on the **previous parallel** branch passed 136 PHPUnit tests, 640 assertions, 10/10 smoke checks and Webpack build. These results do not validate this consolidated renderer and frontend.
+
+Run locally:
 
 ```bash
-composer update twig/twig --with-dependencies
+composer update twig/twig -W
 composer validate --strict --no-check-publish
 php scripts/lint.php
 ./vendor/bin/phpunit --display-phpunit-notices
 php scripts/smoke.php
 cd frontend
 npm install
-npm run check
+npm run lint
 npm run build
-test -s ../public/assets/admin.css
-test -s ../public/assets/admin.js
-test -s ../public/assets/theme-init.js
+test -s ../public/assets/admin/app.css
+test -s ../public/assets/admin/app.js
+test -s ../public/assets/admin/theme-init.js
 ```
 
-Commit verified `composer.lock` and `frontend/package-lock.json`, then use `npm ci` for subsequent reproducible builds. Perform hands-on browser checks at 320/375/390/768/1024/1440px, light/dark/system (including refresh), keyboard focus on mobile drawer, destructive confirmation, disabled review UI, local CSP enforcement and real permission/CSRF failure paths. Verify the Account Portal remains unchanged and default-off provider routes still return 503. Do not claim success until checks actually ran.
-
-**Opt-in regression:** With `ADMIN_TWIG_UI_ENABLED=false` verify the legacy admin HTML and its CSP remain unchanged. After prerequisites are installed, enable the flag only in a trusted local environment and verify Twig login/queues and `script-src 'self'; style-src 'self'`. Recheck account portal CSP, exact admin IP restriction and the independently disabled actions. Never toggle the flag on production merely to see the redesigned UI.
+Commit fresh `composer.lock`, `frontend/package-lock.json` and three matching `/public/assets/admin/` files. Then verify local HTTPS/IP/CSRF/role boundaries, real login and read-only dashboard, both mobile and desktop widths (320/375/390/768/1024/1440), keyboard focus/drawer behavior, dark/light/system preferences including login, CSP and owner portal regression.

@@ -11,3 +11,8 @@
 .DS_Store
 .idea/
 .vscode/
+
+# Build-time NPM dependencies; production bundles in public/assets/admin ARE versioned.
+/frontend/node_modules/
+/frontend/.cache/
+/public/assets/admin/*.map

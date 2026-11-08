@@ -4,16 +4,14 @@ A security-first PHP 8.3 / MySQL gateway foundation for the Openprovider API on 
 
 **Status:** Administrator login/logout, bounded review queues and an independently gated approved-owner portal with one-time API key issuance/revocation are available when explicitly enabled. Seven administrator lifecycle operations (approve user/client/IP, create client, request IP, disable client, revoke IP) are implemented but independently disabled by default; the client and credential management modules enforce ownership checks, but **all public `/v1` provider routes remain disabled (HTTP 503)**. This is not a production-ready upstream proxy.
 
-## Admin UI redesign (review branch)
-
-The `feat/admin-tailadmin-twig-foundation` branch introduces a **default-off `ADMIN_TWIG_UI_ENABLED`** gate for private Twig templates for administrator login and bounded real-data overview, TailAdmin Free-inspired Tailwind CSS v4 / Alpine CSP sources, responsive navigation and three-way theme selection. **This branch is not deployable until Twig Composer lock/vendor and built public assets are generated and all tests are run locally.** Admin/auth/security routes, existing feature flags, account portal and disabled provider proxy are unchanged. See [Admin frontend architecture](docs/frontend-architecture.md) and [UI design system](docs/ui-design-system.md).
+**Admin UI migration (in progress):** A TailAdmin Free/Twig 3 first vertical slice is in the repository behind an additional **default-off** `ADMIN_TWIG_UI_ENABLED` switch. Until the integrated Composer lock resolution, local webpack build, static asset deployment and browser/security verification are complete, keep this switch **false** in all environments. Legacy admin HTML remains the runtime default.
 
 ## Hosting model
 
 - Private source and `.env`: `/home/arsamnet/repositories/opgateway`
 - Public Document Root: `/home/arsamnet/opgateway.arsamnet.com`
 - Deployment: cPanel → Git Version Control → **Update from Remote** → **Deploy HEAD Commit**.
-- `.cpanel.yml` copies only `public/index.php`; it never overwrites cPanel-managed `.htaccess`, `php.ini`, `.user.ini` or private configuration.
+- The staged `.cpanel.yml` copies `public/index.php` and three reviewed `/assets/admin/` files only; it never overwrites cPanel-managed `.htaccess`, `php.ini`, `.user.ini` or private configuration.
 - Hosted MySQL uses `DB_HOST=db`; on local macOS, use the actual MySQL endpoint (often `127.0.0.1`, port `3306`). A local database containing the same data still needs independent connection settings.
 - `/health` returns `{"status":"ok"}`, without checking database connectivity.
 
@@ -32,6 +30,8 @@ There is no public setup endpoint or automated schema migration on deploy.
 
 - [Architecture and current feature boundaries](docs/architecture.md)
 - [Administration and login](docs/admin.md)
+- [Frontend migration and build plan](docs/frontend-architecture.md)
+- [TailAdmin Free design tokens](docs/ui-design-system.md)
 - [Approved account portal and API keys](docs/account.md)
 - [Database and first-administrator SQL](docs/database.md)
 - [Security and API credential rules](docs/security.md)
