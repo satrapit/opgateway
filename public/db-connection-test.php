@@ -107,14 +107,19 @@ if (!in_array('mysql', PDO::getAvailableDrivers(), true)) {
 // The native MySQLi probe executes only SELECT 1 using the same private
 // credentials; it never mutates database content.
 try {
-    $mysqliOutcome = MysqliConnectionProbe::inspect($config);
+    $mysqliDiagnostic = MysqliConnectionProbe::inspectDetailed($config);
 } catch (Throwable) {
-    $mysqliOutcome = 'unclassified';
+    $mysqliDiagnostic = ['reason' => 'unclassified', 'stage' => 'init', 'mysql_errno' => null];
 }
 
-$mysqliResult = $mysqliOutcome === 'connected'
+$mysqliResult = $mysqliDiagnostic['reason'] === 'connected'
     ? ['status' => 'connected']
-    : ['status' => 'failed', 'reason' => $mysqliOutcome];
+    : [
+        'status' => 'failed',
+        'reason' => $mysqliDiagnostic['reason'],
+        'stage' => $mysqliDiagnostic['stage'],
+        'mysql_errno' => $mysqliDiagnostic['mysql_errno'],
+    ];
 
 $ok = $pdoResult['status'] === 'connected'
     && $mysqliResult['status'] === 'connected';

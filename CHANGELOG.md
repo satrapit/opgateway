@@ -2,6 +2,11 @@
 
 ## [Unreleased]
 
+- Preserve valid numeric MySQL errors even when their codes are not in
+  the categorized allowlist; return MySQLi failure stage and code for
+  gated, read-only diagnostics without raw exception messages.
+
+
 - Fix database test 404 caused by cPanel deployment copying only
   public/index.php: add a disabled-by-default guarded virtual route.
 - Emit private, allowlisted gate-denial reason so 404 can be diagnosed

@@ -49,6 +49,15 @@ final class DatabaseFailureTest extends TestCase
         self::assertSame('unclassified', $result['reason']);
     }
 
+    public function testUnrecognizedButValidNativeErrnoRemainsVisibleWithoutMessage(): void
+    {
+        $exception = new PDOException('SQLSTATE[HY000] [2026] secret certificate path');
+        $exception->errorInfo = [];
+        $result = DatabaseFailure::classify($exception);
+        self::assertSame(2026, $result['mysql_errno']);
+        self::assertSame('unclassified', $result['reason']);
+    }
+
     public function testUnknownErrorCodeIsRedacted(): void
     {
         $exception = new PDOException('do not record this');

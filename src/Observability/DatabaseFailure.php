@@ -37,10 +37,10 @@ final class DatabaseFailure
             && preg_match('/^SQLSTATE\\[[A-Z0-9]{5}\\] \\[([0-9]{3,5})\\](?:\\s|$)/D', $error->getMessage(), $matches) === 1) {
             $number = (int) $matches[1];
         }
-        $safeNumber = $number !== null && in_array($number, [
-            1040, 1044, 1045, 1049, 1054, 1062, 1142, 1143, 1146, 1203,
-            1227, 2002, 2003, 2005, 2006, 2013, 2054,
-        ], true) ? $number : null;
+        // A native numeric MySQL errno is metadata, not error text. Keep
+        // any valid code so uncommon cPanel/mysqlnd errors are diagnosable.
+        $safeNumber = $number !== null && $number >= 1 && $number <= 65535
+            ? $number : null;
 
         $state = isset($info[0]) && is_string($info[0])
             ? $info[0] : (is_string($error->getCode()) ? $error->getCode() : '');

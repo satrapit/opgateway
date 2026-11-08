@@ -52,3 +52,18 @@ hostnames, MySQL messages, file paths, input or request headers. It
 does not use Doctrine's Composer vendor dependencies.
 
 **Never recreate database tables because of a connection failure.**
+
+
+## Enhanced numeric diagnostics
+
+As of the diagnostic revision, PDO and MySQLi return a **native numeric
+MySQL errno** when available, including unfamiliar codes in the range
+1..65535. A reason of `unclassified` may therefore accompany a useful
+number. MySQLi also returns the fixed stage `driver`, `config`,
+`init`, `connect`, or `query`. No raw exception messages, DSN,
+credentials, socket paths, IP addresses or SQL text are disclosed.
+
+If both connections fail with errno null, the application may not be
+receiving a native MySQL code. Inspect the PHP error log privately in
+cPanel after confirming the enabled test and the runtime path, rather
+than changing database contents.
