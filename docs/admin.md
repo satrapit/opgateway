@@ -66,3 +66,11 @@ Client credential generation and user self-service remain a separate security-se
 - Incorrect password or missing admin role: the login form shows a generic failure.
 
 For a fresh database, use the one-time administrator SQL in [database.md](database.md). Do **not** rerun provisioning on an existing administrator.
+
+## Twig / TailAdmin Free admin interface (work in review branch)
+
+The HTML presentation layer is migrated behind the unchanged `BrowserViews::login()` and `BrowserViews::dashboard()` APIs into private Twig templates. `TwigRenderer` requires an installed, pinned Twig 3 runtime. Admin login, overview, original bounded queues and existing strict POST forms use the same routes and CSRF names. The summary widgets count **records in each limited result**, never all records in MySQL. Actions are only rendered if `ADMIN_ACTIONS_ENABLED` was already enabled and authorization remains enforced in the adapter/domain services.
+
+Mobile navigation links to anchored sections on the existing `GET /admin` route; there are no new operational endpoints. Built assets are loaded from `/assets/admin.css`, `/assets/theme-init.js` and `/assets/admin.js`. Theme preference (`system`, `light`, `dark`) is the **only** browser-stored UI setting. The Alpine CSP runtime and lightweight interactions never access API credentials. See `docs/frontend-architecture.md` and `docs/ui-design-system.md`.
+
+**Deployment gate:** Do not merge/deploy the source-only branch before `composer.lock`, `frontend/package-lock.json`, complete built assets, local PHP/JS tests, real browser/CSP checks, and private vendor provisioning have passed. In particular, do not enable any disabled feature flags as part of redesign.
