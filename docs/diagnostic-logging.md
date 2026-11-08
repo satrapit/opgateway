@@ -38,7 +38,9 @@ environment values. No raw user-controlled context is accepted.
 - `setup.identity_state_query_failed`: read-only users/roles count failed.
 - `setup.already_initialized`: some user or role already exists.
 - `setup.session_start_failed`: unable to establish secure PHP session.
-- `setup.provisioning_failed`: protected first-admin mutation failed.
+- `setup.origin_denied`: POST Origin missing or mismatched against APP_URL; no headers recorded.
+- `setup.content_type_denied`: invalid form POST Content-Type; no headers recorded.
+- `setup.provisioning_failed`: first-admin token/registration or database operation failed; no secret details recorded.
 - `setup.administrator_created`: first administrator successfully created.
 - `admin.database_connection_failed` and `admin.schema_inspection_failed`:
   same boundary for separately gated private admin UI.

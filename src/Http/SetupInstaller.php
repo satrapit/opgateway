@@ -124,9 +124,14 @@ final readonly class SetupInstaller
         if ($method !== 'POST') {
             return self::error(405);
         }
-        if (!hash_equals($origin, (string) ($server['HTTP_ORIGIN'] ?? ''))
-            || !preg_match('~^application/x-www-form-urlencoded(?:\s*;\s*charset=utf-8)?$~iD',
-                (string) ($server['CONTENT_TYPE'] ?? ''))) {
+        if (!hash_equals($origin, (string) ($server['HTTP_ORIGIN'] ?? ''))) {
+            // Record only the rejection stage, not raw headers or secrets.
+            DiagnosticLog::record('setup.origin_denied', 403);
+            return self::error(403);
+        }
+        if (!preg_match('~^application/x-www-form-urlencoded(?:\s*;\s*charset=utf-8)?$~iD',
+            (string) ($server['CONTENT_TYPE'] ?? ''))) {
+            DiagnosticLog::record('setup.content_type_denied', 403);
             return self::error(403);
         }
 
