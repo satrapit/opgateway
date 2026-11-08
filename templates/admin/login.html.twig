@@ -1,0 +1,27 @@
+{% extends 'layouts/auth.html.twig' %}
+{% block title %}Administrator sign in{% endblock %}
+{% block auth_content %}
+  <header class="mb-8">
+    <h1 class="mb-2 text-3xl font-semibold text-gray-900 dark:text-white">Sign in</h1>
+    <p class="text-sm leading-6 text-gray-500 dark:text-gray-400">Administrator sign in to your secure OPGateway workspace.</p>
+  </header>
+  {% if show_error %}
+    <div role="alert" id="login-error" class="mb-6 rounded-xl border border-red-200 bg-red-50 p-4 text-sm font-medium text-red-700 dark:border-red-900 dark:bg-red-950 dark:text-red-300">Sign-in was not successful.</div>
+  {% endif %}
+  <form method="post" action="/admin/login" autocomplete="on" class="space-y-6">
+    <input type="hidden" name="_csrf" value="{{ csrf_token }}">
+    <div>
+      <label for="email" class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">Email address</label>
+      <input id="email" name="email" type="email" maxlength="254" autocomplete="username" inputmode="email" required
+        {% if show_error %}aria-describedby="login-error"{% endif %}
+        class="block min-h-11 w-full rounded-lg border border-gray-300 bg-transparent px-4 py-3 text-sm text-gray-800 shadow-theme-xs outline-none placeholder:text-gray-400 focus:border-brand-500 focus:ring-3 focus:ring-brand-500/15 dark:border-gray-700 dark:text-white dark:focus:border-brand-400" placeholder="admin@example.com">
+    </div>
+    <div>
+      <label for="password" class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">Password</label>
+      <input id="password" name="password" type="password" autocomplete="current-password" required
+        {% if show_error %}aria-describedby="login-error"{% endif %}
+        class="block min-h-11 w-full rounded-lg border border-gray-300 bg-transparent px-4 py-3 text-sm text-gray-800 shadow-theme-xs outline-none focus:border-brand-500 focus:ring-3 focus:ring-brand-500/15 dark:border-gray-700 dark:text-white dark:focus:border-brand-400">
+    </div>
+    <button type="submit" class="flex min-h-11 w-full items-center justify-center rounded-lg bg-brand-500 px-5 py-3 text-sm font-medium text-white shadow-theme-xs transition-colors hover:bg-brand-600 focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-brand-500">Sign in</button>
+  </form>
+{% endblock %}
