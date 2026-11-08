@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace OPGateway\Tests;
 
-use OPGateway\Http\BrowserViews;
+use OPGateway\Http\TwigBrowserViews;
 use PHPUnit\Framework\TestCase;
 
 /**
@@ -17,7 +17,7 @@ final class TwigAdminViewsTest extends TestCase
 
     public function testEscapesDangerousValuesAndPreservesValidCsrfFields(): void
     {
-        $html = BrowserViews::dashboard(self::TOKEN, '<b>admin</b>', [
+        $html = TwigBrowserViews::dashboard(self::TOKEN, '<b>admin</b>', [
             'users' => [['id' => 12, 'email' => '"><script>alert(1)</script>']],
             'owners' => [],
             'clients' => [],
@@ -34,7 +34,7 @@ final class TwigAdminViewsTest extends TestCase
 
     public function testReadOnlyStateDoesNotRenderMutationForms(): void
     {
-        $html = BrowserViews::dashboard(self::TOKEN, 'Administrator', [
+        $html = TwigBrowserViews::dashboard(self::TOKEN, 'Administrator', [
             'users' => [['id' => 1, 'email' => 'pending@example.com']],
             'owners' => [['id' => 2, 'email' => 'approved@example.com']],
             'clients' => [['id' => 3, 'owner_email' => 'approved@example.com',
@@ -54,7 +54,7 @@ final class TwigAdminViewsTest extends TestCase
 
     public function testAllExistingActionsKeepTheirStrictFormNames(): void
     {
-        $html = BrowserViews::dashboard(self::TOKEN, 'Administrator', [
+        $html = TwigBrowserViews::dashboard(self::TOKEN, 'Administrator', [
             'users' => [['id' => 1, 'email' => 'pending@example.com']],
             'owners' => [['id' => 2, 'email' => 'approved@example.com']],
             'clients' => [
