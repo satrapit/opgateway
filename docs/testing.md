@@ -59,3 +59,5 @@ test -s ../public/assets/theme-init.js
 ```
 
 Commit verified `composer.lock` and `frontend/package-lock.json`, then use `npm ci` for subsequent reproducible builds. Perform hands-on browser checks at 320/375/390/768/1024/1440px, light/dark/system (including refresh), keyboard focus on mobile drawer, destructive confirmation, disabled review UI, local CSP enforcement and real permission/CSRF failure paths. Verify the Account Portal remains unchanged and default-off provider routes still return 503. Do not claim success until checks actually ran.
+
+**Opt-in regression:** With `ADMIN_TWIG_UI_ENABLED=false` verify the legacy admin HTML and its CSP remain unchanged. After prerequisites are installed, enable the flag only in a trusted local environment and verify Twig login/queues and `script-src 'self'; style-src 'self'`. Recheck account portal CSP, exact admin IP restriction and the independently disabled actions. Never toggle the flag on production merely to see the redesigned UI.
