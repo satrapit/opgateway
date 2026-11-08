@@ -27,7 +27,7 @@ use PDO;
  * Opt-in admin browser HTTP entry; fail-closed until explicitly enabled.
  *
  * Sign-in and read-only review are gated by ADMIN_UI_ENABLED. Three
- * administrative mutations are gated independently by ADMIN_ACTIONS_ENABLED.
+ * administrator mutations are gated independently by ADMIN_ACTIONS_ENABLED.
  * No provider proxy is routed through this entrypoint.
  *
  * Trust: HTTPS and REMOTE_ADDR must be supplied by the actual web server,

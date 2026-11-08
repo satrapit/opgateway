@@ -2,7 +2,8 @@
 
 declare(strict_types=1);
 
-$directories = [__DIR__ . '/../src', __DIR__ . '/../public', __DIR__ . '/../tests'];
+$directories = [__DIR__ . '/../src', __DIR__ . '/../public', __DIR__ . '/../tests',
+    __DIR__ . '/../tests-integration', __DIR__];
 $failed = false;
 foreach ($directories as $directory) {
     $files = new RecursiveIteratorIterator(new RecursiveDirectoryIterator($directory));

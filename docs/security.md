@@ -24,3 +24,7 @@ No arbitrary proxy. Before enabling any provider operation, require a verified v
 Only allowlisted metadata enters security and diagnostic logs: timestamps, random request IDs, restricted event names, status, and safe numeric database categories. **Never log** passwords, bearer tokens, raw request bodies, email addresses, source IPs, session cookies, CSRF tokens, SQL or stack traces.
 
 Future hardening includes administrator MFA, data-retention/pruning policy, external API audit and verified concurrency behavior. A rejected HTTP request is not a packet-level firewall drop.
+
+## Owner credential portal
+
+Owner login and key actions are behind two independent default-off flags. Password sign-in has separate IP/identity limits; issuance requires password reconfirmation, a fresh eligible owner session and active owned client, and both issue/revoke use CSRF rotation, separate HMAC limits, SQL ownership checks, and metadata-only transactional audit. Secret bearer values never appear in GET views, session data, URLs, application logs or database columns. All public `/v1` provider routes remain disabled.

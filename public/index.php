@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use OPGateway\Config\Environment;
 use OPGateway\Http\AdministrativeWebEntry;
+use OPGateway\Http\AccountWebEntry;
 use OPGateway\Http\FoundationApplication;
 use OPGateway\Observability\DiagnosticLog;
 
@@ -31,6 +32,8 @@ try {
 
     if ($path === '/admin' || str_starts_with($path, '/admin/')) {
         $response = (new AdministrativeWebEntry($config))->handle($method, $path, $_SERVER);
+    } elseif ($path === '/account' || str_starts_with($path, '/account/')) {
+        $response = (new AccountWebEntry($config))->handle($method, $path, $_SERVER);
     } else {
         $result = (new FoundationApplication($config))->handle(
             $method, $path, $_SERVER['REMOTE_ADDR'] ?? '',

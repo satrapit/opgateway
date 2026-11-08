@@ -2,7 +2,7 @@
 
 A security-first PHP 8.3 / MySQL gateway foundation for the Openprovider API on shared cPanel hosting.
 
-**Status:** Administrator login/logout and bounded review queues are available when explicitly enabled. Seven administrator lifecycle operations (approve user/client/IP, create client, request IP, disable client, revoke IP) are implemented but independently disabled by default; the API client and ownership modules exist internally, but **all public `/v1` provider routes remain disabled (HTTP 503)**. This is not a production-ready upstream proxy.
+**Status:** Administrator login/logout, bounded review queues and an independently gated approved-owner portal with one-time API key issuance/revocation are available when explicitly enabled. Seven administrator lifecycle operations (approve user/client/IP, create client, request IP, disable client, revoke IP) are implemented but independently disabled by default; the client and credential management modules enforce ownership checks, but **all public `/v1` provider routes remain disabled (HTTP 503)**. This is not a production-ready upstream proxy.
 
 ## Hosting model
 
@@ -28,6 +28,7 @@ There is no public setup endpoint or automated schema migration on deploy.
 
 - [Architecture and current feature boundaries](docs/architecture.md)
 - [Administration and login](docs/admin.md)
+- [Approved account portal and API keys](docs/account.md)
 - [Database and first-administrator SQL](docs/database.md)
 - [Security and API credential rules](docs/security.md)
 - [Deployment and diagnostics](docs/cpanel-deployment.md)

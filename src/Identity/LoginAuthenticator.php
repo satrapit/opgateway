@@ -7,8 +7,8 @@ namespace OPGateway\Identity;
 /**
  * Password authentication without observable account-state distinctions.
  *
- * No HTTP integration yet: a future caller MUST enforce rate limits,
- * CSRF, secure transport, and a generic failed-login response.
+ * HTTP callers must use GuardedLoginService for persistent throttling
+ * and a secure transport, server-side session CSRF and generic errors.
  */
 final readonly class LoginAuthenticator
 {

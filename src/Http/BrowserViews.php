@@ -7,7 +7,7 @@ namespace OPGateway\Http;
 use InvalidArgumentException;
 
 /**
- * Dependency-free HTML views for a future authenticated browser gateway.
+ * Dependency-free HTML views for the authenticated administrator gateway.
  *
  * Outputs are encoded for HTML contexts. No remote scripts, stylesheets,
  * frameworks, trackers or inline JavaScript are loaded.

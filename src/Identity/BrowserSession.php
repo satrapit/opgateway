@@ -92,6 +92,16 @@ final class BrowserSession
         return $token;
     }
 
+    /** Rotate after a successful privileged POST to prevent replay on refresh. */
+    public function rotateCsrf(): string
+    {
+        $this->assertActive();
+        $token = bin2hex(random_bytes(32));
+        $_SESSION[self::CSRF_KEY] = $token;
+
+        return $token;
+    }
+
     public function csrfValid(string $submitted): bool
     {
         $this->assertActive();

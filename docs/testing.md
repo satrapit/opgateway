@@ -11,9 +11,9 @@ php scripts/smoke.php
 composer validate --strict --no-check-publish
 ```
 
-The last user-verified baseline before administrator client/IP onboarding was **93 PHPUnit tests / 343 assertions** and **10/10 smoke checks**. A new baseline must be recorded only after running the expanded suite; do not infer test success from code review.
+The last user-verified baseline before owner credential portal work was **105 PHPUnit tests / 439 assertions, zero notices**, and **10/10 smoke checks**. A new baseline must be recorded only after running the expanded suite; do not infer test success from code review.
 
-Smoke tests confirm `/health`, deny-by-default `/v1`, IP helper behavior and safe metadata; they **do not** prove live authentication, schema compatibility, ownership enforcement or upstream connectivity. Test administrator login/logout over HTTPS in both local and hosting environments separately.
+Smoke tests confirm `/health`, deny-by-default `/v1`, IP helper behavior and safe metadata; they **do not** prove live authentication, schema compatibility, ownership enforcement or upstream connectivity. Test administrator login/logout and the separately disabled owner account/credential routes over HTTPS in a real browser; unit tests do not substitute for real MySQL authorization or key handling.
 
 ## Optional disposable MySQL integration test
 
