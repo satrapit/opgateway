@@ -18,10 +18,9 @@ commit can create a user in the production database.
    All three counts MUST be zero for first setup. If not, stop; never
    delete accounts or bypass the guard.
 3. Check `APP_URL=https://opgateway.arsamnet.com` in the private .env.
-   Ensure the effective GET response has `Referrer-Policy: same-origin`
-   in PHP and the deployed cPanel-managed `.htaccess`, not `no-referrer`.
-   A no-referrer policy can force `Origin: null` on ordinary form POSTs,
-   which the installer correctly rejects.
+   The one-time setup no longer relies on a browser Origin header: operator
+   IP, trusted HTTPS, session CSRF, one-time setup token and rate limiting
+   remain mandatory.
 4. The intended operator must know the exact source IP received by
    PHP as `REMOTE_ADDR`. On proxy/CDN configurations it may be a proxy
    IP, in which case do NOT enable setup until proxy trust is reviewed.
@@ -64,15 +63,11 @@ ADMIN_UI_ENABLED=false
 Open `https://opgateway.arsamnet.com/setup/administrator` over HTTPS
 from that exact IP. Enter the intended admin email, a strong unique
 password (at least 12 characters), and the one-time setup token.
-Submit **once**; do not repeatedly retry failures. If a 403 occurs, inspect
-private `opgateway.jsonl`: `setup.origin_mismatch` means the browser
-Origin header differs from exact APP_URL, while `setup.origin_missing`
-means Origin is absent and Fetch Metadata did not assert same-origin
-navigation. Explicit mismatches are never bypassed. When Origin is absent
-but `Sec-Fetch-Site: same-origin` and `Sec-Fetch-Mode: navigate` are present,
-the existing session-bound CSRF check and setup token remain mandatory.
-Never send passwords, session cookies, form bodies, or setup tokens in chat. A successful response
+Submit **once**; do not repeatedly retry failures. A successful response
 contains `"status":"administrator_created"` with HTTP 201.
+The form field **Setup Token** takes the original 64-character token,
+not the `SETUP_TOKEN_HASH` value stored in `.env`. Never send the token,
+admin password or session cookies in chat.
 
 Immediately set `SETUP_ENABLED=false`, clear `SETUP_TOKEN_HASH`
 and `SETUP_RATE_LIMIT_KEY`, and verify the installer returns 404.

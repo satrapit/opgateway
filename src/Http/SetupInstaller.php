@@ -12,7 +12,6 @@ use OPGateway\Database\Migrations\MigrationCatalog;
 use OPGateway\Database\Migrations\SchemaReadiness;
 use PDO;
 use OPGateway\Security\PdoSetupAttemptLimiter;
-use OPGateway\Security\SetupOriginPolicy;
 use Throwable;
 use OPGateway\Observability\DiagnosticLog;
 
@@ -125,14 +124,10 @@ final readonly class SetupInstaller
         if ($method !== 'POST') {
             return self::error(405);
         }
-        // Explicit mismatches always fail. If a browser omits Origin, only
-        // a verified same-origin document navigation may reach the independent
-        // session CSRF and one-time setup-token checks below.
-        $originDenial = SetupOriginPolicy::denialEvent($origin, $server);
-        if ($originDenial !== null) {
-            DiagnosticLog::record($originDenial, 403);
-            return self::error(403);
-        }
+        // One-time setup is protected by HTTPS, the operator IP allowlist,
+        // a server-side session CSRF token, a separate 256-bit setup token,
+        // rate limiting, and the empty-identity guard. Do not depend on
+        // browser Origin headers, which shared-hosting policies can rewrite.
         if (!preg_match('~^application/x-www-form-urlencoded(?:\s*;\s*charset=utf-8)?$~iD',
             (string) ($server['CONTENT_TYPE'] ?? ''))) {
             DiagnosticLog::record('setup.content_type_denied', 403);

@@ -17,7 +17,9 @@ disabled by default**. Installation never runs automatically on deploy.
 
 ## Security controls
 
-- Session CSRF and exact same-origin POST, bounded form body and fields.
+- Session-bound CSRF, exact source-IP allowlist, trusted HTTPS, explicit
+  one-time setup token, bounded form body and fields. Browser Origin headers
+  are not relied upon because hosting/browser referrer policies can change them.
 - Setup token is 32 cryptographically random bytes, supplied as 64 lowercase
   hex characters; store only SHA-256 of the **raw decoded bytes** in private
   `SETUP_TOKEN_HASH`. Do not confuse this with SHA-256 of the hex text.

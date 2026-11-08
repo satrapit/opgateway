@@ -2,6 +2,12 @@
 
 ## [Unreleased]
 
+- Simplify the one-time administrator setup: remove only its unreliable
+  browser Origin restriction while retaining HTTPS, exact IP, session
+  CSRF, the 256-bit setup token, rate limits and the empty-database guard.
+- Delete the now-unused setup Origin policy and tests. No schema changes.
+
+
 - Fix root cause of browser `Origin: null` during HTML form POST by using
   `Referrer-Policy: same-origin` in the PHP front controller and Apache
   template; keep strict Origin verification, CSRF and setup-token checks.
