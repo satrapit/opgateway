@@ -6,7 +6,7 @@ A security-first PHP 8.3 / MySQL gateway foundation for the Openprovider API on 
 
 ## Admin UI redesign (review branch)
 
-The `feat/admin-tailadmin-twig-foundation` branch introduces private Twig templates for administrator login and bounded real-data overview, TailAdmin Free-inspired Tailwind CSS v4 / Alpine CSP sources, responsive navigation and three-way theme selection. **This branch is not deployable until Twig Composer lock/vendor and built public assets are generated and all tests are run locally.** Admin/auth/security routes, feature flags, account portal and disabled provider proxy are unchanged. See [Admin frontend architecture](docs/frontend-architecture.md) and [UI design system](docs/ui-design-system.md).
+The `feat/admin-tailadmin-twig-foundation` branch introduces a **default-off `ADMIN_TWIG_UI_ENABLED`** gate for private Twig templates for administrator login and bounded real-data overview, TailAdmin Free-inspired Tailwind CSS v4 / Alpine CSP sources, responsive navigation and three-way theme selection. **This branch is not deployable until Twig Composer lock/vendor and built public assets are generated and all tests are run locally.** Admin/auth/security routes, existing feature flags, account portal and disabled provider proxy are unchanged. See [Admin frontend architecture](docs/frontend-architecture.md) and [UI design system](docs/ui-design-system.md).
 
 ## Hosting model
 
