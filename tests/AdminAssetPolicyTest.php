@@ -14,6 +14,7 @@ final class AdminAssetPolicyTest extends TestCase
         $source = file_get_contents(dirname(__DIR__) . '/public/index.php');
         self::assertIsString($source);
         self::assertStringContainsString("script-src 'self'; style-src 'self'", $source);
+        self::assertStringContainsString("ADMIN_TWIG_UI_ENABLED", $source);
         self::assertStringNotContainsString("'unsafe-eval'", $source);
         self::assertStringContainsString("header('Referrer-Policy: same-origin');", $source);
     }
