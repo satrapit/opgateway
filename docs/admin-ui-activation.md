@@ -13,10 +13,14 @@ This stage wires the existing browser login/logout/dashboard adapter to
   key (`LOGIN_RATE_LIMIT_KEY`, lowercase 64-character hex) are mandatory.
 - Checks all three versioned migration records and checksums before starting
   a privileged browser session. Unknown or incomplete history fails closed.
-- Enforces secure server-side session, CSRF, same-origin login/logout,
-  bounded form parsing and MySQL-backed attempt throttling and audit.
+- Enforces secure server-side session, session-bound CSRF, Strict
+  SameSite cookies, bounded form parsing and MySQL-backed attempt
+  throttling and audit. The browser Origin header is not an authorization
+  dependency because this hosting environment can produce Origin: null.
 - Current routes: GET/POST `/admin/login`, GET `/admin` and POST
-  `/admin/logout`. The POST responses are JSON (not browser redirects).
+  `/admin/logout`. Successful login/logout uses HTTP 303 redirect to
+  `/admin` or `/admin/login` respectively; invalid credentials rerender
+  a generic HTML sign-in error.
   No user or client administration actions are exposed yet.
 - `/v1` stays blocked and `GATEWAY_PROXY_ENABLED` does not enable it.
 
@@ -49,8 +53,8 @@ Do not reuse `APP_KEY` or any other application secret for login throttling.
    `REMOTE_ADDR` at the shared hosting boundary; never bypass this by
    trusting arbitrary client-provided forwarding headers.
 4. Prepare a dedicated random key and record the actual operator IP.
-5. Temporarily enable the private flag, test sign-in, role checks,
-   throttling, CSRF, logout and 30-minute session expiry.
+5. Enable the private flag only for the verified administrator IP, test
+   sign-in, role checks, throttling, CSRF, logout and session expiry.
 6. Disable the flag immediately if behavior differs from expectations.
    PHP/server integration tests have not yet been run in this release.
 

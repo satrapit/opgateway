@@ -18,6 +18,7 @@ final class BrowserViewsTest extends TestCase
         self::assertStringContainsString('name="_csrf"', $html);
         self::assertStringContainsString('name="password"', $html);
         self::assertStringContainsString('action="/admin/login"', $html);
+        self::assertStringContainsString('<meta name="referrer" content="same-origin">', $html);
         self::assertStringNotContainsString('Sign-in was not successful.', $html);
         self::assertStringContainsString('role="alert"', BrowserViews::login(self::TOKEN, true));
     }

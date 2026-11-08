@@ -9,12 +9,12 @@ use OPGateway\Identity\LoginAccountRepository;
 use OPGateway\Identity\AdministratorAuthorization;
 
 /**
- * Prepared browser route dispatcher; never registered by the public bootstrap.
+ * Private browser route dispatcher with IP/HTTPS-gated entrypoint.
  *
  * Caller must derive HTTPS from trusted server configuration, start the
  * session and supply bounded request bytes (never POST superglobals).
- * In particular, route registration must remain disabled until the
- * administrator installer and persistent login security tables are ready.
+ * Mutations require a server-side session CSRF token; HTTP Origin is not
+ * authoritative on this shared hosting environment.
  */
 final readonly class PrivateBrowserAdapter
 {
@@ -33,7 +33,6 @@ final readonly class PrivateBrowserAdapter
         string $method,
         string $path,
         bool $trustedHttps,
-        ?string $origin,
         ?string $contentType,
         string $sourceIp,
         string $requestId,
@@ -53,16 +52,19 @@ final readonly class PrivateBrowserAdapter
                 return self::error(400);
             }
             $result = $this->auth->login(
-                $trustedHttps, $method, $origin, $contentType,
+                $trustedHttps, $method, $contentType,
                 $sourceIp, $requestId, $form['_csrf'], $form['email'], $form['password'],
             );
-            return self::json($result['status'], $result['body']);
+            if ($result['status'] === 200) {
+                return self::redirect('/admin');
+            }
+            return self::html(BrowserViews::login($this->session->csrfToken(), true), $result['status']);
         }
 
         if ($path === '/admin' && $method === 'GET') {
             $userId = $this->session->currentUserId($this->accounts);
             if ($userId === null) {
-                return self::error(401);
+                return self::redirect('/admin/login');
             }
             if (!$this->administrators->isAdministrator($userId)) {
                 return self::error(403);
@@ -76,9 +78,11 @@ final readonly class PrivateBrowserAdapter
                 return self::error(400);
             }
             $result = $this->auth->logout(
-                $trustedHttps, $method, $origin, $contentType, $form['_csrf'],
+                $trustedHttps, $method, $contentType, $form['_csrf'],
             );
-            return self::json($result['status'], $result['body']);
+            return $result['status'] === 200
+                ? self::redirect('/admin/login')
+                : self::json($result['status'], $result['body']);
         }
 
         // Unknown paths and unsupported methods never reveal private state.
@@ -86,9 +90,17 @@ final readonly class PrivateBrowserAdapter
     }
 
     /** @return array{status:int,content_type:string,body:string} */
-    private static function html(string $html): array
+    private static function html(string $html, int $status = 200): array
     {
-        return ['status' => 200, 'content_type' => 'text/html; charset=utf-8', 'body' => $html];
+        return ['status' => $status, 'content_type' => 'text/html; charset=utf-8', 'body' => $html];
+    }
+
+    /** @return array{status:int,content_type:string,body:string,location:string} */
+    private static function redirect(string $location): array
+    {
+        // Callers pass only fixed internal route literals.
+        return ['status' => 303, 'content_type' => 'text/plain; charset=utf-8',
+            'body' => '', 'location' => $location];
     }
 
     /** @param array<string,string> $payload

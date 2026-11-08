@@ -2,6 +2,13 @@
 
 ## [Unreleased]
 
+- Fix live administrator sign-in/logout: remove brittle Origin comparison
+  while retaining session-bound CSRF, strict cookie policy, HTTPS, IP allowlist,
+  MySQL-backed throttling and role authorization.
+- Use standard browser HTTP 303 redirects after successful login/logout,
+  show a generic HTML login error, and correct page referrer metadata.
+
+
 - Remove the entire one-time web administrator setup mechanism, route,
   setup token, attempts limiter, and their tests and SETUP_* example flags.
 - Document direct phpMyAdmin administrator provisioning with locally generated

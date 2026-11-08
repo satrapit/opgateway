@@ -82,7 +82,7 @@ HTML;
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="referrer" content="no-referrer">
+  <meta name="referrer" content="same-origin">
   <title>{$safeTitle} | OPGateway</title>
   <style>
     body { font: 16px system-ui, sans-serif; line-height: 1.55; margin: 0; padding: 3rem 1rem; background: #f6f8fa; color: #17202a; }

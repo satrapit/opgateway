@@ -56,6 +56,10 @@ try {
 }
 
 http_response_code($response['status']);
+if (isset($response['location'])) {
+    // Route handlers allow only fixed internal paths.
+    header('Location: ' . $response['location'], true, $response['status']);
+}
 header('Content-Type: ' . $response['content_type']);
 header('Cache-Control: no-store, private');
 header('X-Content-Type-Options: nosniff');
@@ -63,6 +67,6 @@ header('X-Frame-Options: DENY');
 // Preserve browser Origin on same-origin form POST while suppressing
 // cross-origin referrer disclosures.
 header('Referrer-Policy: same-origin');
-header("Content-Security-Policy: default-src 'none'; form-action 'self'; base-uri 'none'; frame-ancestors 'none'");
+header("Content-Security-Policy: default-src 'none'; style-src 'unsafe-inline'; form-action 'self'; base-uri 'none'; frame-ancestors 'none'");
 header('X-Request-ID: ' . $requestId);
 echo $response['body'];

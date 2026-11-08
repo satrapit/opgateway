@@ -8,12 +8,11 @@ use OPGateway\Identity\BrowserSession;
 use OPGateway\Identity\GuardedLoginService;
 use OPGateway\Identity\LoginAccountRepository;
 use OPGateway\Identity\AdministratorAuthorization;
-use RuntimeException;
 
 /**
- * Private login/logout boundary for an eventual same-origin browser adapter.
+ * Authentication boundary for HTTPS-only, IP-allowlisted admin browser.
  *
- * NOT registered in public/index.php. The HTTP adapter must verify HTTPS
+ * The HTTP adapter verifies HTTPS
  * from server-controlled metadata, start the secure session, supply a
  * CSPRNG-generated request ID and read a bounded form body before calling.
  *
@@ -26,11 +25,7 @@ final readonly class BrowserAuthController
         private GuardedLoginService $login,
         private LoginAccountRepository $accounts,
         private AdministratorAuthorization $admins,
-        private string $canonicalOrigin,
     ) {
-        if (!preg_match('/^https:\/\/[a-z0-9.-]+(?::[0-9]{1,5})?$/iD', $canonicalOrigin)) {
-            throw new RuntimeException('Invalid browser authentication origin.');
-        }
     }
 
     /**
@@ -42,7 +37,6 @@ final readonly class BrowserAuthController
     public function login(
         bool $trustedHttps,
         string $method,
-        ?string $origin,
         ?string $contentType,
         string $sourceIp,
         string $requestId,
@@ -50,7 +44,7 @@ final readonly class BrowserAuthController
         string $email,
         string $password,
     ): array {
-        if (!$this->validMutation($trustedHttps, $method, $origin, $contentType, $csrfToken)) {
+        if (!$this->validMutation($trustedHttps, $method, $contentType, $csrfToken)) {
             return self::denied(403, 'forbidden');
         }
 
@@ -74,11 +68,10 @@ final readonly class BrowserAuthController
     public function logout(
         bool $trustedHttps,
         string $method,
-        ?string $origin,
         ?string $contentType,
         string $csrfToken,
     ): array {
-        if (!$this->validMutation($trustedHttps, $method, $origin, $contentType, $csrfToken)) {
+        if (!$this->validMutation($trustedHttps, $method, $contentType, $csrfToken)) {
             return self::denied(403, 'forbidden');
         }
         if ($this->session->currentUserId($this->accounts) === null) {
@@ -92,14 +85,11 @@ final readonly class BrowserAuthController
     private function validMutation(
         bool $https,
         string $method,
-        ?string $origin,
         ?string $contentType,
         string $csrfToken,
     ): bool {
         return $https
             && $method === 'POST'
-            && $origin !== null
-            && hash_equals($this->canonicalOrigin, $origin)
             && $contentType !== null
             && preg_match('/^application\/x-www-form-urlencoded(?:\s*;\s*charset=utf-8)?$/iD', $contentType) === 1
             && $this->session->csrfValid($csrfToken);

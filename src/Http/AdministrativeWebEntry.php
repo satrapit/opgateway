@@ -87,7 +87,12 @@ final readonly class AdministrativeWebEntry
         }
 
         $session = new BrowserSession();
-        $session->start(true);
+        try {
+            $session->start(true);
+        } catch (Throwable $exception) {
+            DiagnosticLog::record('admin.session_start_failed', 503, $exception);
+            return self::error(503);
+        }
         $accounts = new PdoLoginAccountRepository($pdo);
         $admins = new PdoAdministratorAuthorization($pdo);
         $auth = new BrowserAuthController(
@@ -99,7 +104,6 @@ final readonly class AdministrativeWebEntry
             ),
             $accounts,
             $admins,
-            $origin,
         );
         $adapter = new PrivateBrowserAdapter($session, $auth, $accounts, $admins);
 
@@ -124,7 +128,6 @@ final readonly class AdministrativeWebEntry
             $method,
             $path,
             true,
-            isset($server['HTTP_ORIGIN']) ? (string) $server['HTTP_ORIGIN'] : null,
             isset($server['CONTENT_TYPE']) ? (string) $server['CONTENT_TYPE'] : null,
             (string) ($server['REMOTE_ADDR'] ?? ''),
             bin2hex(random_bytes(16)),
