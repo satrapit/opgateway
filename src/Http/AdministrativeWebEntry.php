@@ -123,9 +123,23 @@ final readonly class AdministrativeWebEntry
             )
             : null;
 
+        // The UI is independently gated and never enabled by admin login or
+        // mutation flags. Keep existing HTML available by default.
+        $twigEnabled = ($this->config['ADMIN_TWIG_UI_ENABLED'] ?? '') === 'true';
+        if ($twigEnabled) {
+            $root = dirname(__DIR__, 2);
+            foreach (['vendor/autoload.php', 'public/assets/admin.css',
+                'public/assets/admin.js', 'public/assets/theme-init.js'] as $file) {
+                if (!is_file($root . '/' . $file)) {
+                    DiagnosticLog::record('admin.twig_assets_unavailable', 503);
+                    return self::error(503);
+                }
+            }
+        }
+
         $adapter = new PrivateBrowserAdapter(
             $session, $auth, $accounts, $admins,
-            new AdminOverviewRepository($pdo), $review,
+            new AdminOverviewRepository($pdo), $review, $twigEnabled,
         );
 
         $body = null;
