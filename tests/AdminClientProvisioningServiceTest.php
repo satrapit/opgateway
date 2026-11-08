@@ -140,7 +140,7 @@ final class AdminClientProvisioningServiceTest extends TestCase
     }
     public function testRequestingDuplicateIpDoesNotModifyPreviousApproval(): void
     {
-        $conflict = new \PDOException('duplicate', '23000');
+        $conflict = new \PDOException('duplicate', 23000);
         $conflict->errorInfo = ['23000', 1062, 'duplicate'];
         $stmt = $this->createMock(PDOStatement::class);
         $stmt->expects(self::once())->method('execute')->willThrowException($conflict);
