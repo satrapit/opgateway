@@ -9,7 +9,7 @@ Reference: [TailAdmin Free source](https://github.com/TailAdmin/tailadmin-free-t
 ## Incremental migration
 1. Add root `AGENTS.md` and project-specific UI design/architecture docs, identify route contracts and security boundaries.
 2. Integrate Twig 3 via Composer locally; commit a resolved, reproducible `composer.lock` **before** enabling any Twig route. Add a strict autoescaping renderer and shared layouts/components.
-3. Introduce admin Twig rendering behind an **additional default-off view migration flag**; existing `BrowserViews` continues as legacy fallback while adapter methods, auth and POST contracts remain unchanged.
+3. Introduce admin Twig rendering behind **`ADMIN_TWIG_UI_ENABLED=false`**; existing `BrowserViews` continues as legacy fallback while adapter methods, auth and POST contracts remain unchanged.
 4. Build a minimal tailored Tailwind/Alpine CSP-safe Webpack entry locally, commit only minimal production CSS/JS assets and deploy them through a restrictive allowlist.
 5. Provide mobile-first admin login and five real-data dashboard sections (pending user approvals, eligible owners, client lifecycle, pending IP and approved IP), with state-aware action forms. Summary metrics must describe *visible bounded rows* unless separate authorized count queries are added.
 6. Validate all regressions and manual cPanel behavior before opting into Twig rendering; then retire legacy admin HTML and old `unsafe-inline` CSP only after the account portal is similarly migrated.
@@ -22,7 +22,7 @@ Reference: [TailAdmin Free source](https://github.com/TailAdmin/tailadmin-free-t
 
 ## Assets / CSP
 - `frontend/`: locally built Tailwind CSS v4 and Alpine CSP-compatible JavaScript, Webpack production build. No JS is necessary for server form semantics.
-- `public/assets/admin/`: reviewed compiled artifacts only. A page must not opt into the new view flag until the assets are built and present on the server.
+- `public/assets/`: reviewed compiled artifacts only. The current opt-in flag is `ADMIN_TWIG_UI_ENABLED=false` by default. A page must not opt in until the assets and the private Twig Composer vendor are built, installed and present on the server. Missing prerequisites are denied with HTTP 503.
 - Legacy account HTML contains inline CSS; global CSP must preserve that until the account portal is separately migrated. New admin Twig views should request a stricter route-specific CSP where supported.
 - Light/dark/system theme preference may be stored client-side with a non-sensitive key; no token, password, CSRF or session IDs.
 
