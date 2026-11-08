@@ -38,3 +38,24 @@ unset OPGATEWAY_TEST_MYSQL_PASSWORD
 ```
 
 Keep all test credentials disposable; never run `set -x` when passing secrets. No GitHub workflow is used for tests.
+
+## Admin UI test gate (not yet verified)
+
+After installing Twig and building assets on the local Mac:
+
+```bash
+composer update twig/twig --with-dependencies
+composer validate --strict --no-check-publish
+php scripts/lint.php
+./vendor/bin/phpunit --display-phpunit-notices
+php scripts/smoke.php
+cd frontend
+npm install
+npm run check
+npm run build
+test -s ../public/assets/admin.css
+test -s ../public/assets/admin.js
+test -s ../public/assets/theme-init.js
+```
+
+Commit verified `composer.lock` and `frontend/package-lock.json`, then use `npm ci` for subsequent reproducible builds. Perform hands-on browser checks at 320/375/390/768/1024/1440px, light/dark/system (including refresh), keyboard focus on mobile drawer, destructive confirmation, disabled review UI, local CSP enforcement and real permission/CSRF failure paths. Verify the Account Portal remains unchanged and default-off provider routes still return 503. Do not claim success until checks actually ran.
