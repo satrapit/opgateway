@@ -1,32 +1,25 @@
-# TailAdmin Free-based design system
+# OPGateway admin design system — TailAdmin Free adaptation
 
-## Source and provenance
+**Primary source:** TailAdmin Free MIT repository, with its free theme definitions from `src/css/style.css`. This project does not use TailAdmin Pro or third-party UI libraries.
 
-Visual reference: [TailAdmin Free](https://github.com/TailAdmin/tailadmin-free-tailwind-dashboard-template) and its [free demo](https://free-demo.tailadmin.com/). Audit on 2026-11-09: upstream `main/package.json` declares version **2.4.0**, Tailwind `^4.3.3`, Alpine `^3.17.2` and Webpack `^5.110.3`; upstream changelog describes a 2.5.0 release. Treat actual source and lockfile as authoritative, rather than assuming version parity with release notes.
+## Shared tokens
+- `brand-500 #465fff`, `brand-600 #3641f5`, `brand-50 #ecf3ff` and `brand-950 #161950`.
+- Tailwind grays and near-white dashboard surface. Accessible light/dark text and border contrast with status labels (not color alone).
+- Font stack: `Outfit` when a locally hosted licensed copy is available, else system UI sans-serif (no Google Fonts request).
+- Subtle shadow `0 1px 3px rgba(16,24,40,.1), 0 1px 2px rgba(16,24,40,.06)`; 10–16px component radii; ergonomic 44px controls.
+- Responsive grid breakpoints: 375, 425, 640, 768, 1024, 1280, 1536px. Test 320px explicitly.
+- Use Tailwind dark variant anchored to `html.dark`; default follows `prefers-color-scheme`. Manual theme selection: system / light / dark; store only `opgateway-theme`.
+- Support logical-direction margins/paddings and future RTL without separate markup.
 
-TailAdmin Free is MIT licensed, copyright (c) 2023 TailAdmin. Retain notices for substantial copied parts. Never require Pro assets or runtime scripts.
+## Component vocabulary
+Navigation: full-height side rail on desktops and accessible drawer on mobile; grouped Overview / Approvals / Clients / IP Allowlist anchors, never dead future module links.
 
-## Tokens and usage
+Data: small summary cards labeled “visible / up to 50”, bounded tabular sections and mobile cards. State labels: Pending, Active, Disabled, Approved, Revoked — always include text. Each empty state clearly states there are no records currently listed.
 
-Use TailAdmin's original `brand-50..950` including `brand-500: #465fff`; `gray-50` surfaces, white cards, `gray-200` boundaries, `gray-900` dark surfaces, and the `shadow-theme-*` family. Sidebar/menu patterns use `menu-item`, active brand tint and compact iconography. Prefer `rounded-xl` / `rounded-2xl` cards, focused typography and restrained transitions. Never add decorative gradients or bespoke palettes.
+Forms: reusable POST macro with hidden `_csrf`, exact `action`, `target_id` and `value` when the real backend requires them. Never add arbitrary extra form fields; preserve the strict parser. Make destructive operations distinguishable and ask for optional client-side confirmation, but authorization remains entirely server-side.
 
-## State patterns
+## Accessibility checklist
+Semantic `main`, `nav`, `header`, `table`, `th scope`, explicit inputs and labels, keyboard-operable buttons, 44px touches, visible focus, status text, reduced-motion handling, modal/drawer focus management. No color-only statuses or fake loading spinners. Test layouts and keyboard/a11y with actual browsers before claiming WCAG AA.
 
-Provide explicit informational empty states, a read-only mutation warning, controlled enabled actions, inline server errors, keyboard-friendly form labels, destructive confirmations and visible focus. Negative security responses should remain generic at the backend boundary. A form only renders if its actual existing route and authorization permit it; hidden UI is not authorization.
-
-## Responsive & i18n
-
-Mobile-first at 320, 375, 390, 768, 1024 and 1440px. Sidebar becomes a dismissible off-canvas drawer, with no document overflow; tables become cards or intentionally contained horizontal-scrolling regions on small screens. All mobile action targets should be around 44px. Use CSS logical properties and semantic ordering for future `dir=rtl` and translated labels. Initial text language remains English.
-
-## Theme / CSP
-
-Support `light`, `dark`, `system`; system preference uses `matchMedia('(prefers-color-scheme: dark)')`. Only the theme choice, never secret/session material, may be saved in localStorage. Theme initialization should run before first paint using same-origin files and a strict CSP. Use the CSP-compatible Alpine package or framework-independent JS; no `unsafe-eval`.
-
-## Acceptance checklist
-
-- Mobile and desktop without clipping/overflows; correct light, dark and system behavior.
-- Keyboard focus and status announcements, contrast and `prefers-reduced-motion`.
-- All data from the authorized, bounded server result, no fake chart/counter.
-- No dead/unrouted navigation; no inactive operation portrayed as functional.
-- No inline secrets, no runtime CDN, correct `no-store` and CSP headers.
-- Negative CSRF/role/feature-flag tests, build validation and browser review actually run.
+## Legal / performance
+Keep MIT and original copyright for actual reused source. Import only tokens and core primitives; no charts, date picker, third-party map or paid components in this first slice. No CDN, tracking, network fonts or unnecessary effects.

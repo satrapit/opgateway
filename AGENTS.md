@@ -1,66 +1,49 @@
-# OPGateway — Agent and Contributor Rules
-
-> Mandatory instructions for Codex, AI coding agents and maintainers. Read the code and `docs/` before changing it. This repository is a PHP 8.3 modular monolith, **not** a greenfield application.
+# OPGateway — AI agent and contributor instructions
 
 ## 1. Project overview
-OPGateway is a security-sensitive Openprovider API gateway designed for PHP 8.3, PDO/MySQL and shared cPanel hosting. The browser-facing admin and owner account portals are **independently gated**. All `/v1` provider endpoints currently fail closed with HTTP 503. Consult `README.md`, `docs/architecture.md`, `docs/admin.md`, `docs/account.md` and `docs/security.md` before edits.
+OPGateway is a security-sensitive, PHP 8.3/MySQL modular monolith that will expose a restricted Openprovider-compatible API gateway. Source: `src/`, web entry: `public/index.php`, private SQL migrations: `src/Database/Migrations/`. The production gateway is not yet enabled. Read `README.md`, `SECURITY.md`, `CONTRIBUTING.md`, `docs/architecture.md`, `docs/admin.md`, `docs/account.md`, and `docs/cpanel-deployment.md` **before edits**.
 
-## 2. Architecture and non-negotiable constraints
-Keep PSR-4 `OPGateway\\` modules and existing HTTP routing and authorization contracts. Do not introduce a full-stack framework, SPA, ORM, Redis, queues or long-running services. Preserve existing owner credential issuance/revocation and its one-time secret display. Prefer incremental changes and small classes over reimplementing working services.
+## 2. Architecture and immutable boundaries
+Use PSR-4 OPGateway namespacing, strict PHP types, dependency injection where useful and native PDO. Preserve `FoundationApplication`, `AdministrativeWebEntry`, `PrivateBrowserAdapter`, `BrowserAuthController`, the dedicated account boundary, domain services and existing HTTP contracts. Views must never perform queries, business decisions, or authorization. Refactor incrementally and add regression tests; do not rewrite stable backend code for presentation purposes.
 
-## 3. Mandatory UI stack
-New server-rendered admin UI: Twig 3, TailAdmin Free visual conventions, Tailwind CSS v4, semantic HTML, accessible vanilla JS and Alpine.js **CSP build** where useful. Webpack compiles local static assets **offline**. No React, Vue, Next.js, Angular, jQuery, production CDN or Node runtime on hosting.
+## 3. Mandatory frontend stack
+TailAdmin **Free/MIT** is the only visual baseline: https://github.com/TailAdmin/tailadmin-free-tailwind-dashboard-template . Preserve its brand colors (notably `brand-500 #465fff`), layout proportions, rounded cards, gray palette, spacing and understated shadows. Check the **actual** upstream commit, `package.json`, CSS tokens and license before importing assets. Do not use Pro components. Use Twig 3.x for server-rendered views, Tailwind CSS v4 for styling, Alpine **CSP-safe build** only for small interactions, and minimal vanilla ES modules. Webpack compiles assets locally. No SPA framework, jQuery, remote runtime CDN, analytics, trackers, external web fonts or Node runtime on production.
 
-## 4. TailAdmin Free design system
-Reference `https://github.com/TailAdmin/tailadmin-free-tailwind-dashboard-template`. Inspect upstream actual CSS/package versions before copying. Preserve TailAdmin's `brand-50..950` scale (notably `brand-500 #465fff`), gray palette, layout density, cards, shadows, radii, forms, sidebar and responsive patterns. Adapt only necessary MIT-licensed free components, retain copyright notices and licenses. Never copy Pro-only features. Avoid an unrelated theme or decorative gradient.
+## 4. MVC and Twig view layer
+Keep the existing modular monolith. Put new presentation in `templates/` with layouts, components and feature templates; use `src/View/` for a focused renderer/presenter. Twig autoescaping and strict variables must stay enabled. Controllers/adapters supply pre-authorized view models and server-issued CSRF. Templates may format and branch for presentation but may not access PDO, secrets, server globals or domain services. Share cards, badges, tables, inputs, alerts and navigation through includes/macros; do not duplicate backend validation.
 
-## 5. MVC and Twig
-Keep controllers and services responsible for data and business decisions. `src/View/` handles rendering and view models; templates under private `templates/` handle presentation only. Use inheritance, include/macro/components, contextual autoescaping, safe URL literals and named parameters. No SQL or privileged service calls in templates; no untrusted `|raw` output. Never embed keys, session cookies or secret payloads in template context.
+## 5. Mobile-first behavior
+Design for widths 320, 375, 390, 768, 1024 and 1440px. No page-level horizontal overflow. Sidebar becomes an accessible off-canvas drawer with keyboard/escape and focus behavior. Use a readable desktop grid and mobile card/scroll treatment for dense tables. Form controls/tap targets should be at least about 44px tall where practical. All primary server-side actions must remain usable without JavaScript.
 
-## 6. Mobile-first responsiveness
-Design at 320, 375, 390, 768, 1024 and 1440px. Provide a keyboard-accessible mobile drawer and coherent dense desktop tables; avoid document-level horizontal overflow. Ensure 44px-class touch targets, adequate input labels, visible actions and usable narrow-screen data cards. Prefer logical CSS properties for future RTL.
+## 6. Theme and internationalization
+Support light, dark and system preferences. The default must follow `prefers-color-scheme`; manual preference may be persisted in browser storage **only** for theme state (not credentials or tokens). Avoid flash by resolving the preference before styles when possible. Reuse TailAdmin design tokens. Do not hard-code unrelated colors in components. Current language is English, with direction-aware CSS and markup ready for future RTL translation.
 
-## 7. Theme behavior
-Support light, dark and system preference. Store only non-sensitive preference locally. Sync `html.dark` with effective theme, honor `prefers-color-scheme`, avoid unnecessary theme flash, and test all view states in both schemes. Never store tokens or authentication state in browser storage.
+## 7. Accessibility (WCAG 2.2 AA target)
+Use semantic headings, navigation, labels, legends, accessible status text, keyboard focus rings, ARIA state where necessary, reduced-motion preference and safe dialogs. Do not rely on color alone. Validate disabled, loading, error, empty and success states; do not claim accessibility conformance without testing.
 
-## 8. Accessibility
-Target WCAG 2.2 AA: semantic landmarks, accessible name/label, headings, visible focus, adequate contrast, error associations, keyboard navigation, correct dialog semantics and focus restoration, status text beyond color, and reduced-motion support. Verify before claiming compliance.
+## 8. Real admin information architecture
+Only show capabilities actually implemented: approved/verified users, approved owners, active/disabled API clients, IP whitelist requests and approvals, and authenticated/logout actions. Derive counters from real authorized queries and label bounded listings accurately. Keep future Usage, Security Events, API Docs and Settings out of live navigation until real authorized routes exist. No fake counters, endpoints, charts, filters or pagination.
 
-## 9. Reusable components
-Use shared navigation, alerts, form controls, status badges, table/list states and confirmation patterns. Use active/disabled states from real backend state. No fake KPI, dead menu link, unauthorized action or unbounded client-side filtering. Navigation must only link to valid, authorized routes.
+## 9. HTTP security boundaries (must never be weakened)
+- `ADMIN_UI_ENABLED`: exact trusted HTTPS and `ADMIN_UI_ALLOWED_IP` from trusted `REMOTE_ADDR`; never trust forwarded headers.
+- `ADMIN_ACTIONS_ENABLED`: independent default-off mutation gate.
+- `ACCOUNT_UI_ENABLED` and `ACCOUNT_KEYS_ENABLED`: separate default-off owner portal gates.
+- `GATEWAY_PROXY_ENABLED`: does not enable public `/v1`; keep it disabled until a validated API admission pipeline exists.
+- Use fresh database account/role checks; secure short-lived server sessions, SameSite=Strict/HttpOnly/Secure cookies, strict CSRF and exact field parsing, source IP checks, HMAC-isolated MySQL rate limits, metadata-only audit and fail-closed denials.
+- Do not modify admin review POST payloads, routes, response status meanings or redirects without explicit review.
+- Do not log SQL, raw bodies, IPs, emails, tokens or passwords. A bearer key is displayed only once on its original successful POST; never in GET, logs, localStorage, headers, analytics or session state.
 
-## 10. Authentication and authorization
-Never weaken `ADMIN_UI_ENABLED`, `ADMIN_ACTIONS_ENABLED`, `ACCOUNT_UI_ENABLED`, `ACCOUNT_KEYS_ENABLED`, `GATEWAY_PROXY_ENABLED`, `ADMIN_UI_ALLOWED_IP`, secure HTTPS checks, exact `REMOTE_ADDR`, fresh role/owner eligibility checks, CSRF, password/rate limits, SQL transaction audit or fail-closed routing. Never enable a disabled flag for a visual demo, particularly in production. Admin and account security boundaries remain distinct.
+## 10. CSP and frontend interactions
+Prefer a strict Content Security Policy: no `unsafe-eval`, no inline script, no external runtime origins. Audit Alpine CSP compatibility and avoid unsafe dynamic expressions. Load local JS/CSS through `public/assets/` only; changing CSP must not weaken protections for the owner portal or legacy admin views. Escape untrusted text with Twig HTML escaping, untrusted attributes in the right context, and no `raw` filters without explicit safe review.
 
-## 11. Browser sessions and API credentials
-Server-side sessions stay Secure, HttpOnly, SameSite=Strict and time-limited. Never put bearer credentials, CSRF values, secrets, passwords, or sensitive response bodies in logs, JavaScript, localStorage, query strings or browser consoles. API keys remain visible **once** only in their authorized POST response.
+## 11. Build and hosting
+Production is cPanel shared hosting with Git Version Control, no shell, Redis, workers, Node, composer install or asset build. Private repository checkout: `/home/arsamnet/repositories/opgateway`; public document root: `/home/arsamnet/opgateway.arsamnet.com`. Only precompiled, reviewed and committed static assets can be copied by a restricted `.cpanel.yml` allowlist. Never copy private templates, `.env`, `vendor/`, Git metadata, application logs or source into the document root. Never overwrite cPanel-managed `.htaccess`, `php.ini` or `.user.ini`. Do not introduce a GitHub Action, CI workflow, background deploy, migration on deploy or server-side NPM/Composer install.
 
-## 12. Frontend assets and CSP
-Build minified CSS/JS locally and commit approved static assets as needed. Production serves only `/assets/...` from its own origin. No `unsafe-eval`, external trackers, third-party runtime CDN or avoidable inline scripts/styles. If Alpine requires expression evaluation, use `@alpinejs/csp` or an audited vanilla JS alternative. Keep strict Content Security Policy; verify third-party scripts under it.
+## 12. Testing and release gates
+Before implementation, inspect actual code and existing tests. Run PHP lint, PHPUnit with notices, smoke checks and strict Composer validation; verify Twig escaping, login/CSRF/IP/role/feature-flag regressions and no fake data. Run `npm ci`, production build, bundle inspection, JS lint, automated/browser responsive tests at 320–1440px, keyboard checks, dark/system theme tests and CSP checks before declaring UI ready. Keep user-verified test baselines separate from expected outcomes and accurately report what could not run.
 
-## 13. cPanel hosting and deployment
-No server SSH, Node, Composer install/build, Redis, worker or migration on deploy. Private checkout `/home/arsamnet/repositories/opgateway`; public Document Root `/home/arsamnet/opgateway.arsamnet.com`. Limit `.cpanel.yml` to explicit public files and ensure `.env`, `src`, `templates`, `vendor`, `frontend`, `storage` and Git metadata are never published. Do not overwrite cPanel-controlled `.htaccess`, `php.ini` or `.user.ini`. Existing manual Git Version Control deployment remains authoritative.
+## 13. Documentation and change management
+Keep architecture, UI tokens, template conventions, security/CSP, build, manual deploy and test procedures in `docs/`; update `CHANGELOG.md` and `README.md` for meaningful changes. Use small reviewable commits, preserve the existing fixed migration checksums and avoid unrelated changes. Do not blindly copy TailAdmin's own `AGENTS.md`; this document governs OPGateway.
 
-## 14. Coding standards
-PHP 8.3, `declare(strict_types=1)`, PSR-12, PSR-4, typed parameters/properties, constructor injection, meaningful PHPDoc, focused units, no hardcoded secrets and clean diffs. Prefer zero unnecessary dependencies or duplicated logic. HTML should be in Twig, not long PHP heredocs.
-
-## 15. Test requirements
-Run existing `php scripts/lint.php`, `composer test`, `./vendor/bin/phpunit --display-phpunit-notices`, `php scripts/smoke.php` and `composer validate --strict --no-check-publish` locally. Test login/logout, fresh authorization, CSRF, default-off flags, escaped output, route rejection, secret non-disclosure and tenant/owner restrictions. Validate local build, CSP, responsive overflow, keyboard flow, accessible dialogs and all themes. Do not run destructive integration tests against the working database. Never claim a test ran unless it did.
-
-## 16. Documentation requirements
-Update `docs/frontend-architecture.md`, `docs/ui-design-system.md`, `docs/cpanel-deployment.md`, `docs/admin.md`, `docs/testing.md` and `README.md` as relevant. Explain exact commands, manual deployment, changed routes, security controls and limitations. Avoid copying upstream documentation verbatim.
-
-## 17. Definition of done
-A UI slice is complete only if it uses actual authorized backend data, retains security gates, has accessible responsive light/dark behavior, passes relevant PHP/JS/build/browser checks, ships **built** local assets safely, and has updated docs. A screenshot, source-only UI or mock-data page is not complete.
-
-## 18. Agent workflow and change management
-1. Review `git status`, current branch, code, tests, docs and approved scope.
-2. Record implemented/disabled/planned features and security trust boundaries.
-3. Propose the smallest safe vertical slice; preserve HTTP contracts and deny-by-default behavior.
-4. Build TailAdmin-compatible Twig components and static asset pipeline; incrementally replace admin views.
-5. Add focused negative/security tests before expanding routes.
-6. Run checks, identify any checks blocked by environment, review sensitive diffs and keep commits small.
-7. Document rollout, offline Composer/vendor dependencies, rollback, and verification before production.
-8. Never introduce GitHub Actions/CI workflows, automatic deployment, unverified counters or unrelated architectural refactoring.
-
-When changing permanent conventions, update this file and corresponding documentation in the same change.
+## 14. Definition of done
+A feature is done only when it uses the actual TailAdmin Free design language, Twig presentation, accessible mobile and desktop layouts, responsive light/dark/system behavior, real authorized backend data, tested server mutations, secure local assets, compatible manual cPanel deployment, unchanged default-off flags and updated documentation. **Never describe unrun tests/builds/browser audits as passing.**
