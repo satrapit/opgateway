@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+- Add bounded, read-only administrator review queues for pending verified users, inactive clients and pending IP allowlist requests; keep state-changing administrative operations unrouted.
+
 - Simplify cPanel deployment to copy only the entrypoint; remove obsolete automatic deletion of database test scripts.
 - Consolidate outdated stage-specific documentation into current, maintainable references.
 - Stabilize administrator browser login/logout using CSRF-protected form POSTs, safe redirects and generic errors.

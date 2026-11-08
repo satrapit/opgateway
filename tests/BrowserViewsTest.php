@@ -36,4 +36,33 @@ final class BrowserViewsTest extends TestCase
         $this->expectException(InvalidArgumentException::class);
         BrowserViews::login('not-a-token');
     }
+
+    public function testDashboardEscapesPendingReviewEntries(): void
+    {
+        $html = BrowserViews::dashboard(self::TOKEN, 'Administrator', [
+            'users' => [['id' => 3, 'email' => '<script>alert(1)</script>']],
+            'clients' => [['id' => 4, 'label' => '<img src=x onerror=alert(2)>',
+                'owner_email' => 'user@example.com']],
+            'ips' => [['id' => 5, 'client_label' => 'Cloud & Services',
+                'address' => '2001:db8::1']],
+        ]);
+
+        self::assertStringContainsString('Verified users awaiting approval', $html);
+        self::assertStringContainsString('&lt;script&gt;alert(1)&lt;/script&gt;', $html);
+        self::assertStringNotContainsString('<script>', $html);
+        self::assertStringContainsString('&lt;img src=x onerror=alert(2)&gt;', $html);
+        self::assertStringContainsString('Cloud &amp; Services', $html);
+        self::assertStringContainsString('2001:db8::1', $html);
+        self::assertStringContainsString('read-only', $html);
+        self::assertStringNotContainsString('name="approve_user"', $html);
+    }
+
+    public function testEmptyReviewQueuesAreClearlyDisplayed(): void
+    {
+        $html = BrowserViews::dashboard(self::TOKEN, 'Administrator', [
+            'users' => [], 'clients' => [], 'ips' => [],
+        ]);
+        self::assertSame(3, substr_count($html, 'None awaiting review.'));
+    }
+
 }

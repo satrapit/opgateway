@@ -39,7 +39,14 @@ HTML;
         return self::page('Administrator sign in', $content);
     }
 
-    public static function dashboard(string $csrfToken, string $email): string
+    /**
+     * @param array{
+     *   users:list<array{id:int,email:string}>,
+     *   clients:list<array{id:int,label:string,owner_email:string}>,
+     *   ips:list<array{id:int,client_label:string,address:string}>
+     * }|null $pending
+     */
+    public static function dashboard(string $csrfToken, string $email, ?array $pending = null): string
     {
         self::assertCsrf($csrfToken);
         if (strlen($email) > 254) {
@@ -47,11 +54,13 @@ HTML;
         }
         $token = self::escape($csrfToken);
         $displayEmail = self::escape($email);
+        $overview = $pending === null ? '' : self::pendingLists($pending);
         $content = <<<HTML
 <main>
   <h1>OPGateway administration</h1>
   <p>Signed in as {$displayEmail}</p>
-  <p>Management features are not available until production security checks pass.</p>
+  <p>Review queues are read-only. Approval actions are not enabled yet.</p>
+  {$overview}
   <form method="post" action="/admin/logout">
     <input type="hidden" name="_csrf" value="{$token}">
     <button type="submit">Sign out</button>
@@ -59,6 +68,55 @@ HTML;
 </main>
 HTML;
         return self::page('Administration', $content);
+    }
+
+
+    /**
+     * Render at most 50 entries per queue; no client credential or secret
+     * is ever read or reflected. Every database-originated value is escaped.
+     *
+     * @param array{
+     *   users:list<array{id:int,email:string}>,
+     *   clients:list<array{id:int,label:string,owner_email:string}>,
+     *   ips:list<array{id:int,client_label:string,address:string}>
+     * } $pending
+     */
+    private static function pendingLists(array $pending): string
+    {
+        $users = [];
+        foreach ($pending['users'] as $item) {
+            $users[] = '<li>#' . (int) $item['id'] . ' — '
+                . self::escape($item['email']) . '</li>';
+        }
+
+        $clients = [];
+        foreach ($pending['clients'] as $item) {
+            $clients[] = '<li>#' . (int) $item['id'] . ' — '
+                . self::escape($item['label'])
+                . ' (owner: ' . self::escape($item['owner_email']) . ')</li>';
+        }
+
+        $ips = [];
+        foreach ($pending['ips'] as $item) {
+            $ips[] = '<li>#' . (int) $item['id'] . ' — '
+                . self::escape($item['address']) . ' (client: '
+                . self::escape($item['client_label']) . ')</li>';
+        }
+
+        return self::listSection('Verified users awaiting approval', $users)
+            . self::listSection('Inactive clients eligible for review', $clients)
+            . self::listSection('Pending IP allowlist requests', $ips);
+    }
+
+    /** @param list<string> $escapedItems */
+    private static function listSection(string $heading, array $escapedItems): string
+    {
+        $items = $escapedItems === []
+            ? '<p>None awaiting review.</p>'
+            : '<ul>' . implode('', $escapedItems) . '</ul>';
+
+        return '<section><h2>' . self::escape($heading) . '</h2>'
+            . $items . '<p class="hint">Showing up to 50 records.</p></section>';
     }
 
     private static function assertCsrf(string $token): void
@@ -90,6 +148,9 @@ HTML;
     label { display: block; margin-top: 1rem; font-weight: 600; }
     input:not([type="hidden"]) { display: block; box-sizing: border-box; width: 100%; padding: .75rem; font: inherit; }
     button { margin-top: 1.5rem; padding: .7rem 1rem; font: inherit; cursor: pointer; }
+    section { border-top: 1px solid #d7dfe6; margin-top: 1.5rem; padding-top: .75rem; overflow-wrap: anywhere; }
+    section h2 { font-size: 1.1rem; }
+    .hint { font-size: .85rem; color: #596579; }
     :focus-visible { outline: 3px solid #125ab5; outline-offset: 2px; }
   </style>
 </head>

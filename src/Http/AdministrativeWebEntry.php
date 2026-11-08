@@ -105,7 +105,9 @@ final readonly class AdministrativeWebEntry
             $accounts,
             $admins,
         );
-        $adapter = new PrivateBrowserAdapter($session, $auth, $accounts, $admins);
+        $adapter = new PrivateBrowserAdapter(
+            $session, $auth, $accounts, $admins, new AdminOverviewRepository($pdo),
+        );
 
         $body = null;
         if ($method === 'POST') {

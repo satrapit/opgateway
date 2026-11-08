@@ -2,7 +2,7 @@
 
 A security-first PHP 8.3 / MySQL gateway foundation for the Openprovider API on shared cPanel hosting.
 
-**Status:** Administrator login/logout and its read-only landing page are available when explicitly enabled. The API client and ownership modules exist internally, but **all public `/v1` provider routes remain disabled (HTTP 503)**. This is not a production-ready upstream proxy.
+**Status:** Administrator login/logout and bounded read-only review queues are available when explicitly enabled. The API client and ownership modules exist internally, but **all public `/v1` provider routes remain disabled (HTTP 503)**. This is not a production-ready upstream proxy.
 
 ## Hosting model
 

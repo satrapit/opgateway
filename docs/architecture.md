@@ -8,7 +8,7 @@ OPGateway is a PHP 8.3 modular monolith: `public/index.php` is the only deployed
 
 - `GET /health`: static health response, no DB or provider connection.
 - `GET /admin/login`, `POST /admin/login`, `GET /admin`, `POST /admin/logout`: conditional on `ADMIN_UI_ENABLED=true`, trusted HTTPS and an exact server-observed operator IP.
-- Admin login checks active, email-verified, approved account and fresh `admin` role membership; session authentication uses PHP server-side sessions, rotating the ID and enforcing 30-minute absolute lifetime.
+- Admin login checks active, email-verified, approved account and fresh `admin` role membership; session authentication uses PHP server-side sessions, rotating the ID and enforcing 30-minute absolute lifetime. The protected `/admin` page displays bounded, read-only approval queues.
 - Credentials/passwords are never included in logs.
 - `/v1` and `/v1/*` return `503 gateway_not_configured` regardless of `GATEWAY_PROXY_ENABLED`.
 
@@ -23,10 +23,9 @@ The fixed migration schema contains `users`, `roles`, `user_roles`, `api_clients
 
 ## Next phases
 
-1. Extend the protected administrator interface with **read-only** pending user, API client and IP-approval visibility.
-2. Add state-changing administrator management behind individually reviewed session/CSRF, audit and authorization checks.
-3. Complete API client provisioning, bearer authentication, strict per-client source IP checks, scope/ownership enforcement, rate limits and request-level sanitized audit.
-4. Pin and verify the provider API specification; implement restricted outbound transport, secure token management, safe retries and route-by-route compatibility.
-5. Only after end-to-end verification, selectively enable explicitly approved `/v1` operations.
+1. Add state-changing administrator management behind individually reviewed session/CSRF, audit and authorization checks.
+2. Complete API client provisioning, bearer authentication, strict per-client source IP checks, scope/ownership enforcement, rate limits and request-level sanitized audit.
+3. Pin and verify the provider API specification; implement restricted outbound transport, secure token management, safe retries and route-by-route compatibility.
+4. Only after end-to-end verification, selectively enable explicitly approved `/v1` operations.
 
 At no stage should an arbitrary provider proxy route or user-controlled upstream target be made public.

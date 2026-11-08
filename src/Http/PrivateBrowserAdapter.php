@@ -23,6 +23,7 @@ final readonly class PrivateBrowserAdapter
         private BrowserAuthController $auth,
         private LoginAccountRepository $accounts,
         private AdministratorAuthorization $administrators,
+        private ?AdminOverviewRepository $overview = null,
     ) {
     }
 
@@ -69,7 +70,12 @@ final readonly class PrivateBrowserAdapter
             if (!$this->administrators->isAdministrator($userId)) {
                 return self::error(403);
             }
-            return self::html(BrowserViews::dashboard($this->session->csrfToken(), 'Administrator'));
+            // Role and account eligibility have been rechecked before
+            // querying any personally identifying review data.
+            $pending = $this->overview?->pending();
+            return self::html(BrowserViews::dashboard(
+                $this->session->csrfToken(), 'Administrator', $pending,
+            ));
         }
 
         if ($path === '/admin/logout' && $method === 'POST') {

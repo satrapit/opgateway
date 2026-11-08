@@ -6,8 +6,10 @@
 |---|---|---|
 | GET | `/admin/login` | Login form with session-bound CSRF |
 | POST | `/admin/login` | Validate password, administrator role and rate limits; HTTP 303 to `/admin` |
-| GET | `/admin` | Authenticated administrator landing page |
+| GET | `/admin` | Authenticated read-only administrator review queues |
 | POST | `/admin/logout` | Validate CSRF and session; HTTP 303 to `/admin/login` |
+
+The dashboard displays up to 50 records per queue for verified pending users, inactive clients with eligible owners, and pending IP entries for eligible active clients. Only an already authenticated, freshly authorized administrator can read these records. No credentials or password hashes are queried. Read-only queries are deliberately not a substitute for approval actions.
 
 State-changing `AdminActions` are **not exposed** as HTTP routes. Public signup, client management and provider proxy remain disabled. No `/setup/administrator` route exists.
 
