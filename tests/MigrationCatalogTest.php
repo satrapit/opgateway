@@ -30,7 +30,7 @@ final class MigrationCatalogTest extends TestCase
         }
 
         foreach ($migrations as $migration) {
-            $statements = implode("\\n", $migration->statements());
+            $statements = implode("\n", $migration->statements());
             self::assertStringNotContainsString('INSERT INTO', strtoupper($statements));
             self::assertStringNotContainsString('DROP TABLE', strtoupper($statements));
         }
