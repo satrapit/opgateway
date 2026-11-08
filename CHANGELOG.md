@@ -2,6 +2,12 @@
 
 ## [Unreleased]
 
+- Fix root cause of browser `Origin: null` during HTML form POST by using
+  `Referrer-Policy: same-origin` in the PHP front controller and Apache
+  template; keep strict Origin verification, CSRF and setup-token checks.
+- Document the required one-time manual change to cPanel-managed `.htaccess`.
+
+
 - Differentiate rejected explicit POST Origin from missing Origin;
   accept a missing Origin only on same-origin HTML navigation indicated by
   Fetch Metadata, followed by mandatory session CSRF and setup-token checks.

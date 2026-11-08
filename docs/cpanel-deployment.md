@@ -15,9 +15,23 @@ The deployed `.htaccess` must retain:
 - `Options -Indexes` and `DirectoryIndex index.php`.
 - Rewrite of virtual paths to `index.php` when the requested file does not exist.
 - Security response headers such as `X-Content-Type-Options: nosniff`.
+- `Referrer-Policy: same-origin` (not `no-referrer`). The latter may force
+  `Origin: null` on ordinary HTML form POSTs, causing the protected
+  administrator setup and sign-in forms to reject legitimate requests.
+  Ensure Apache and PHP headers do not conflict or emit duplicate values.
 - cPanel-generated PHP directives and PHP handler, as applicable to the selected runtime.
 
 Make a backup of the deployed `.htaccess` in private storage before editing it. Do not copy cPanel-generated PHP directives to the public Git repository. Check after every deployment that rewrites still work.
+**One-time manual correction:** `.cpanel.yml` intentionally never overwrites
+cPanel's deployed `.htaccess`. After deploying this change, open
+`/home/arsamnet/opgateway.arsamnet.com/.htaccess` in File Manager and
+change any existing `Header always set Referrer-Policy "no-referrer"` to
+`Header always set Referrer-Policy "same-origin"`; retain all cPanel-managed
+and rewrite directives. Also check server/CDN response headers for an
+additional `no-referrer` policy. The effective GET response for
+`/setup/administrator` must not carry `Referrer-Policy: no-referrer`.
+Use an HTTPS same-origin browser tab and submit only once after
+checking the database identity tables remain empty.
 
 The PHP error log must be placed outside Document Root (for example in private `storage/`) with a writable and protected target; never expose PHP errors or log contents to clients. In production, set `display_errors=Off`, `log_errors=On`, and `APP_DEBUG=false`. The effective PHP settings are managed through cPanel, not by `.cpanel.yml`.
 

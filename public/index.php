@@ -63,7 +63,9 @@ header('Content-Type: ' . $response['content_type']);
 header('Cache-Control: no-store, private');
 header('X-Content-Type-Options: nosniff');
 header('X-Frame-Options: DENY');
-header('Referrer-Policy: no-referrer');
+// Preserve browser Origin on same-origin form POST while suppressing
+// cross-origin referrer disclosures.
+header('Referrer-Policy: same-origin');
 header("Content-Security-Policy: default-src 'none'; form-action 'self'; base-uri 'none'; frame-ancestors 'none'");
 header('X-Request-ID: ' . $requestId);
 echo $response['body'];

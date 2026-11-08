@@ -18,6 +18,10 @@ commit can create a user in the production database.
    All three counts MUST be zero for first setup. If not, stop; never
    delete accounts or bypass the guard.
 3. Check `APP_URL=https://opgateway.arsamnet.com` in the private .env.
+   Ensure the effective GET response has `Referrer-Policy: same-origin`
+   in PHP and the deployed cPanel-managed `.htaccess`, not `no-referrer`.
+   A no-referrer policy can force `Origin: null` on ordinary form POSTs,
+   which the installer correctly rejects.
 4. The intended operator must know the exact source IP received by
    PHP as `REMOTE_ADDR`. On proxy/CDN configurations it may be a proxy
    IP, in which case do NOT enable setup until proxy trust is reviewed.
