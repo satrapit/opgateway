@@ -2,6 +2,15 @@
 
 ## [Unreleased]
 
+- Configure provider-specific database hostname `db` and centralize
+  native PDO connection settings through DatabaseConfig.
+- Remove the obsolete public DB test PHP file, its routed endpoint,
+  dedicated .env flags, and socket override. Keep unit tests.
+- Remove standalone public database diagnostic copies during cPanel
+  deployment; leave production schema/data and private .env untouched.
+- Resume secure first-admin setup with the actual migrated database.
+
+
 - Remove obsolete Doctrine and MySQLi test suites after native PDO
   consolidation; preserve active PDO and migration coverage.
 - Correct SQLSTATE extraction for PDO connection errors lacking errorInfo

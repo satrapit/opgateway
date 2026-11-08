@@ -11,7 +11,7 @@ use PHPUnit\Framework\TestCase;
 final class DatabaseConfigTest extends TestCase
 {
     private const VALID = [
-        'DB_HOST' => 'localhost',
+        'DB_HOST' => 'db',
         'DB_PORT' => '3306',
         'DB_NAME' => 'arsamnet_opgateway',
         'DB_USER' => 'arsamnet_gateway',
@@ -21,14 +21,14 @@ final class DatabaseConfigTest extends TestCase
     public function testBuildsDsnWithoutExposingPassword(): void
     {
         $config = DatabaseConfig::fromEnvironment(self::VALID);
-        self::assertSame('mysql:host=localhost;port=3306;dbname=arsamnet_opgateway;charset=utf8mb4', $config->dsn());
+        self::assertSame('mysql:host=db;port=3306;dbname=arsamnet_opgateway;charset=utf8mb4', $config->dsn());
         self::assertStringNotContainsString('do-not-display', $config->dsn());
     }
 
     public function testRejectsMissingSettings(): void
     {
         $this->expectException(InvalidArgumentException::class);
-        DatabaseConfig::fromEnvironment(['DB_HOST' => 'localhost']);
+        DatabaseConfig::fromEnvironment(['DB_HOST' => 'db']);
     }
 
     public function testRejectsDsnInjection(): void

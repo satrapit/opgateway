@@ -23,9 +23,9 @@ The PHP error log must be placed outside Document Root (for example in private `
 
 ## Fail-closed deployment
 
-The version-controlled `.cpanel.yml` copies **only** `public/index.php` into Document Root. Before copying, it checks that the target directory and its existing `.htaccess` are present, and that the destination index is not a symlink. It does not copy `.env`, `src`, `vendor`, `storage`, `tests`, `.git` or `composer.lock` and does not delete existing destination files.
+The version-controlled `.cpanel.yml` copies **only** `public/index.php` into Document Root. Before copying, it checks that the target directory and its existing `.htaccess` are present, and that the destination index is not a symlink. It does not copy `.env`, `src`, `vendor`, `storage`, `tests`, `.git` or `composer.lock`. As a one-time security cleanup, it explicitly deletes only two obsolete temporary test entrypoints (`db-connection-test.php`, `mysql-direct-test.php`) in Document Root; all other destination files are preserved.
 
-The runtime bootstrap loads source from `/home/arsamnet/repositories/opgateway`. The private `.env` must exist in that repository root (outside the webroot); it must never be committed or published. The initial alpha release requires no server-side Composer command.
+The runtime bootstrap loads source from `/home/arsamnet/repositories/opgateway`. Production database hostname is `db` on this provider, not `localhost`. The private `.env` must exist in that repository root (outside the webroot); it must never be committed or published. The initial alpha release requires no server-side Composer command.
 
 ## Manual update through cPanel
 
@@ -35,7 +35,7 @@ The runtime bootstrap loads source from `/home/arsamnet/repositories/opgateway`.
 4. Run **Deploy HEAD Commit**. Check the cPanel deployment log.
 5. Verify `https://opgateway.arsamnet.com/health` returns `{"status":"ok"}` and `/v1/domains` returns HTTP 503 with `{"error":"gateway_not_configured"}`.
 6. Check that `/.env`, `/composer.json`, `/.git/config`, `/src/autoload.php` and `/storage/` cannot be fetched publicly. Any HTTP 200 on a private file is a deployment blocker.
-7. Confirm the deployed `.htaccess` still contains its cPanel-generated sections and the required rewrite rules.
+7. Confirm the deployed `.htaccess` still contains its cPanel-generated sections and the required rewrite rules.\n8. Confirm both old database-test URLs return 404. Remove any separate private diagnostic config file manually via File Manager after confirming it is not used elsewhere.
 
 For rollback, use a reviewed non-destructive revert commit followed by manual Update from Remote / Deploy HEAD Commit. Do not rewrite Git history or reset the cPanel-managed checkout.
 

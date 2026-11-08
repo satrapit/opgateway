@@ -1,14 +1,15 @@
 # Create the first Administrator (operator procedure)
 
 This is a one-time, carefully limited operation for the production
-cPanel instance. A new empty database is initialized with `database/sql/opgateway_full_schema.sql`. Never reimport it into a populated database.
+cPanel instance. This host uses `DB_HOST=db`; use the existing DB_NAME
+and credentials confirmed by the independent connection test. A new empty database is initialized with `database/sql/opgateway_full_schema.sql`. Never reimport it into a populated database.
 
 The system does not ship a default account or password, and no GitHub
 commit can create a user in the production database.
 
 ## Safety checks
 
-1. Back up the production database using phpMyAdmin Export.
+1. Back up the production database using phpMyAdmin Export.\n   Do not re-import migrated data merely to enable the administrator.
 2. Use read-only SQL in the existing database:
    `SELECT COUNT(*) AS users_count FROM users;`
    `SELECT COUNT(*) AS roles_count FROM roles;`

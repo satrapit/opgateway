@@ -10,7 +10,7 @@ Never make this log file available through HTTP.
 Every entry contains `timestamp_utc`, `request_id`, `event`,
 `http_status`, and `error_category`. A PDOException also adds a
 `database` object with `reason`, allowlisted `mysql_errno`, and
-allowlisted two-character `sqlstate_class`. For constructor-time PDO exceptions without `errorInfo`, only a strict\n`SQLSTATE[XXXXX] [NNNN]` **numeric prefix** can be parsed; the rest of\nthe message is discarded without writing it anywhere. Unsupported codes\nare replaced by null and `unclassified`. An optional `context` object
+allowlisted two-character `sqlstate_class`. For constructor-time PDO exceptions without `errorInfo`, only a strict\n`SQLSTATE[XXXXX] [NNNN]` **numeric prefix** can be parsed; the rest of\nthe message is discarded without writing it anywhere. Unrecognized native numeric codes are retained within the bounded range;\nraw error messages remain excluded. An optional `context` object
 contains only fixed enum values. The corresponding response header is
 `X-Request-ID`.
 
@@ -48,11 +48,11 @@ environment values. No raw user-controlled context is accepted.
 - `unknown_database` (1049): verify the database name.
 - `missing_table` (1146) / `missing_column` (1054): inspect the schema
   with phpMyAdmin; do not reimport blindly.
-- `connection_failure` (2002/2003/2005/2006/2013): verify host and
-  MySQL service availability.
+- `connection_failure` (2002/2003/2005/2006/2013): verify host `db` on
+  this hosting provider and MySQL service availability.
 - `connection_limit` (1040/1203): check database account connection
   limits.
-- `authentication_plugin` (2054): MySQL client plugin compatibility.
+- `authentication_plugin` (1524/2054): server/client authentication plugin problems.
 - `unclassified`: the driver returned an unknown code; no raw details
   are leaked.
 

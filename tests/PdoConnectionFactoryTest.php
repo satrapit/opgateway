@@ -4,30 +4,29 @@ declare(strict_types=1);
 
 namespace OPGateway\Tests;
 
+use InvalidArgumentException;
 use OPGateway\Database\PdoConnectionFactory;
 use PHPUnit\Framework\TestCase;
-use RuntimeException;
 
 final class PdoConnectionFactoryTest extends TestCase
 {
     public function testInvalidPortIsRejectedBeforeOpeningConnection(): void
     {
-        $this->expectException(RuntimeException::class);
+        $this->expectException(InvalidArgumentException::class);
         PdoConnectionFactory::open([
-            'DB_HOST' => 'localhost', 'DB_PORT' => 'invalid',
+            'DB_HOST' => 'db', 'DB_PORT' => 'invalid',
             'DB_NAME' => 'example', 'DB_USER' => 'example',
             'DB_PASSWORD' => 'placeholder',
         ]);
     }
 
-    public function testInvalidSocketIsRejectedBeforeOpeningConnection(): void
+    public function testDsnInjectionIsRejectedBeforeOpeningConnection(): void
     {
-        $this->expectException(RuntimeException::class);
+        $this->expectException(InvalidArgumentException::class);
         PdoConnectionFactory::open([
-            'DB_HOST' => 'localhost', 'DB_PORT' => '3306',
+            'DB_HOST' => 'db;dbname=other', 'DB_PORT' => '3306',
             'DB_NAME' => 'example', 'DB_USER' => 'example',
             'DB_PASSWORD' => 'placeholder',
-            'DB_UNIX_SOCKET' => '../relative.sock',
         ]);
     }
 }

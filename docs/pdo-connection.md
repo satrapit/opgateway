@@ -14,9 +14,9 @@ Prepared statements use native binding (emulation disabled).
 
 Database connection settings in the private .env:
 `DB_HOST`, `DB_PORT`, `DB_NAME`, `DB_USER`, `DB_PASSWORD`,
-and optional absolute `DB_UNIX_SOCKET`. With a socket configured,
-host and port are not included in the DSN. Leave the socket blank
-unless the provider has confirmed its actual location.
+with `DB_HOST=db` on this provider. No socket or alternate
+connection settings are supported; credentials stay in the private
+`.env`.
 
 PHP's `pdo_mysql` extension is required; no extra Composer package
 is required for database connectivity. Composer is used for test tooling.
@@ -25,5 +25,6 @@ A server-side MySQL error 1524 means the database server cannot load
 the configured authentication plugin. Using PDO rather than Medoo or
 MySQLi does not resolve that server-side failure by itself.
 
-This refactor must not modify the database schema, migration ledger,
-users, roles, or production .env.
+Do not modify the database schema, migration ledger, users or roles.
+Update only DB_HOST and the actual database name/user/password in the
+private production .env as required by the hosting provider.

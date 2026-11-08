@@ -18,11 +18,12 @@ The Mac is used for Git operations only in the deployment procedure.
 - cPanel → Git Version Control → Update from Remote → Deploy HEAD Commit.
 - `.cpanel.yml` copies **only** `public/index.php`; it preserves
   cPanel-managed `.htaccess`, `php.ini` and `.user.ini`.
-- Schema installation: select `arsamnet_opgateway_db` in phpMyAdmin and
-  import `database/sql/opgateway_full_schema.sql` **once** into an empty database.
-  Never import into a non-empty or incorrect database.
-
-The temporary PDO database test is disabled by default and requires HTTPS, GET, and an exact allowlisted IP. See [connection-test instructions](docs/db-connection-test.md).
+- Production MySQL hostname on this provider: **`db`**, not `localhost`.
+  Set `DB_HOST=db` in the private `.env` together with the *actual* database
+  name and assigned user. Do not assume previous database names are current.
+- Schema installation for a **new empty database only**: import
+  `database/sql/opgateway_full_schema.sql` once. Never import over the
+  existing migrated database.
 
 No database operations run during Git deployment. Do not attempt to use the
 MigrationRunner directly on shared hosting without an approved protected UI.
@@ -38,8 +39,9 @@ See [phpMyAdmin installation](docs/phpmyadmin-install.md).
 - [cPanel deployment](docs/cpanel-deployment.md)
 - [Single PDO database architecture](docs/pdo-connection.md)
 - [Private diagnostic logs](docs/diagnostic-logging.md)
-- [Temporary database connection test](docs/db-connection-test.md)
 
 No secrets, GitHub Actions, or CI/CD workflows are included.
 
 **Database access:** Native PDO only, using one factory and prepared statements in every repository. No external ORM or query builder is required.
+
+**Diagnostics cleanup:** The former HTTP database-test route and PHP file were removed. The deployment deletes only the two known temporary entrypoints `db-connection-test.php` and `mysql-direct-test.php` from Document Root. Remove any separately stored temporary private diagnostic credentials via cPanel File Manager.

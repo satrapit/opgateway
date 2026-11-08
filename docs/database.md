@@ -1,38 +1,43 @@
-# Database foundation
+# OPGateway database configuration
 
-## Current cPanel deployment
+## Shared cPanel hosting
 
-- DB name: `arsamnet_opgateway_db`
-- DB user: `arsamnet_opgateway_user`
-- Private configuration: `/home/arsamnet/repositories/opgateway/.env`
-- Administration: cPanel + phpMyAdmin (no hosting Terminal)
+This provider specifies the MySQL host **`db`**, not `localhost`.
+The *private* application configuration at
+`/home/arsamnet/repositories/opgateway/.env` must contain:
 
-Do not put a database password or other secrets in the repository, public
-Document Root, error logs or support messages.
+```dotenv
+DB_HOST=db
+DB_PORT=3306
+DB_NAME=YOUR_EXISTING_DATABASE_NAME
+DB_USER=YOUR_EXISTING_FULL_DATABASE_USERNAME
+DB_PASSWORD=YOUR_PRIVATE_DATABASE_PASSWORD
+```
 
-The native PDO connection factory is the only database connection path. Every repository receives a PDO handle and executes prepared SQL. `/health` does not connect to
-the database; a healthy response alone does not prove database connectivity.
+The database and username are not assumed to match historical examples:
+use the account and database already verified with the independent
+MySQL test. Keep all credentials outside Document Root and Git.
+Do not add obsolete `DB_UNIX_SOCKET`, `DB_DRIVER`,
+`DB_DIAGNOSTIC_MYSQLI_ENABLED`, `DB_CONNECTION_TEST_ENABLED` or
+`DB_CONNECTION_TEST_ALLOWED_IP`.
 
-## First migration
+Database queries and transactions use the single native PDO connection
+factory; no ORM, Medoo or second MySQLi connection is deployed.
+`/health` does not connect to MySQL and is not proof of DB readiness.
 
-The canonical migration version is
-`202611070001_create_identity_tables`.
-Import `database/sql/202611070001_create_identity_tables.sql` into an
-**empty** `arsamnet_opgateway_db` through phpMyAdmin, following
-[the manual installation procedure](phpmyadmin-install.md).
+## Existing database / first administrator
 
-The SQL file mirrors the six `CreateIdentityTables` statements and creates
-a matching `schema_migrations` record, so future MigrationRunner executions
-recognize the migration as completed instead of trying to create the same
-tables again. No users, API keys, admin account or whitelisted IPs are inserted.
+The database and migrated data are authoritative. **Do not recreate,
+reimport or delete any tables or users.** Use phpMyAdmin to confirm the
+three completed migration ledger entries in `schema_migrations` and
+that `users`, `roles`, and `user_roles` are empty before attempting
+first-administrator setup. If they are not empty, stop and inspect
+existing identities rather than clearing them.
 
-## Future changes
+For a **brand-new empty database only**, the one-time installation SQL
+is `database/sql/opgateway_full_schema.sql`. It includes all three
+reviewed migrations and their checksums. Follow
+[phpMyAdmin installation](phpmyadmin-install.md). No migration runs
+on cPanel deployment.
 
-Future schema revisions must be provided as separately versioned,
-non-destructive SQL imports and documented phpMyAdmin operations unless a
-properly authenticated one-time web installer is implemented. No automated
-migrations in cPanel Git deployments. Preserve the ledger; do not modify
-previous SQL files or checksums after release.
-
-MySQL DDL can implicitly commit. Keep backups, verify imports and never
-blindly rerun a partially failed migration.
+See [first-administrator procedure](create-first-administrator.md).

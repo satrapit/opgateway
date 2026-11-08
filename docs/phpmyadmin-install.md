@@ -12,7 +12,7 @@ before replacing an already-created database. A database may be perfectly
 intact while the PHP process cannot connect to it.
 
 If a full reinstall is intentionally required, export a verified backup
-of `arsamnet_opgateway_db` from phpMyAdmin. Record any data that must
+of the current database named in private `DB_NAME` from phpMyAdmin. Record any data that must
 be retained; rebuilding loses existing accounts, roles, client records,
 API keys and tokens. Disable the installer and admin UI in the private
 `.env` before altering schema. Ensure the target database is EMPTY
@@ -39,8 +39,10 @@ Expected immutable migration checksums:
 
 Existing private configuration remains at
 `/home/arsamnet/repositories/opgateway/.env`.
-Verify `DB_HOST`, `DB_PORT`, `DB_NAME`, `DB_USER`,
-`DB_PASSWORD`, and MySQL user permissions separately.
+On this hosting provider use `DB_HOST=db` (NOT `localhost`). Verify
+`DB_PORT`, `DB_NAME`, `DB_USER`, `DB_PASSWORD` and MySQL user
+permissions separately. If you migrated into a populated database,
+**do not run this initial import again**.
 Never commit credentials or upload .env to the public Document Root.
 
 No user/admin account is seeded. The first administrator must be

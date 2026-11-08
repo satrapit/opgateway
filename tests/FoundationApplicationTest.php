@@ -19,6 +19,12 @@ final class FoundationApplicationTest extends TestCase
         self::assertSame(503, (new FoundationApplication(['GATEWAY_PROXY_ENABLED' => 'true']))->handle('POST', '/v1/domains', '127.0.0.1')['status']);
     }
 
+    public function testOldDatabaseDiagnosticRouteIsNotExposed(): void
+    {
+        $result = (new FoundationApplication([]))->handle('GET', '/db-connection-test.php', '127.0.0.1');
+        self::assertSame(404, $result['status']);
+    }
+
     public function testUnknownRoutesAreNotExposed(): void
     {
         self::assertSame(404, (new FoundationApplication([]))->handle('GET', '/admin', '127.0.0.1')['status']);
