@@ -201,9 +201,17 @@ final class AdminReviewServiceTest extends TestCase
         )['status']);
 
         $session->logout();
+        self::assertSame(PHP_SESSION_NONE, session_status());
+
+        // Each HTTP request starts its own secure session. Simulate the
+        // subsequent request after logout instead of dispatching with a
+        // destroyed PHP session (which is an invalid adapter invocation).
+        $session->start(true);
+        self::assertNull($session->currentUserId($accounts));
         self::assertSame(401, $adapter->dispatch(
             'POST', '/admin/review', true, 'application/x-www-form-urlencoded',
             '192.0.2.4', str_repeat('f', 32), $makeForm($csrf),
         )['status']);
+        $session->logout();
     }
 }
