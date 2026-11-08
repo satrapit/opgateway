@@ -1,0 +1,52 @@
+{% extends 'layouts/base.html.twig' %}
+{% block body %}
+<a href="#main" class="sr-only rounded bg-brand-500 px-3 py-2 text-white focus:not-sr-only focus:absolute focus:top-2 focus:left-2 focus:z-50">Skip to content</a>
+<div class="min-h-screen xl:flex">
+  <button type="button" data-sidebar-overlay hidden aria-label="Close navigation" tabindex="-1" class="fixed inset-0 z-30 bg-gray-900/60 xl:hidden"></button>
+  <aside id="admin-sidebar" data-sidebar class="fixed inset-y-0 start-0 z-40 flex w-72 -translate-x-full flex-col border-e border-gray-200 bg-white transition-transform duration-200 xl:sticky xl:top-0 xl:h-screen xl:translate-x-0 dark:border-gray-800 dark:bg-gray-900" aria-label="Main navigation">
+    <div class="flex h-20 items-center justify-between border-b border-gray-100 px-6 dark:border-gray-800">
+      <a href="/admin" class="flex items-center gap-3 text-lg font-semibold tracking-tight text-gray-900 dark:text-white">
+        <span class="flex size-10 items-center justify-center rounded-lg bg-brand-500 text-sm font-bold text-white" aria-hidden="true">OP</span>OPGateway
+      </a>
+      <button type="button" data-sidebar-close class="flex size-11 items-center justify-center rounded-lg text-gray-500 hover:bg-gray-100 xl:hidden dark:hover:bg-white/5" aria-label="Close navigation">✕</button>
+    </div>
+    <nav class="min-h-0 flex-1 space-y-2 overflow-y-auto px-4 py-6" aria-label="Administration sections">
+      <p class="px-3 pb-2 text-xs font-semibold tracking-widest text-gray-400 uppercase">Workspace</p>
+      <a href="/admin" aria-current="page" class="menu-item menu-item-active"><span aria-hidden="true">▦</span> Overview</a>
+      {% if has_overview %}
+        <p class="px-3 pt-6 pb-2 text-xs font-semibold tracking-widest text-gray-400 uppercase">Management</p>
+        <a href="#users" class="menu-item menu-item-inactive"><span aria-hidden="true">◎</span> Pending users</a>
+        <a href="#owners" class="menu-item menu-item-inactive"><span aria-hidden="true">♙</span> Account owners</a>
+        <a href="#clients" class="menu-item menu-item-inactive"><span aria-hidden="true">▣</span> API clients</a>
+        <a href="#ips" class="menu-item menu-item-inactive"><span aria-hidden="true">◇</span> IP requests</a>
+        {% if show_approved_ips %}
+          <a href="#approved-ips" class="menu-item menu-item-inactive"><span aria-hidden="true">✓</span> Approved IPs</a>
+        {% endif %}
+      {% endif %}
+    </nav>
+    <div class="border-t border-gray-100 p-4 text-xs leading-5 text-gray-500 dark:border-gray-800 dark:text-gray-400">Administrator workspace<br>Security checks remain enforced by the server.</div>
+  </aside>
+  <div class="min-w-0 flex-1">
+    <header class="sticky top-0 z-20 flex min-h-18 items-center gap-3 border-b border-gray-200 bg-white px-4 shadow-theme-xs sm:px-6 xl:px-8 dark:border-gray-800 dark:bg-gray-900">
+      <button type="button" data-sidebar-toggle aria-controls="admin-sidebar" aria-expanded="false" aria-label="Open navigation" class="flex size-11 shrink-0 items-center justify-center rounded-lg border border-gray-200 text-xl text-gray-700 xl:hidden dark:border-gray-700 dark:text-gray-200">☰</button>
+      <div class="min-w-0 flex-1">
+        <p class="truncate text-sm font-medium text-gray-900 dark:text-white">Administration</p>
+        <p class="truncate text-xs text-gray-500 dark:text-gray-400">OPGateway / Overview</p>
+      </div>
+      <label for="theme-preference" class="sr-only">Theme preference</label>
+      <select id="theme-preference" data-theme-preference class="min-h-11 rounded-lg border border-gray-200 bg-white px-2 text-sm text-gray-700 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200" aria-label="Theme preference">
+        <option value="system">System theme</option>
+        <option value="light">Light theme</option>
+        <option value="dark">Dark theme</option>
+      </select>
+      <form method="post" action="/admin/logout" class="shrink-0">
+        <input type="hidden" name="_csrf" value="{{ csrf_token }}">
+        <button type="submit" class="min-h-11 rounded-lg border border-gray-200 px-3 text-sm font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-700 dark:text-gray-200 dark:hover:bg-gray-800">Sign out</button>
+      </form>
+    </header>
+    <main id="main" class="mx-auto w-full max-w-screen-2xl px-4 py-6 sm:px-6 xl:px-8 xl:py-8">
+      {% block admin_content %}{% endblock %}
+    </main>
+  </div>
+</div>
+{% endblock %}
