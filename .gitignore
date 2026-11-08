@@ -1,9 +1,7 @@
 /.env
 /.env.*
 !/.env.example
-# TEMPORARY: allow committing locally built Composer vendor for cPanel deployment.
-# Restore /vendor/ exclusion after a reproducible private deployment is available.
-# /vendor/
+/vendor/
 /.phpunit.cache/
 /.phpunit.result.cache
 /coverage/

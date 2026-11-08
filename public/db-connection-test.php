@@ -11,7 +11,7 @@ declare(strict_types=1);
  * No SQL changes, secrets or raw errors are emitted.
  */
 use OPGateway\Config\Environment;
-use OPGateway\Database\MedooConnectionFactory;
+use OPGateway\Database\PdoConnectionFactory;
 use OPGateway\Observability\DatabaseFailure;
 use OPGateway\Observability\DiagnosticLog;
 use PDO;
@@ -81,7 +81,7 @@ if (!in_array('mysql', PDO::getAvailableDrivers(), true)) {
     $pdoResult = ['status' => 'failed', 'reason' => 'driver_unavailable'];
 } else {
     try {
-        $pdo = MedooConnectionFactory::pdo($config);
+        $pdo = PdoConnectionFactory::open($config);
         $statement = $pdo->query('SELECT 1');
         if ($statement !== false && (int) $statement->fetchColumn() === 1) {
             $pdoResult = ['status' => 'connected'];
@@ -108,5 +108,5 @@ http_response_code($ok ? 200 : 503);
 DiagnosticLog::record($ok ? 'db_test.success' : 'db_test.connection_failed', $ok ? 200 : 503);
 echo json_encode([
     'request_id' => $requestId,
-    'medoo_pdo' => $pdoResult,
+    'pdo' => $pdoResult,
 ], JSON_THROW_ON_ERROR | JSON_UNESCAPED_SLASHES);

@@ -10,7 +10,7 @@
 Do not put a database password or other secrets in the repository, public
 Document Root, error logs or support messages.
 
-The single Medoo connection factory uses PDO internally. Existing transactional repositories reuse the same PDO handle. `/health` does not connect to
+The native PDO connection factory is the only database connection path. Every repository receives a PDO handle and executes prepared SQL. `/health` does not connect to
 the database; a healthy response alone does not prove database connectivity.
 
 ## First migration

@@ -2,41 +2,12 @@
 
 ## [Unreleased]
 
-- Replace the optional Doctrine DBAL path with one Medoo/PDO connection
-  provider, reused by the existing transactional PDO repositories.
-- Remove obsolete DBAL adapters and the secondary MySQLi diagnostic.
-- Retain a single IP-gated, disabled-by-default Medoo connection test.
-- Requires a matching locally generated Composer lock and vendor install
-  before production deployment; not an authentication-plugin fix.
-
-
-- Preserve valid numeric MySQL errors even when their codes are not in
-  the categorized allowlist; return MySQLi failure stage and code for
-  gated, read-only diagnostics without raw exception messages.
-
-
-- Fix database test 404 caused by cPanel deployment copying only
-  public/index.php: add a disabled-by-default guarded virtual route.
-- Emit private, allowlisted gate-denial reason so 404 can be diagnosed
-  without leaking client IPs or configuration values.
-- Remove need to publish temporary diagnostic PHP files in Document Root.
-
-
-- Add an opt-in, IP- and HTTPS-restricted temporary database-only
-  connection test for cPanel File Manager deployment (not auto-published).
-- Test private .env PDO and native MySQLi connectivity with SELECT 1;
-  never expose raw connection errors, credentials or request data.
-
-- Add a PHP 8.3 Doctrine DBAL factory with `pdo_mysql` and `mysqli`
-  drivers plus DBAL login, registration and administrator-authorization
-  adapters using strictly parameterized queries.
-- Add default-disabled, read-only native MySQLi connection probe gated
-  behind setup's existing HTTPS, IP and private configuration checks.
-- Log only a finite probe result alongside existing PDO connection
-  diagnostics, with no credentials or SQL exposed.
-- Keep all live PDO routes unchanged until Composer dependencies, lockfile
-  and cPanel vendor package can be verified.
-- No SQL migration, workflow or automatic production activation.
+- Standardize every runtime database query on native PDO with one
+  connection factory, shared across repositories and transactions.
+- Remove Doctrine DBAL adapters, Medoo prototype, and secondary
+  MySQLi connection probe.
+- Keep read-only, IP-gated PDO diagnostic route and numeric MySQL errors.
+- No schema changes, no new database dependency, no GitHub workflows.
 
 ## [0.1.0-alpha.2] - 2026-11-07
 

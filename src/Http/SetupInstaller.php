@@ -7,7 +7,7 @@ namespace OPGateway\Http;
 use OPGateway\Identity\AdministratorBootstrap;
 use OPGateway\Identity\BrowserSession;
 use OPGateway\Identity\PasswordHasher;
-use OPGateway\Database\MedooConnectionFactory;
+use OPGateway\Database\PdoConnectionFactory;
 use OPGateway\Database\Migrations\MigrationCatalog;
 use OPGateway\Database\Migrations\SchemaReadiness;
 use PDO;
@@ -64,7 +64,7 @@ final readonly class SetupInstaller
         }
 
         try {
-            $pdo = MedooConnectionFactory::pdo($this->config);
+            $pdo = PdoConnectionFactory::open($this->config);
         } catch (Throwable $exception) {
             DiagnosticLog::record('setup.database_connection_failed', 503, $exception, [
                 'operation' => 'connect',

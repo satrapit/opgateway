@@ -22,7 +22,9 @@ The Mac is used for Git operations only in the deployment procedure.
   import `database/sql/opgateway_full_schema.sql` **once** into an empty database.
   Never import into a non-empty or incorrect database.
 
-The temporary Medoo database test is disabled by default and requires HTTPS, GET, and an exact allowlisted IP. See [connection-test instructions](docs/db-connection-test.md).\n\nNo database operations run during Git deployment. Do not attempt to use the
+The temporary PDO database test is disabled by default and requires HTTPS, GET, and an exact allowlisted IP. See [connection-test instructions](docs/db-connection-test.md).
+
+No database operations run during Git deployment. Do not attempt to use the
 MigrationRunner directly on shared hosting without an approved protected UI.
 See [phpMyAdmin installation](docs/phpmyadmin-install.md).
 
@@ -34,10 +36,10 @@ See [phpMyAdmin installation](docs/phpmyadmin-install.md).
 - [Security](docs/security.md)
 - [API compatibility](docs/api-compatibility.md)
 - [cPanel deployment](docs/cpanel-deployment.md)
-- [Medoo connection architecture](docs/medoo-connection.md)
+- [Single PDO database architecture](docs/pdo-connection.md)
 - [Private diagnostic logs](docs/diagnostic-logging.md)
 - [Temporary database connection test](docs/db-connection-test.md)
 
 No secrets, GitHub Actions, or CI/CD workflows are included.
 
-**Dependency deployment:** Install Composer dependencies locally with `composer update --with-all-dependencies`, commit the generated `composer.lock` and matching `vendor` tree, and verify the package contains Medoo but no Doctrine before deploying PHP changes. Never deploy a mixed lock/vendor state.
+**Database access:** Native PDO only, using one factory and prepared statements in every repository. No external ORM or query builder is required.

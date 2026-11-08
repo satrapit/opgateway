@@ -4,7 +4,6 @@
   "type": "project",
   "license": "MIT",
   "require": {
-    "catfan/medoo": "^2.6",
     "ext-json": "*",
     "ext-pdo": "*",
     "ext-pdo_mysql": "*",
