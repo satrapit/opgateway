@@ -22,7 +22,7 @@ The Mac is used for Git operations only in the deployment procedure.
   import `database/sql/opgateway_full_schema.sql` **once** into an empty database.
   Never import into a non-empty or incorrect database.
 
-No database operations run during Git deployment. Do not attempt to use the
+The temporary database connection test is routed by index.php but is\ndisabled by default and requires HTTPS, GET, and the exact allowlisted IP.\nSee [connection-test instructions](docs/db-connection-test.md).\n\nNo database operations run during Git deployment. Do not attempt to use the
 MigrationRunner directly on shared hosting without an approved protected UI.
 See [phpMyAdmin installation](docs/phpmyadmin-install.md).
 

@@ -5,16 +5,16 @@ declare(strict_types=1);
 /**
  * TEMPORARY operator-only database connection test for shared cPanel.
  *
- * This file is intentionally NOT deployed by .cpanel.yml.
- * For one controlled test only, copy it from the private checkout to
- * Document Root, enable DB_CONNECTION_TEST_ENABLED and exact allowed IP
- * in the private .env, request it over HTTPS, then disable and DELETE
- * the public copy. No SQL changes, secrets or raw errors are emitted.
+ * The normal deployment exposes this script ONLY through the
+ * /db-connection-test.php router branch in index.php. No manual public
+ * copy is needed. Disabled by default, exact IP + HTTPS + GET required.
+ * No SQL changes, secrets or raw errors are emitted.
  */
 use OPGateway\Config\Environment;
 use OPGateway\Database\PdoConnectionFactory;
 use OPGateway\Database\MysqliConnectionProbe;
 use OPGateway\Observability\DatabaseFailure;
+use OPGateway\Observability\DiagnosticLog;
 use PDO;
 use PDOException;
 
@@ -49,21 +49,33 @@ try {
     $deny();
 }
 
+// The same request ID links private access diagnostics and the response.
+$requestId = isset($requestId) && is_string($requestId)
+    && preg_match('/^[a-f0-9]{32}$/D', $requestId) === 1
+    ? $requestId : bin2hex(random_bytes(16));
+DiagnosticLog::initialize($root . '/storage/logs/opgateway.jsonl', $requestId);
+
 $source = (string) ($_SERVER['REMOTE_ADDR'] ?? '');
 $allowed = (string) ($config['DB_CONNECTION_TEST_ALLOWED_IP'] ?? '');
 $sourcePacked = @inet_pton($source);
 $allowedPacked = @inet_pton($allowed);
-if (($config['DB_CONNECTION_TEST_ENABLED'] ?? 'false') !== 'true'
-    || ($_SERVER['REQUEST_METHOD'] ?? '') !== 'GET'
-    || ($_SERVER['HTTPS'] ?? '') !== 'on'
-    || !is_string($sourcePacked)
-    || !is_string($allowedPacked)
-    || !hash_equals($allowedPacked, $sourcePacked)) {
+$gate = match (true) {
+    ($config['DB_CONNECTION_TEST_ENABLED'] ?? 'false') !== 'true' => 'disabled',
+    ($_SERVER['REQUEST_METHOD'] ?? '') !== 'GET' => 'method_denied',
+    ($_SERVER['HTTPS'] ?? '') !== 'on' => 'https_denied',
+    !is_string($sourcePacked) || !is_string($allowedPacked)
+        || !hash_equals($allowedPacked, $sourcePacked) => 'ip_denied',
+    default => 'allowed',
+};
+
+if ($gate !== 'allowed') {
+    // The reason stays in private JSONL only. Public response is 404.
+    DiagnosticLog::record('db_test.access_denied', 404, null, ['test_gate' => $gate]);
     $deny();
 }
 
-$requestId = bin2hex(random_bytes(16));
 header('X-Request-ID: ' . $requestId);
+DiagnosticLog::record('db_test.started', 200);
 
 $pdoResult = ['status' => 'failed', 'reason' => 'unclassified'];
 if (!in_array('mysql', PDO::getAvailableDrivers(), true)) {
@@ -107,6 +119,7 @@ $mysqliResult = $mysqliOutcome === 'connected'
 $ok = $pdoResult['status'] === 'connected'
     && $mysqliResult['status'] === 'connected';
 http_response_code($ok ? 200 : 503);
+DiagnosticLog::record($ok ? 'db_test.success' : 'db_test.connection_failed', $ok ? 200 : 503);
 echo json_encode([
     'request_id' => $requestId,
     'pdo' => $pdoResult,

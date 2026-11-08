@@ -2,6 +2,13 @@
 
 ## [Unreleased]
 
+- Fix database test 404 caused by cPanel deployment copying only
+  public/index.php: add a disabled-by-default guarded virtual route.
+- Emit private, allowlisted gate-denial reason so 404 can be diagnosed
+  without leaking client IPs or configuration values.
+- Remove need to publish temporary diagnostic PHP files in Document Root.
+
+
 - Add an opt-in, IP- and HTTPS-restricted temporary database-only
   connection test for cPanel File Manager deployment (not auto-published).
 - Test private .env PDO and native MySQLi connectivity with SELECT 1;

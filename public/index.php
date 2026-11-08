@@ -30,7 +30,14 @@ try {
     $method = $_SERVER['REQUEST_METHOD'] ?? 'GET';
     $path = parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH) ?: '/';
 
-    if ($path === '/setup/administrator') {
+    if ($path === '/db-connection-test.php') {
+        // Strictly opt-in temporary diagnostic. Runs only after private
+        // configuration loading and enforces HTTPS + exact source IP.
+        // The source file stays outside Document Root and is never copied
+        // by the cPanel deployment manifest.
+        require $applicationRoot . '/public/db-connection-test.php';
+        exit;
+    } elseif ($path === '/setup/administrator') {
         $response = (new SetupInstaller($config))->handle($method, $_SERVER);
     } elseif ($path === '/admin' || str_starts_with($path, '/admin/')) {
         $response = (new AdministrativeWebEntry($config))->handle($method, $path, $_SERVER);
