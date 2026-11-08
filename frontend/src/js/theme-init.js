@@ -1,7 +1,7 @@
 /* Same-origin blocking head script: apply theme before CSS paints. */
 (function () {
   'use strict';
-  const key = 'opgateway.theme';
+  const key = 'opgateway-theme';
   const allowed = ['system', 'light', 'dark'];
   let preference = 'system';
 
