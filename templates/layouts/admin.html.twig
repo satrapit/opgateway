@@ -29,15 +29,15 @@
   <div class="min-w-0 flex-1">
     <header class="sticky top-0 z-20 flex min-h-18 items-center gap-3 border-b border-gray-200 bg-white px-4 shadow-theme-xs sm:px-6 xl:px-8 dark:border-gray-800 dark:bg-gray-900">
       <button type="button" data-sidebar-toggle aria-controls="admin-sidebar" aria-expanded="false" aria-label="Open navigation" class="flex size-11 shrink-0 items-center justify-center rounded-lg border border-gray-200 text-xl text-gray-700 xl:hidden dark:border-gray-700 dark:text-gray-200">☰</button>
-      <div class="min-w-0 flex-1">
+      <div class="hidden min-w-0 flex-1 sm:block">
         <p class="truncate text-sm font-medium text-gray-900 dark:text-white">Administration</p>
         <p class="truncate text-xs text-gray-500 dark:text-gray-400">OPGateway / Overview</p>
       </div>
       <label for="theme-preference" class="sr-only">Theme preference</label>
-      <select id="theme-preference" data-theme-preference class="min-h-11 rounded-lg border border-gray-200 bg-white px-2 text-sm text-gray-700 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200" aria-label="Theme preference">
-        <option value="system">System theme</option>
-        <option value="light">Light theme</option>
-        <option value="dark">Dark theme</option>
+      <select id="theme-preference" data-theme-preference class="min-h-11 max-w-24 rounded-lg border border-gray-200 bg-white px-2 text-sm text-gray-700 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200" aria-label="Theme preference">
+        <option value="system">System</option>
+        <option value="light">Light</option>
+        <option value="dark">Dark</option>
       </select>
       <form method="post" action="/admin/logout" class="shrink-0">
         <input type="hidden" name="_csrf" value="{{ csrf_token }}">
