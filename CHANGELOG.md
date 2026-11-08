@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+- Fix the browser flow regression test: use a real PHP session in an
+  isolated PHPUnit process instead of extending the final BrowserSession.
+
+
 - Fix live administrator sign-in/logout: remove brittle Origin comparison
   while retaining session-bound CSRF, strict cookie policy, HTTPS, IP allowlist,
   MySQL-backed throttling and role authorization.

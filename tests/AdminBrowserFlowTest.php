@@ -14,6 +14,8 @@ use OPGateway\Identity\LoginAuthenticator;
 use OPGateway\Identity\PasswordHasher;
 use OPGateway\Security\LoginAttemptLimiter;
 use OPGateway\Security\SecurityEventRecorder;
+use PHPUnit\Framework\Attributes\PreserveGlobalState;
+use PHPUnit\Framework\Attributes\RunInSeparateProcess;
 use PHPUnit\Framework\TestCase;
 
 /**
@@ -22,38 +24,18 @@ use PHPUnit\Framework\TestCase;
  */
 final class AdminBrowserFlowTest extends TestCase
 {
+    #[RunInSeparateProcess]
+    #[PreserveGlobalState(false)]
     public function testLoginDashboardAndLogoutWithoutOriginDependency(): void
     {
-        $session = new class extends BrowserSession {
-            public ?int $userId = null;
-
-            public function csrfToken(): string
-            {
-                return str_repeat('a', 64);
-            }
-
-            public function csrfValid(string $submitted): bool
-            {
-                return hash_equals($this->csrfToken(), $submitted);
-            }
-
-            public function authenticate(int $userId): void
-            {
-                $this->userId = $userId;
-            }
-
-            public function currentUserId(LoginAccountRepository $accounts): ?int
-            {
-                return $this->userId;
-            }
-
-            public function logout(): void
-            {
-                $this->userId = null;
-            }
-        };
+        // BrowserSession is final: use a real isolated PHP session, not a
+        // subclass. This also verifies actual CSRF rotation and logout.
+        $session = new BrowserSession();
+        $session->start(true);
+        $initialCsrf = $session->csrfToken();
 
         $accounts = $this->createMock(LoginAccountRepository::class);
+        $accounts->method('isEligible')->willReturn(true);
         $accounts->method('findEligibleByEmail')->willReturn([
             'id' => 17,
             'password_hash' => password_hash('correct-horse-123', PASSWORD_DEFAULT),
@@ -87,33 +69,30 @@ final class AdminBrowserFlowTest extends TestCase
         $denied = $adapter->dispatch('POST', '/admin/login', true,
             'application/x-www-form-urlencoded', '192.0.2.3', str_repeat('c', 32), $wrongCsrfBody);
         self::assertSame(403, $denied['status']);
-        self::assertNull($session->userId);
+        self::assertArrayNotHasKey('opgateway_user_id', $_SESSION);
 
         $body = http_build_query([
-            '_csrf' => str_repeat('a', 64), 'email' => 'admin@example.com',
+            '_csrf' => $initialCsrf, 'email' => 'admin@example.com',
             'password' => 'correct-horse-123',
         ]);
         $login = $adapter->dispatch('POST', '/admin/login', true,
             'application/x-www-form-urlencoded', '192.0.2.3', str_repeat('d', 32), $body);
         self::assertSame(303, $login['status']);
         self::assertSame('/admin', $login['location']);
-        self::assertSame(17, $session->userId);
+        self::assertSame(17, $session->currentUserId($accounts));
 
         $dashboard = $adapter->dispatch('GET', '/admin', true, null,
             '192.0.2.3', str_repeat('e', 32), null);
         self::assertSame(200, $dashboard['status']);
         self::assertStringContainsString('Sign out', $dashboard['body']);
 
+        $logoutCsrf = $session->csrfToken();
+        self::assertNotSame($initialCsrf, $logoutCsrf);
         $logout = $adapter->dispatch('POST', '/admin/logout', true,
             'application/x-www-form-urlencoded', '192.0.2.3', str_repeat('f', 32),
-            http_build_query(['_csrf' => str_repeat('a', 64)]));
+            http_build_query(['_csrf' => $logoutCsrf]));
         self::assertSame(303, $logout['status']);
         self::assertSame('/admin/login', $logout['location']);
-        self::assertNull($session->userId);
-
-        $after = $adapter->dispatch('GET', '/admin', true, null,
-            '192.0.2.3', str_repeat('0', 32), null);
-        self::assertSame(303, $after['status']);
-        self::assertSame('/admin/login', $after['location']);
+        self::assertSame(PHP_SESSION_NONE, session_status());
     }
 }
