@@ -42,8 +42,10 @@ HTML;
     /**
      * @param array{
      *   users:list<array{id:int,email:string}>,
-     *   clients:list<array{id:int,label:string,owner_email:string}>,
-     *   ips:list<array{id:int,client_label:string,address:string}>
+     *   owners?:list<array{id:int,email:string}>,
+     *   clients:list<array{id:int,label:string,status?:string,owner_email:string}>,
+     *   ips:list<array{id:int,client_label:string,address:string}>,
+     *   approved_ips?:list<array{id:int,client_label:string,address:string}>
      * }|null $pending
      */
     public static function dashboard(
@@ -103,10 +105,30 @@ HTML;
 
         $clients = [];
         foreach ($pending['clients'] as $item) {
+            $status = $item['status'] ?? 'disabled';
             $clients[] = '<li>#' . (int) $item['id'] . ' — '
                 . self::escape($item['label'])
-                . ' (owner: ' . self::escape($item['owner_email']) . ')'
-                . ($actionsEnabled ? self::reviewForm($token, 'activate_client', (int) $item['id'], 'Activate client') : '')
+                . ' (owner: ' . self::escape($item['owner_email']) . '; '
+                . self::escape($status) . ')'
+                . ($actionsEnabled && $status === 'disabled'
+                    ? self::reviewForm($token, 'activate_client', (int) $item['id'], 'Activate client')
+                    : '')
+                . ($actionsEnabled && $status === 'active'
+                    ? self::reviewForm($token, 'disable_client', (int) $item['id'], 'Disable client')
+                    : '')
+                . ($actionsEnabled
+                    ? self::provisionForm($token, 'request_ip', (int) $item['id'], 'IP address', 'Request IP', 45)
+                    : '')
+                . '</li>';
+        }
+
+        $owners = [];
+        foreach ($pending['owners'] ?? [] as $item) {
+            $owners[] = '<li>#' . (int) $item['id'] . ' — '
+                . self::escape($item['email'])
+                . ($actionsEnabled
+                    ? self::provisionForm($token, 'create_client', (int) $item['id'], 'Client label', 'Create client', 128)
+                    : '')
                 . '</li>';
         }
 
@@ -119,9 +141,26 @@ HTML;
                 . '</li>';
         }
 
-        return self::listSection('Verified users awaiting approval', $users)
-            . self::listSection('Inactive clients eligible for review', $clients)
+        $activeIps = [];
+        foreach ($pending['approved_ips'] ?? [] as $item) {
+            $activeIps[] = '<li>#' . (int) $item['id'] . ' — '
+                . self::escape($item['address']) . ' (client: '
+                . self::escape($item['client_label']) . ')'
+                . ($actionsEnabled
+                    ? self::reviewForm($token, 'revoke_ip', (int) $item['id'], 'Revoke IP')
+                    : '')
+                . '</li>';
+        }
+
+        $sections = self::listSection('Verified users awaiting approval', $users)
+            . self::listSection('Approved account owners', $owners)
+            . self::listSection('API clients and IP provisioning', $clients)
             . self::listSection('Pending IP allowlist requests', $ips);
+        if (array_key_exists('approved_ips', $pending)) {
+            $sections .= self::listSection('Approved IP allowlist entries', $activeIps);
+        }
+        return $sections;
+
     }
 
     /** Form actions are selected only from hardcoded allowlisted values. */
@@ -132,6 +171,30 @@ HTML;
             . '<input type="hidden" name="action" value="' . self::escape($action) . '">'
             . '<input type="hidden" name="target_id" value="' . $targetId . '">'
             . '<button type="submit">' . self::escape($label) . '</button></form>';
+    }
+
+    /**
+     * The input value is always supplied by the user and strictly validated
+     * again by the POST adapter and SQL-backed domain service.
+     */
+    private static function provisionForm(
+        string $token,
+        string $action,
+        int $targetId,
+        string $fieldLabel,
+        string $buttonLabel,
+        int $maxLength,
+    ): string {
+        $fieldId = 'provision-' . self::escape($action) . '-' . $targetId;
+        return '<form class="review-form" method="post" action="/admin/provision">'
+            . '<input type="hidden" name="_csrf" value="' . $token . '">'
+            . '<input type="hidden" name="action" value="' . self::escape($action) . '">'
+            . '<input type="hidden" name="target_id" value="' . $targetId . '">'
+            . '<label for="' . $fieldId . '">' . self::escape($fieldLabel) . '</label>'
+            . '<input id="' . $fieldId . '" name="value" type="text" maxlength="'
+            . $maxLength . '" required>'
+            . '<button type="submit">' . self::escape($buttonLabel) . '</button>'
+            . '</form>';
     }
 
     /** @param list<string> $escapedItems */
@@ -178,6 +241,8 @@ HTML;
     section h2 { font-size: 1.1rem; }
     .review-form { display: inline-block; margin-left: .75rem; }
     .review-form button { margin: .4rem 0; padding: .3rem .6rem; }
+    .review-form input:not([type="hidden"]) { min-width: 11rem; width: auto; }
+    .review-form label { font-size: .8rem; margin: .25rem 0; }
     .hint { font-size: .85rem; color: #596579; }
     :focus-visible { outline: 3px solid #125ab5; outline-offset: 2px; }
   </style>

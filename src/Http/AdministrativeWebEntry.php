@@ -8,6 +8,7 @@ use OPGateway\Database\Migrations\MigrationCatalog;
 use OPGateway\Database\Migrations\SchemaReadiness;
 use OPGateway\Database\PdoConnectionFactory;
 use OPGateway\Clients\ClientManagementService;
+use OPGateway\Clients\AdminClientProvisioningService;
 use OPGateway\Identity\AccountApprovalService;
 use OPGateway\Identity\BrowserSession;
 use OPGateway\Identity\GuardedLoginService;
@@ -118,6 +119,7 @@ final readonly class AdministrativeWebEntry
                 ),
                 new PdoAdminActionLimiter($pdo, hex2bin($key)),
                 new PdoSecurityEventRecorder($pdo),
+                new AdminClientProvisioningService($pdo),
             )
             : null;
 

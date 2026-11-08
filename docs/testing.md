@@ -11,7 +11,7 @@ php scripts/smoke.php
 composer validate --strict --no-check-publish
 ```
 
-The latest reported baseline on macOS was **76 PHPUnit tests / 239 assertions (without notices)** and **10/10 smoke checks**. This baseline applies to the preceding commit and is not a substitute for retesting after changes.
+The last user-verified baseline before administrator client/IP onboarding was **93 PHPUnit tests / 343 assertions** and **10/10 smoke checks**. A new baseline must be recorded only after running the expanded suite; do not infer test success from code review.
 
 Smoke tests confirm `/health`, deny-by-default `/v1`, IP helper behavior and safe metadata; they **do not** prove live authentication, schema compatibility, ownership enforcement or upstream connectivity. Test administrator login/logout over HTTPS in both local and hosting environments separately.
 

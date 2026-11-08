@@ -30,9 +30,11 @@ final class AdminOverviewRepositoryTest extends TestCase
     {
         $data = [
             [['id' => 2, 'email' => 'review@example.com']],
-            [['id' => 3, 'label' => 'Client A', 'owner_email' => 'owner@example.com']],
+            [['id' => 3, 'label' => 'Client A', 'status' => 'disabled', 'owner_email' => 'owner@example.com']],
             [['id' => 4, 'client_label' => 'Client A',
                 'ip_address' => inet_pton('2001:db8::25')]],
+            [['id' => 9, 'email' => 'owner@example.com']],
+            [['id' => 10, 'client_label' => 'Client A', 'ip_address' => inet_pton('192.0.2.7')]],
         ];
         $statements = [];
         foreach ($data as $rows) {
@@ -44,7 +46,7 @@ final class AdminOverviewRepositoryTest extends TestCase
         $pdo = $this->createMock(PDO::class);
         $queries = [];
         $index = 0;
-        $pdo->expects(self::exactly(3))
+        $pdo->expects(self::exactly(5))
             ->method('query')
             ->willReturnCallback(
                 static function (string $sql) use (&$queries, &$index, $statements): PDOStatement {
@@ -56,10 +58,13 @@ final class AdminOverviewRepositoryTest extends TestCase
         $overview = (new AdminOverviewRepository($pdo))->pending();
 
         self::assertSame([['id' => 2, 'email' => 'review@example.com']], $overview['users']);
-        self::assertSame([['id' => 3, 'label' => 'Client A',
+        self::assertSame([['id' => 3, 'label' => 'Client A', 'status' => 'disabled',
             'owner_email' => 'owner@example.com']], $overview['clients']);
+        self::assertSame([['id' => 9, 'email' => 'owner@example.com']], $overview['owners']);
         self::assertSame([['id' => 4, 'client_label' => 'Client A',
             'address' => '2001:db8::25']], $overview['ips']);
+        self::assertSame([['id' => 10, 'client_label' => 'Client A',
+            'address' => '192.0.2.7']], $overview['approved_ips']);
 
         foreach ($queries as $sql) {
             self::assertStringStartsWith('SELECT ', trim($sql));

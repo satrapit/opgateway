@@ -23,8 +23,10 @@ final readonly class AdminOverviewRepository
     /**
      * @return array{
      *   users:list<array{id:int,email:string}>,
-     *   clients:list<array{id:int,label:string,owner_email:string}>,
-     *   ips:list<array{id:int,client_label:string,address:string}>
+     *   owners:list<array{id:int,email:string}>,
+     *   clients:list<array{id:int,label:string,status:string,owner_email:string}>,
+     *   ips:list<array{id:int,client_label:string,address:string}>,
+     *   approved_ips:list<array{id:int,client_label:string,address:string}>
      * }
      */
     public function pending(): array
@@ -38,10 +40,10 @@ LIMIT 50
 SQL);
 
         $clients = $this->rows(<<<'SQL'
-SELECT c.id, c.label, owner.email AS owner_email
+SELECT c.id, c.label, c.status, owner.email AS owner_email
 FROM api_clients AS c
 JOIN users AS owner ON owner.id = c.owner_user_id
-WHERE c.status = 'disabled'
+WHERE c.status IN ('active', 'disabled')
   AND owner.status = 'active'
   AND owner.email_verified_at IS NOT NULL
   AND owner.approved_at IS NOT NULL
@@ -64,6 +66,27 @@ ORDER BY ip.id ASC
 LIMIT 50
 SQL);
 
+        $owners = $this->rows(<<<'SQL'
+SELECT id, email
+FROM users
+WHERE status = 'active'
+  AND email_verified_at IS NOT NULL
+  AND approved_at IS NOT NULL
+ORDER BY id ASC
+LIMIT 50
+SQL);
+
+        $approvedIps = $this->rows(<<<'SQL'
+SELECT ip.id, ip.ip_address, c.label AS client_label
+FROM client_ip_whitelists AS ip
+JOIN api_clients AS c ON c.id = ip.api_client_id
+WHERE ip.enabled = 1
+  AND ip.approved_at IS NOT NULL
+  AND c.status IN ('active', 'disabled')
+ORDER BY ip.id ASC
+LIMIT 50
+SQL);
+
         $pendingIps = [];
         foreach ($ips as $row) {
             $address = @inet_ntop((string) $row['ip_address']);
@@ -71,6 +94,19 @@ SQL);
                 throw new RuntimeException('Invalid stored IP address.');
             }
             $pendingIps[] = [
+                'id' => (int) $row['id'],
+                'client_label' => (string) $row['client_label'],
+                'address' => $address,
+            ];
+        }
+
+        $activeIps = [];
+        foreach ($approvedIps as $row) {
+            $address = @inet_ntop((string) $row['ip_address']);
+            if ($address === false) {
+                throw new RuntimeException('Invalid stored IP address.');
+            }
+            $activeIps[] = [
                 'id' => (int) $row['id'],
                 'client_label' => (string) $row['client_label'],
                 'address' => $address,
@@ -85,15 +121,24 @@ SQL);
                 ],
                 $users,
             ),
+            'owners' => array_map(
+                static fn (array $row): array => [
+                    'id' => (int) $row['id'],
+                    'email' => (string) $row['email'],
+                ],
+                $owners,
+            ),
             'clients' => array_map(
                 static fn (array $row): array => [
                     'id' => (int) $row['id'],
                     'label' => (string) $row['label'],
+                    'status' => (string) $row['status'],
                     'owner_email' => (string) $row['owner_email'],
                 ],
                 $clients,
             ),
             'ips' => $pendingIps,
+            'approved_ips' => $activeIps,
         ];
     }
 

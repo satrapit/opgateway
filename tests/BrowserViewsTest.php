@@ -62,7 +62,7 @@ final class BrowserViewsTest extends TestCase
         $html = BrowserViews::dashboard(self::TOKEN, 'Administrator', [
             'users' => [], 'clients' => [], 'ips' => [],
         ]);
-        self::assertSame(3, substr_count($html, 'None awaiting review.'));
+        self::assertSame(4, substr_count($html, 'None awaiting review.'));
     }
 
     public function testReviewFormsAreShownOnlyWhenActionsEnabled(): void
@@ -86,6 +86,26 @@ final class BrowserViewsTest extends TestCase
         self::assertStringContainsString('name="action" value="approve_ip"', $enabled);
         self::assertStringContainsString('name="_csrf" value="' . self::TOKEN . '"', $enabled);
         self::assertStringContainsString('name="target_id" value="4"', $enabled);
+    }
+
+    public function testApprovedIpCanBeRevokedAndActiveClientCanBeDisabled(): void
+    {
+        $pending = [
+            'users' => [], 'owners' => [],
+            'clients' => [['id' => 7, 'label' => 'Active', 'status' => 'active',
+                'owner_email' => 'owner@example.com']],
+            'ips' => [],
+            'approved_ips' => [['id' => 10, 'client_label' => 'Active',
+                'address' => '2001:db8::7']],
+        ];
+        $enabled = BrowserViews::dashboard(self::TOKEN, 'Admin', $pending, true);
+        self::assertStringContainsString('name="action" value="disable_client"', $enabled);
+        self::assertStringContainsString('name="action" value="revoke_ip"', $enabled);
+        self::assertStringContainsString('2001:db8::7', $enabled);
+        self::assertStringContainsString('Approved IP allowlist entries', $enabled);
+        $readOnly = BrowserViews::dashboard(self::TOKEN, 'Admin', $pending);
+        self::assertStringNotContainsString('name="action" value="disable_client"', $readOnly);
+        self::assertStringNotContainsString('name="action" value="revoke_ip"', $readOnly);
     }
 
 }

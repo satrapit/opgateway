@@ -26,6 +26,14 @@ final readonly class PdoSecurityEventRecorder implements SecurityEventRecorder
         'admin_activate_client_denied',
         'admin_approve_ip_allowed',
         'admin_approve_ip_denied',
+        'admin_create_client_allowed',
+        'admin_create_client_denied',
+        'admin_request_ip_allowed',
+        'admin_request_ip_denied',
+        'admin_disable_client_allowed',
+        'admin_disable_client_denied',
+        'admin_revoke_ip_allowed',
+        'admin_revoke_ip_denied',
     ];
 
     public function __construct(private PDO $pdo)

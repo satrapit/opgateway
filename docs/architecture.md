@@ -16,14 +16,14 @@ OPGateway is a PHP 8.3 modular monolith: `public/index.php` is the only deployed
 
 - Registration, verification, account approval and user repositories.
 - API client creation/activation, IP request/approval/revocation and credential issuance/authentication.
-- The older JSON `AdminController` remains internal and unrouted. Three explicitly validated `AdminActions` operations can be routed through session-protected HTML forms only if the independent mutation feature flag is enabled.
+- The older JSON `AdminController` remains internal and unrouted. Seven allowlisted administrator operations are reachable through two strictly validated, session-protected HTML form routes only if the independent mutation feature flag is enabled: approve user/client/IP, create disabled client, request a disabled IP, disable client and revoke IP.
 - The migration runner is for controlled offline use; cPanel deployments never run migrations.
 
 The fixed migration schema contains `users`, `roles`, `user_roles`, `api_clients`, `api_credentials`, `client_ip_whitelists`, `email_verification_tokens`, `login_rate_limits`, `security_events` and `schema_migrations`.
 
 ## Next phases
 
-1. Validate the new gated administrator mutations end-to-end in local MySQL and the real cPanel HTTP environment before enabling production actions.
+1. Validate the gated administrator approval and provisioning workflow end-to-end in local MySQL and the real cPanel HTTP environment before enabling production actions.
 2. Complete API client provisioning, bearer authentication, strict per-client source IP checks, scope/ownership enforcement, rate limits and request-level sanitized audit.
 3. Pin and verify the provider API specification; implement restricted outbound transport, secure token management, safe retries and route-by-route compatibility.
 4. Only after end-to-end verification, selectively enable explicitly approved `/v1` operations.

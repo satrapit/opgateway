@@ -119,6 +119,43 @@ final readonly class PrivateBrowserAdapter
                 : self::json($result['status'], ['error' => $result['code']]);
         }
 
+        if ($path === '/admin/provision' && $method === 'POST') {
+            // Reuse the separate, default-off administrator mutation gate.
+            if ($this->review === null) {
+                return self::error(404);
+            }
+            $administratorId = $this->session->currentUserId($this->accounts);
+            if ($administratorId === null) {
+                return self::error(401);
+            }
+            if (!$this->administrators->isAdministrator($administratorId)) {
+                return self::error(403);
+            }
+            if ($contentType === null
+                || preg_match('/^application\/x-www-form-urlencoded(?:\s*;\s*charset=utf-8)?$/iD', $contentType) !== 1) {
+                return self::error(415);
+            }
+            $form = $body === null ? null
+                : StrictForm::decode($body, ['_csrf', 'action', 'target_id', 'value']);
+            if ($form === null
+                || preg_match('/^[1-9][0-9]{0,18}$/D', $form['target_id']) !== 1
+                || filter_var($form['target_id'], FILTER_VALIDATE_INT, [
+                    'options' => ['min_range' => 1],
+                ]) === false) {
+                return self::error(400);
+            }
+            if (!$this->session->csrfValid($form['_csrf'])) {
+                return self::error(403);
+            }
+            $result = $this->review->provision(
+                $administratorId, $sourceIp, $requestId,
+                $form['action'], (int) $form['target_id'], $form['value'],
+            );
+            return $result['status'] === 200
+                ? self::redirect('/admin')
+                : self::json($result['status'], ['error' => $result['code']]);
+        }
+
         if ($path === '/admin/logout' && $method === 'POST') {
             $form = $body === null ? null : StrictForm::decode($body, ['_csrf']);
             if ($form === null) {
