@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+- Introduce an independently default-off Twig/TailAdmin Free admin UI view migration with private Twig templates, mobile-first dashboard, real bounded overview, system/light/dark theme and CSP-safe local build sources; preserve the existing admin HTML fallback and all authorization boundaries. The UI rollout remains blocked until reproducible dependency locks, built assets and local/browser/security tests are completed.
+
 - Add default-off approved-owner account portal with secure password login, owner-scoped nonsecret client/key/IP listings, and separate credential operations flag.
 - Implement one-time API key issuance with password reconfirmation, CSRF rotation, owner-scoped SQL, HMAC throttling and transactionally recorded metadata-only audit; support owner key revocation.
 - Add a guarded local-only test account password reset command and focused security regression tests; keep `/v1` provider routes unavailable.
