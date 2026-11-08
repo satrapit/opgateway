@@ -1,0 +1,62 @@
+{% import 'components/admin/forms.html.twig' as forms %}
+<section id="{{ section_id }}" class="scroll-mt-24 overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-theme-xs dark:border-gray-800 dark:bg-gray-900" aria-labelledby="{{ section_id }}-heading">
+  <div class="flex flex-wrap items-center justify-between gap-2 border-b border-gray-100 px-5 py-4 sm:px-6 dark:border-gray-800">
+    <h2 id="{{ section_id }}-heading" class="text-base font-semibold text-gray-900 dark:text-white">{{ heading }}</h2>
+    <span class="rounded-full bg-gray-100 px-3 py-1 text-xs font-medium text-gray-600 dark:bg-gray-800 dark:text-gray-300">{{ items|length }} shown</span>
+  </div>
+  {% if items is empty %}
+    <div class="px-5 py-10 text-center sm:px-6">
+      <p class="font-medium text-gray-700 dark:text-gray-200">None awaiting review.</p>
+      <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">This list is currently empty.</p>
+    </div>
+  {% else %}
+    <ul class="divide-y divide-gray-100 dark:divide-gray-800">
+      {% for item in items %}
+        <li class="px-5 py-4 sm:px-6">
+          <div class="flex flex-wrap items-start justify-between gap-3">
+            <div class="min-w-0 flex-1">
+              <p class="break-words text-sm font-semibold text-gray-900 dark:text-gray-100">
+                {% if kind == 'users' or kind == 'owners' %}{{ item.email }}
+                {% elseif kind == 'clients' %}{{ item.label }}
+                {% else %}{{ item.address }}{% endif %}
+              </p>
+              <p class="mt-1 break-words text-xs text-gray-500 dark:text-gray-400">
+                #{{ item.id }}
+                {% if kind == 'clients' %} · Owner: {{ item.owner_email }}
+                {% elseif kind == 'ips' or kind == 'approved_ips' %} · Client: {{ item.client_label }}
+                {% endif %}
+              </p>
+              {% if kind == 'clients' %}
+                {% set status = item.status|default('disabled') %}
+                <span class="mt-2 inline-flex rounded-full px-2.5 py-1 text-xs font-medium {{ status == 'active' ? 'bg-green-50 text-green-700 dark:bg-green-950 dark:text-green-300' : 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300' }}">{{ status }}</span>
+              {% endif %}
+              {% if actions_enabled and kind == 'owners' %}
+                {{ forms.provision(csrf_token, 'create_client', item.id, 'Client label', 'Create client', 128) }}
+              {% elseif actions_enabled and kind == 'clients' %}
+                {{ forms.provision(csrf_token, 'request_ip', item.id, 'IP address', 'Request IP', 45) }}
+              {% endif %}
+            </div>
+            {% if actions_enabled %}
+              <div class="flex shrink-0 flex-wrap gap-2">
+                {% if kind == 'users' %}
+                  {{ forms.review(csrf_token, 'approve_user', item.id, 'Approve user') }}
+                {% elseif kind == 'clients' %}
+                  {% if item.status|default('disabled') == 'disabled' %}
+                    {{ forms.review(csrf_token, 'activate_client', item.id, 'Activate client') }}
+                  {% elseif item.status == 'active' %}
+                    {{ forms.review(csrf_token, 'disable_client', item.id, 'Disable client', true) }}
+                  {% endif %}
+                {% elseif kind == 'ips' %}
+                  {{ forms.review(csrf_token, 'approve_ip', item.id, 'Approve IP') }}
+                {% elseif kind == 'approved_ips' %}
+                  {{ forms.review(csrf_token, 'revoke_ip', item.id, 'Revoke IP', true) }}
+                {% endif %}
+              </div>
+            {% endif %}
+          </div>
+        </li>
+      {% endfor %}
+    </ul>
+  {% endif %}
+  <p class="border-t border-gray-100 px-5 py-3 text-xs text-gray-500 sm:px-6 dark:border-gray-800 dark:text-gray-400">Showing up to 50 records. This is not an all-time total.</p>
+</section>
