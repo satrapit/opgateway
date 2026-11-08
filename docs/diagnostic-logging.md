@@ -21,7 +21,7 @@ contains only fixed enum values. The corresponding response header is
 For example (synthetic, no real server information):
 
 ```json
-{"timestamp_utc":"2026-11-07T19:00:00Z","request_id":"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa","event":"setup.database_connection_failed","http_status":503,"error_category":"database","database":{"reason":"authentication_rejected","mysql_errno":1045,"sqlstate_class":"28"},"context":{"operation":"connect"}}
+{"timestamp_utc":"2026-11-07T19:00:00Z","request_id":"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa","event":"admin.database_connection_failed","http_status":503,"error_category":"database","database":{"reason":"authentication_rejected","mysql_errno":1045,"sqlstate_class":"28"},"context":{"operation":"connect"}}
 ```
 
 Never log the raw PDO message, SQL, credentials, connection DSN, IP,
@@ -30,19 +30,10 @@ environment values. No raw user-controlled context is accepted.
 
 ## Error stages
 
-- `setup.configuration_invalid`: missing or invalid setup flags/keys.
-- `setup.database_driver_unavailable`: PDO MySQL driver missing.
-- `setup.database_connection_failed`: PDO connection/config exception.
-- `setup.schema_inspection_failed`: ledger query or checksum verification.
-- `setup.schema_incomplete`: a required migration is not marked completed.
-- `setup.identity_state_query_failed`: read-only users/roles count failed.
-- `setup.already_initialized`: some user or role already exists.
-- `setup.session_start_failed`: unable to establish secure PHP session.
-- `setup.content_type_denied`: invalid form POST Content-Type; no headers recorded.
-- `setup.provisioning_failed`: first-admin token/registration or database operation failed; no secret details recorded.
-- `setup.administrator_created`: first administrator successfully created.
-- `admin.database_connection_failed` and `admin.schema_inspection_failed`:
-  same boundary for separately gated private admin UI.
+- `admin.database_connection_failed`: PDO connection failed for the
+  separately gated admin UI.
+- `admin.schema_inspection_failed` or `admin.schema_incomplete`: the
+  migration ledger could not be read or did not match expected revisions.
 - `http.unhandled_exception`: last-resort handler.
 
 ## Interpreting database.reason
@@ -74,14 +65,9 @@ does not need a publicly accessible troubleshooting endpoint.
 
 ## Operator procedure
 
-1. Git pull on Mac, then cPanel Git Version Control Update / Deploy.
-2. Confirm private log directory exists and is writable.
-3. Keep the setup switch OFF until a controlled, HTTPS + IP-restricted
-   investigation. Request the setup GET page only once.
-4. Read the newest entry, correlate it via X-Request-ID, and report only
-   event, error_category, database reason / errno / class if present.
-5. If the cause is found, turn setup OFF while fixing it.
+1. Deploy a reviewed commit and verify private log storage is writable.
+2. Keep `ADMIN_UI_ENABLED=false` until a verified manual admin user exists.
+3. When testing login, correlate the response `X-Request-ID` with the
+   private JSONL event. Never share secrets, raw headers or form payloads.
 
-No database migration is required for this logging improvement. Historical
-log entries cannot be retroactively expanded, so make one new controlled
-request after updating the code.
+No public database diagnostic or initial administrator setup endpoint exists.

@@ -2,6 +2,12 @@
 
 ## [Unreleased]
 
+- Remove the entire one-time web administrator setup mechanism, route,
+  setup token, attempts limiter, and their tests and SETUP_* example flags.
+- Document direct phpMyAdmin administrator provisioning with locally generated
+  PHP password hash. Preserve admin sign-in and all existing database schema.
+
+
 - Simplify the one-time administrator setup: remove only its unreliable
   browser Origin restriction while retaining HTTPS, exact IP, session
   CSRF, the 256-bit setup token, rate limits and the empty-database guard.

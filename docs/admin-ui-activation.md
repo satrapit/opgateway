@@ -37,16 +37,14 @@ hex characters. Generate this using a trusted password manager's
 cryptographic generator; do not use a human-made phrase. Store only in
 the private .env; never send this key over chat or add it to Git.
 
-Do not reuse `APP_KEY`, the bootstrap setup token or its digest for
-login throttling.
+Do not reuse `APP_KEY` or any other application secret for login throttling.
 
 ## Deliberate enablement checklist
 
 1. Confirm that all three migration rows are `completed`, and that
    the database schema is unchanged from the reviewed migrations.
-2. Provision the first administrator only after verifying the
-   installer TLS/IP controls; disable and remove the installer secret
-   immediately afterward.
+2. Provision the first administrator using the reviewed manual SQL in
+   `docs/manual-administrator-sql.md` and verify its database role.
 3. Confirm PHP provides accurate `HTTPS=on` and source
    `REMOTE_ADDR` at the shared hosting boundary; never bypass this by
    trusting arbitrary client-provided forwarding headers.

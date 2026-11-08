@@ -13,7 +13,9 @@ The first migration definitions and the `MigrationRunner` exist in the private s
 
 ## Remaining prerequisites
 
-Before using the runner, implement and separately verify a one-time, authenticated operator-only web installer with HTTPS, CSRF validation, setup credential validation, secure session management, throttling, installation disable switch, explicit preflight and confirmation. Do not invoke `MigrationRunner::run` from user routes until those controls and MySQL integration tests are complete.
+Never expose the MigrationRunner as a web route. Migrations are executed
+manually through phpMyAdmin after backup and review; the runner remains
+an internal development tool. Do not invoke it from user-facing routes.
 
 Test with an empty disposable local MySQL/MariaDB database. Verify repeated no-op execution, lock contention, interrupted DDL detection, catalog modifications, and backup/restore procedures before production. MySQL DDL implicitly commits: migration markers cannot guarantee atomic rollback.
 

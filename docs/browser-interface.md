@@ -29,8 +29,8 @@ standalone public PHP scripts.
    content types and unsupported methods.
 3. Add production-ready, migration-ledger-backed storage for login attempts
    and sanitized audit events; the existing initial database remains intact.
-4. Complete safe operator-only first-admin provisioning and ensure public
-   bootstrap is impossible afterward.
+4. Create the first administrator manually in phpMyAdmin and confirm
+   the public setup route does not exist.
 5. Add same-origin response protection headers (strict CSP, no-store,
    referrer policy, frame denial), review inline CSS CSP compatibility.
 6. Test login, session fixation, CSRF, database failure, brute force,

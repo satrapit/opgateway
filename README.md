@@ -29,10 +29,16 @@ No database operations run during Git deployment. Do not attempt to use the
 MigrationRunner directly on shared hosting without an approved protected UI.
 See [phpMyAdmin installation](docs/phpmyadmin-install.md).
 
+Initial administrator: create one active, verified and approved user and the
+`admin` role/membership manually through phpMyAdmin, as documented in
+[Manual administrator provisioning](docs/manual-administrator-sql.md).
+There is **no initial-admin setup HTTP endpoint or SETUP configuration**.
+
 ## Documentation
 
 - [phpMyAdmin installation](docs/phpmyadmin-install.md)
 - [Database design](docs/database.md)
+- [Manual administrator SQL](docs/manual-administrator-sql.md)
 - [Architecture](docs/architecture.md)
 - [Security](docs/security.md)
 - [API compatibility](docs/api-compatibility.md)

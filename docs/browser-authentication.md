@@ -31,7 +31,7 @@ published. The current production front controller only supports
 8. Never log a password, session ID, CSRF token, recovery link or API key.
 
 Before publishing login, add persistent, concurrency-safe login rate limiting,
-recovery flows, authorized administrator bootstrap, CSRF-protected controllers,
+recovery flows, manually provisioned administrator accounts, CSRF-protected controllers,
 session lifecycle tests, security audit events and suitable email verification.
 
 ## Deployment

@@ -5,12 +5,11 @@ declare(strict_types=1);
 use OPGateway\Config\Environment;
 use OPGateway\Http\AdministrativeWebEntry;
 use OPGateway\Http\FoundationApplication;
-use OPGateway\Http\SetupInstaller;
 use OPGateway\Observability\DiagnosticLog;
 
 /**
  * cPanel split-root entrypoint; private source and secrets remain outside
- * Document Root. Both installer and admin UI are default-disabled.
+ * Document Root. Admin UI is default-disabled; initial admin is provisioned manually in DB.
  */
 $localRoot = dirname(__DIR__);
 $applicationRoot = is_file($localRoot . '/src/autoload.php')
@@ -30,9 +29,7 @@ try {
     $method = $_SERVER['REQUEST_METHOD'] ?? 'GET';
     $path = parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH) ?: '/';
 
-    if ($path === '/setup/administrator') {
-        $response = (new SetupInstaller($config))->handle($method, $_SERVER);
-    } elseif ($path === '/admin' || str_starts_with($path, '/admin/')) {
+    if ($path === '/admin' || str_starts_with($path, '/admin/')) {
         $response = (new AdministrativeWebEntry($config))->handle($method, $path, $_SERVER);
     } else {
         $result = (new FoundationApplication($config))->handle(

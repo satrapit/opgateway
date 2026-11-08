@@ -30,7 +30,7 @@ critical authorization bypass.
 ## Incomplete prerequisites
 
 No live admin controller, login page, session-bound action handler, initial
-administrator setup UI, user list, CSRF integration, body-stream validation,
+manual administrator provisioning, user list, CSRF integration, body-stream validation,
 audited action dispatcher, or operation permission system is implemented yet.
 
 Request body size must additionally be enforced during streaming/reading;
@@ -40,7 +40,7 @@ including invalid/multiple Content-Length header values.
 
 Password login must use the guarded, rate-limited orchestration, not a direct
 call to `LoginAuthenticator`. A complete UI cannot be enabled until
-administrative bootstrap and stateful session flow have been tested.
+manual administrator initialization and stateful session flow have been tested.
 
 ## Hosting
 

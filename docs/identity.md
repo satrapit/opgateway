@@ -21,8 +21,9 @@ email verification, administrator approval or API proxy routes are active.
 `AccountApprovalService` authorizes the actor from DB state on each action:
 active and verified account plus membership in the `admin` role. It permits
 approval only of a distinct, verified pending user. This service **does not**
-create the initial administrator or grant admin roles. Production provisioning
-and action audit logs will be designed separately.
+create the initial administrator or grant admin roles. The first
+administrator is provisioned through reviewed SQL in phpMyAdmin (see
+`manual-administrator-sql.md`); later account approval remains separate.
 
 ## API client IP allowlisting
 

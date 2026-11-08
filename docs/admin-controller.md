@@ -19,7 +19,7 @@ Unknown operations and extra JSON fields are rejected.
 
 **None of these classes is wired to `public/index.php`.** The production
 behavior remains `GET /health` and deny-by-default `/v1`. No login form,
-installer endpoint, admin dashboard or security-sensitive action is reachable
+initial-admin setup endpoint, admin dashboard or security-sensitive action is reachable
 remotely. This commit adds no schema, SQL import or cPanel setting.
 
 The eventual HTTP adapter must additionally:

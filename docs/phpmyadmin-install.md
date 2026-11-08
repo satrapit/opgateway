@@ -14,7 +14,7 @@ intact while the PHP process cannot connect to it.
 If a full reinstall is intentionally required, export a verified backup
 of the current database named in private `DB_NAME` from phpMyAdmin. Record any data that must
 be retained; rebuilding loses existing accounts, roles, client records,
-API keys and tokens. Disable the installer and admin UI in the private
+API keys and tokens. Disable the admin UI in the private
 `.env` before altering schema. Ensure the target database is EMPTY
 using cPanel / phpMyAdmin; the SQL does not drop any existing tables.
 
@@ -45,8 +45,9 @@ permissions separately. If you migrated into a populated database,
 **do not run this initial import again**.
 Never commit credentials or upload .env to the public Document Root.
 
-No user/admin account is seeded. The first administrator must be
-created through the separately protected setup process when safe.
+No user/admin account is seeded. Create the first administrator directly
+with the documented manual SQL (see `manual-administrator-sql.md`),
+using a local PHP-generated password hash.
 
 MacBook: Git only (`git pull --ff-only origin main`).
 cPanel: Git Version Control > Update from Remote / Deploy HEAD Commit.

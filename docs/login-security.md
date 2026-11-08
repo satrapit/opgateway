@@ -34,7 +34,7 @@ in `CreateLoginSecurityTables::statements()`.
 
 ## Still required before public login
 
-1. Safe administrator provisioning and one-time setup disablement.
+1. Verify the manually provisioned administrator and restrict login.
 2. Trustworthy HTTPS/session and CSRF integration at the real HTTP edge.
 3. Application-specific rate-limit key loaded from private environment.
 4. Integration tests for concurrent rate-limit updates and audit persistence.
