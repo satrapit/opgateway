@@ -22,15 +22,18 @@ final class MigrationCatalogTest extends TestCase
     public function testInitialSchemaContainsNoSecretSeedsOrDefaultAdmin(): void
     {
         $migrations = MigrationCatalog::all();
-        self::assertCount(1, $migrations);
+        self::assertNotEmpty($migrations);
         $sql = implode("\n", $migrations[0]->statements());
 
         foreach (['users', 'roles', 'user_roles', 'api_clients', 'api_credentials', 'client_ip_whitelists'] as $table) {
             self::assertStringContainsString('CREATE TABLE ' . $table, $sql);
         }
 
-        self::assertStringNotContainsString('INSERT INTO', strtoupper($sql));
-        self::assertStringNotContainsString('DROP TABLE', strtoupper($sql));
+        foreach ($migrations as $migration) {
+            $statements = implode("\\n", $migration->statements());
+            self::assertStringNotContainsString('INSERT INTO', strtoupper($statements));
+            self::assertStringNotContainsString('DROP TABLE', strtoupper($statements));
+        }
     }
 
     public function testNewClientsAndWhitelistsStartDisabled(): void

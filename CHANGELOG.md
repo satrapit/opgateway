@@ -2,6 +2,13 @@
 
 ## [Unreleased]
 
+- Remove obsolete Doctrine and MySQLi test suites after native PDO
+  consolidation; preserve active PDO and migration coverage.
+- Correct SQLSTATE extraction for PDO connection errors lacking errorInfo
+  and categorize MySQL 1524 as authentication_plugin.
+- Make migration tests compatible with the complete versioned catalog.
+
+
 - Standardize every runtime database query on native PDO with one
   connection factory, shared across repositories and transactions.
 - Remove Doctrine DBAL adapters, Medoo prototype, and secondary

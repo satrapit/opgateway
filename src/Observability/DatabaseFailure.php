@@ -42,8 +42,13 @@ final class DatabaseFailure
         $safeNumber = $number !== null && $number >= 1 && $number <= 65535
             ? $number : null;
 
-        $state = isset($info[0]) && is_string($info[0])
+        $state = isset($info[0]) && is_string($info[0]) && $info[0] !== ''
             ? $info[0] : (is_string($error->getCode()) ? $error->getCode() : '');
+        if (preg_match('/^[A-Z0-9]{5}$/D', $state) !== 1
+            && preg_match('/^SQLSTATE\\[([A-Z0-9]{5})\\](?:\\s|$)/', $error->getMessage(), $stateMatches) === 1) {
+            // Extract only the SQLSTATE token, never the free-form message.
+            $state = $stateMatches[1];
+        }
         $stateClass = strlen($state) === 5 ? substr($state, 0, 2) : '';
         $safeClass = in_array($stateClass, [
             '08', '22', '23', '28', '42', 'HY',
@@ -58,7 +63,7 @@ final class DatabaseFailure
             1062 => 'duplicate_key',
             1040, 1203 => 'connection_limit',
             2002, 2003, 2005, 2006, 2013 => 'connection_failure',
-            2054 => 'authentication_plugin',
+            1524, 2054 => 'authentication_plugin',
             default => match ($safeClass) {
                 '08' => 'connection_failure',
                 '28' => 'authentication_rejected',

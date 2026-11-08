@@ -40,6 +40,16 @@ final class DatabaseFailureTest extends TestCase
         self::assertSame('authentication_rejected', DatabaseFailure::classify($exception)['reason']);
     }
 
+    public function testRecognizesMissingAuthenticationPluginCode(): void
+    {
+        $exception = new PDOException("SQLSTATE[HY000] [1524] secret message");
+        $exception->errorInfo = [];
+        $result = DatabaseFailure::classify($exception);
+        self::assertSame('authentication_plugin', $result['reason']);
+        self::assertSame(1524, $result['mysql_errno']);
+        self::assertSame('HY', $result['sqlstate_class']);
+    }
+
     public function testIgnoresUntrustedNumericTokensOutsideOfficialPrefix(): void
     {
         $exception = new PDOException('password=2002 SQLSTATE[HY000] [1045]');
