@@ -27,7 +27,7 @@ final readonly class PrivateBrowserAdapter
     }
 
     /**
-     * @return array{status:int,content_type:string,body:string}
+     * @return array{status:int,content_type:string,body:string,location?:string}
      */
     public function dispatch(
         string $method,

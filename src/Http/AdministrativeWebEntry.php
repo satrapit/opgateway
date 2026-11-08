@@ -37,7 +37,7 @@ final readonly class AdministrativeWebEntry
 
     /**
      * @param array<string,mixed> $server Trusted PHP server metadata.
-     * @return array{status:int,content_type:string,body:string}
+     * @return array{status:int,content_type:string,body:string,location?:string}
      */
     public function handle(string $method, string $path, array $server): array
     {
@@ -142,7 +142,7 @@ final readonly class AdministrativeWebEntry
         return is_string($a) && is_string($b) && hash_equals($b, $a);
     }
 
-    /** @return array{status:int,content_type:string,body:string} */
+    /** @return array{status:int,content_type:string,body:string,location?:string} */
     private static function error(int $status): array
     {
         return [

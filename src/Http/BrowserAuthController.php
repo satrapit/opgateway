@@ -12,11 +12,11 @@ use OPGateway\Identity\AdministratorAuthorization;
 /**
  * Authentication boundary for HTTPS-only, IP-allowlisted admin browser.
  *
- * The HTTP adapter verifies HTTPS
- * from server-controlled metadata, start the secure session, supply a
- * CSPRNG-generated request ID and read a bounded form body before calling.
- *
- * Nothing here authorizes arbitrary users to administer the gateway.
+ * The HTTP adapter verifies HTTPS and source IP, starts the session,
+ * supplies a CSPRNG request ID and bounds submitted form data.
+ * Browser Origin is not an authorization dependency here: an existing
+ * server-side CSRF token and same-site secure cookie protect POST mutations.
+ * Account eligibility and the administrator role are checked from storage.
  */
 final readonly class BrowserAuthController
 {
