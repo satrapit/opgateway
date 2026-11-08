@@ -34,17 +34,17 @@ final class AdminBrowserFlowTest extends TestCase
         $session->start(true);
         $initialCsrf = $session->csrfToken();
 
-        $accounts = $this->createMock(LoginAccountRepository::class);
+        $accounts = $this->createStub(LoginAccountRepository::class);
         $accounts->method('isEligible')->willReturn(true);
         $accounts->method('findEligibleByEmail')->willReturn([
             'id' => 17,
             'password_hash' => password_hash('correct-horse-123', PASSWORD_DEFAULT),
         ]);
-        $admins = $this->createMock(AdministratorAuthorization::class);
+        $admins = $this->createStub(AdministratorAuthorization::class);
         $admins->method('isAdministrator')->willReturn(true);
-        $limits = $this->createMock(LoginAttemptLimiter::class);
+        $limits = $this->createStub(LoginAttemptLimiter::class);
         $limits->method('allow')->willReturn(true);
-        $events = $this->createMock(SecurityEventRecorder::class);
+        $events = $this->createStub(SecurityEventRecorder::class);
 
         $controller = new BrowserAuthController(
             $session,
@@ -109,16 +109,16 @@ final class AdminBrowserFlowTest extends TestCase
         $session->start(true);
         $csrf = $session->csrfToken();
 
-        $accounts = $this->createMock(LoginAccountRepository::class);
+        $accounts = $this->createStub(LoginAccountRepository::class);
         $accounts->method('findEligibleByEmail')->willReturn([
             'id' => 17,
             'password_hash' => password_hash('correct-password-123', PASSWORD_DEFAULT),
         ]);
-        $admins = $this->createMock(AdministratorAuthorization::class);
+        $admins = $this->createStub(AdministratorAuthorization::class);
         $admins->method('isAdministrator')->willReturn(false);
-        $limits = $this->createMock(LoginAttemptLimiter::class);
+        $limits = $this->createStub(LoginAttemptLimiter::class);
         $limits->method('allow')->willReturn(true);
-        $events = $this->createMock(SecurityEventRecorder::class);
+        $events = $this->createStub(SecurityEventRecorder::class);
         $controller = new BrowserAuthController(
             $session,
             new GuardedLoginService(
