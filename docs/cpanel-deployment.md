@@ -35,7 +35,8 @@ The runtime bootstrap loads source from `/home/arsamnet/repositories/opgateway`.
 4. Run **Deploy HEAD Commit**. Check the cPanel deployment log.
 5. Verify `https://opgateway.arsamnet.com/health` returns `{"status":"ok"}` and `/v1/domains` returns HTTP 503 with `{"error":"gateway_not_configured"}`.
 6. Check that `/.env`, `/composer.json`, `/.git/config`, `/src/autoload.php` and `/storage/` cannot be fetched publicly. Any HTTP 200 on a private file is a deployment blocker.
-7. Confirm the deployed `.htaccess` still contains its cPanel-generated sections and the required rewrite rules.\n8. Confirm both old database-test URLs return 404. Remove any separate private diagnostic config file manually via File Manager after confirming it is not used elsewhere.
+7. Confirm the deployed `.htaccess` still contains its cPanel-generated sections and the required rewrite rules.
+8. Confirm both old database-test URLs return 404. Remove any separate private diagnostic config file manually via File Manager after confirming it is not used elsewhere.
 
 For rollback, use a reviewed non-destructive revert commit followed by manual Update from Remote / Deploy HEAD Commit. Do not rewrite Git history or reset the cPanel-managed checkout.
 
