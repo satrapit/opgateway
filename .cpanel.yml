@@ -2,7 +2,6 @@
 # The cPanel-managed .htaccess, php.ini and .user.ini stay on the server.
 # Deploy only the explicitly approved application entrypoint.
 # No secrets, runtime logs, private source code, or Git metadata are copied.
-# Remove only two previously manually deployed standalone DB test endpoints.
 deployment:
   tasks:
     - export DEPLOYPATH=/home/arsamnet/opgateway.arsamnet.com
@@ -11,4 +10,3 @@ deployment:
     - /bin/test -f public/index.php
     - /bin/test ! -L "$DEPLOYPATH/index.php"
     - /bin/cp -f public/index.php "$DEPLOYPATH/index.php"
-    - /bin/rm -f -- "$DEPLOYPATH/db-connection-test.php" "$DEPLOYPATH/mysql-direct-test.php"

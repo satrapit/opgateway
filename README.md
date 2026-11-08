@@ -1,53 +1,37 @@
 # OPGateway
 
-Security-first PHP 8.3 Openprovider API Gateway — early foundation only.
+A security-first PHP 8.3 / MySQL gateway foundation for the Openprovider API on shared cPanel hosting.
 
-> **Not production-ready.** No authenticated client API, tenant isolation, or upstream
-> transport exists. All `/v1` routes continue to return HTTP 503.
+**Status:** Administrator login/logout and its read-only landing page are available when explicitly enabled. The API client and ownership modules exist internally, but **all public `/v1` provider routes remain disabled (HTTP 503)**. This is not a production-ready upstream proxy.
 
-## Shared-cPanel hosting requirements
+## Hosting model
 
-This project targets standard shared hosting with **cPanel Git Version Control,
-File Manager, MultiPHP INI Editor, and phpMyAdmin**. Hosting does **not**
-require a shell, SSH Terminal, Docker, MySQL CLI, Composer CLI, cron jobs, or workers.
-The Mac is used for Git operations only in the deployment procedure.
+- Private source and `.env`: `/home/arsamnet/repositories/opgateway`
+- Public Document Root: `/home/arsamnet/opgateway.arsamnet.com`
+- Deployment: cPanel → Git Version Control → **Update from Remote** → **Deploy HEAD Commit**.
+- `.cpanel.yml` copies only `public/index.php`; it never overwrites cPanel-managed `.htaccess`, `php.ini`, `.user.ini` or private configuration.
+- Hosted MySQL uses `DB_HOST=db`; on local macOS, use the actual MySQL endpoint (often `127.0.0.1`, port `3306`). A local database containing the same data still needs independent connection settings.
+- `/health` returns `{"status":"ok"}`, without checking database connectivity.
 
-- Git repository: `/home/arsamnet/repositories/opgateway`
-- Document Root: `/home/arsamnet/opgateway.arsamnet.com`
-- Private `.env` stays in repository root, outside Document Root.
-- cPanel → Git Version Control → Update from Remote → Deploy HEAD Commit.
-- `.cpanel.yml` copies **only** `public/index.php`; it preserves
-  cPanel-managed `.htaccess`, `php.ini` and `.user.ini`.
-- Production MySQL hostname on this provider: **`db`**, not `localhost`.
-  Set `DB_HOST=db` in the private `.env` together with the *actual* database
-  name and assigned user. Do not assume previous database names are current.
-- Schema installation for a **new empty database only**: import
-  `database/sql/opgateway_full_schema.sql` once. Never import over the
-  existing migrated database.
+## Quick start (local)
 
-No database operations run during Git deployment. Do not attempt to use the
-MigrationRunner directly on shared hosting without an approved protected UI.
-See [phpMyAdmin installation](docs/phpmyadmin-install.md).
+1. Run `composer install` on PHP 8.3 with PDO MySQL.
+2. Create a private `.env` from `.env.example` and supply real local DB settings. Never commit it.
+3. For an **empty new database only**, import `database/sql/opgateway_full_schema.sql`. Existing databases must **not** be re-imported.
+4. Create the first administrator using the reviewed one-time SQL in [Database](docs/database.md), if none exists.
+5. Enable the admin browser only after configuring its exact local IP, HTTPS URL and random login limiter key. See [Administration](docs/admin.md).
+6. Run `php scripts/lint.php`, `composer test` and `php scripts/smoke.php`.
 
-Initial administrator: create one active, verified and approved user and the
-`admin` role/membership manually through phpMyAdmin, as documented in
-[Manual administrator provisioning](docs/manual-administrator-sql.md).
-There is **no initial-admin setup HTTP endpoint or SETUP configuration**.
+There is no public setup endpoint or automated schema migration on deploy.
 
 ## Documentation
 
-- [phpMyAdmin installation](docs/phpmyadmin-install.md)
-- [Database design](docs/database.md)
-- [Manual administrator SQL](docs/manual-administrator-sql.md)
-- [Architecture](docs/architecture.md)
-- [Security](docs/security.md)
-- [API compatibility](docs/api-compatibility.md)
-- [cPanel deployment](docs/cpanel-deployment.md)
-- [Single PDO database architecture](docs/pdo-connection.md)
-- [Private diagnostic logs](docs/diagnostic-logging.md)
+- [Architecture and current feature boundaries](docs/architecture.md)
+- [Administration and login](docs/admin.md)
+- [Database and first-administrator SQL](docs/database.md)
+- [Security and API credential rules](docs/security.md)
+- [Deployment and diagnostics](docs/cpanel-deployment.md)
+- [Testing](docs/testing.md)
+- [Provider API compatibility](docs/api-compatibility.md)
 
-No secrets, GitHub Actions, or CI/CD workflows are included.
-
-**Database access:** Native PDO only, using one factory and prepared statements in every repository. No external ORM or query builder is required.
-
-**Diagnostics cleanup:** The former HTTP database-test route and PHP file were removed. The deployment deletes only the two known temporary entrypoints `db-connection-test.php` and `mysql-direct-test.php` from Document Root. Remove any separately stored temporary private diagnostic credentials via cPanel File Manager.
+Project policy: [SECURITY.md](SECURITY.md), [CONTRIBUTING.md](CONTRIBUTING.md), [CHANGELOG.md](CHANGELOG.md). No GitHub Actions, automatic hosting workflows, credentials, or runtime logs are committed.

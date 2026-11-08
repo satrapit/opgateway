@@ -1,63 +1,43 @@
-# cPanel Git Version Control — OPGateway
+# Deployment and operations
 
-## Paths
+## cPanel paths
 
-- Private repository: `/home/arsamnet/repositories/opgateway`.
+- Private Git checkout: `/home/arsamnet/repositories/opgateway`.
 - Document Root: `/home/arsamnet/opgateway.arsamnet.com`.
-- Remote repository: `satrapit/opgateway`.
-- The existing SSH key configuration is managed separately. **Do not modify it as part of an application deployment**; the currently selected key is required for this repository.
+- Secrets: private checkout `.env`, outside Document Root.
+- Diagnostics: private `storage/logs/opgateway.jsonl`, writable by PHP, never public.
 
-## Ownership of configuration files
+The versioned `.cpanel.yml` **only copies `public/index.php`**. It checks the destination exists, `.htaccess` exists and the target index is not a symlink. It **does not delete or clean up any deployed files**. The cPanel-managed `.htaccess`, `php.ini` and `.user.ini` are not overwritten. Old standalone files, if any, must be audited and removed deliberately via File Manager, not by future deployment scripts.
 
-The cPanel MultiPHP INI Editor manages `php.ini`, `.user.ini`, and generated sections of the **deployed** `.htaccess`. Those server-side files must not be overwritten by Git deployments. The source `public/.htaccess` remains a reference template and is **not copied** by `.cpanel.yml`.
+## Manual deployment
 
-The deployed `.htaccess` must retain:
-- `Options -Indexes` and `DirectoryIndex index.php`.
-- Rewrite of virtual paths to `index.php` when the requested file does not exist.
-- Security response headers such as `X-Content-Type-Options: nosniff`.
-- `Referrer-Policy: same-origin` (not `no-referrer`). The latter may force
-  `Origin: null` on ordinary HTML form POSTs, causing the protected
-  administrator setup and sign-in forms to reject legitimate requests.
-  Ensure Apache and PHP headers do not conflict or emit duplicate values.
-- cPanel-generated PHP directives and PHP handler, as applicable to the selected runtime.
+1. Locally run `php scripts/lint.php`, `composer test`, `php scripts/smoke.php` and `composer validate --strict --no-check-publish`.
+2. Commit and push reviewed changes to `main`; never commit real `.env`.
+3. cPanel → Git Version Control → **Update from Remote**, verify commit → **Deploy HEAD Commit**.
+4. Confirm `https://opgateway.arsamnet.com/health` returns HTTP 200 and `{"status":"ok"}`.
+5. Confirm `/v1/domains` remains HTTP 503 with `gateway_not_configured`.
+6. Check private URLs (`/.env`, `/src/autoload.php`, `/composer.json`, `/.git/config`, `/storage/`) do not return HTTP 200.
+7. Confirm deployed rewrite rules and existing cPanel PHP handler remain intact.
+8. Test admin browser login/dashboard/logout from the allowed IP only when `ADMIN_UI_ENABLED=true`.
 
-Make a backup of the deployed `.htaccess` in private storage before editing it. Do not copy cPanel-generated PHP directives to the public Git repository. Check after every deployment that rewrites still work.
-**One-time manual correction:** `.cpanel.yml` intentionally never overwrites
-cPanel's deployed `.htaccess`. After deploying this change, open
-`/home/arsamnet/opgateway.arsamnet.com/.htaccess` in File Manager and
-change any existing `Header always set Referrer-Policy "no-referrer"` to
-`Header always set Referrer-Policy "same-origin"`; retain all cPanel-managed
-and rewrite directives. Also check server/CDN response headers for an
-additional `no-referrer` policy. The effective GET response for
-`/setup/administrator` must not carry `Referrer-Policy: no-referrer`.
-Use an HTTPS same-origin browser tab and submit only once after
-checking the database identity tables remain empty.
+No server-side shell, automated migration, Docker, cron, GitHub Actions or CI workflow is required. Roll back by a reviewed revert commit and the same manual deployment, not by resetting the deployed Git checkout.
 
-The PHP error log must be placed outside Document Root (for example in private `storage/`) with a writable and protected target; never expose PHP errors or log contents to clients. In production, set `display_errors=Off`, `log_errors=On`, and `APP_DEBUG=false`. The effective PHP settings are managed through cPanel, not by `.cpanel.yml`.
+## PHP and .htaccess
 
-## Fail-closed deployment
+Set production `display_errors=Off`, `log_errors=On` and `APP_DEBUG=false`. Keep cPanel-generated PHP sections untouched. The application emits no-store, frame-denial, nosniff, CSP and same-origin referrer headers. Admin authentication relies on session CSRF, not on the browser `Origin` header.
 
-The version-controlled `.cpanel.yml` copies **only** `public/index.php` into Document Root. Before copying, it checks that the target directory and its existing `.htaccess` are present, and that the destination index is not a symlink. It does not copy `.env`, `src`, `vendor`, `storage`, `tests`, `.git` or `composer.lock`. As a one-time security cleanup, it explicitly deletes only two obsolete temporary test entrypoints (`db-connection-test.php`, `mysql-direct-test.php`) in Document Root; all other destination files are preserved.
+For site routing, retain `DirectoryIndex index.php`, `Options -Indexes` and the existing rewrite of virtual paths to `index.php` when the request does not map to a file. Source `public/.htaccess` is only a reference, not deployed automatically.
 
-The runtime bootstrap loads source from `/home/arsamnet/repositories/opgateway`. Production database hostname is `db` on this provider, not `localhost`. The private `.env` must exist in that repository root (outside the webroot); it must never be committed or published. The initial alpha release requires no server-side Composer command.
+## Private diagnostic log
 
-## Manual update through cPanel
+The structured JSONL log records UTC time, 128-bit request ID, event code, status and restricted failure categories. Numeric MySQL codes may be present without SQL or credential details. `X-Request-ID` on HTTP responses helps correlate requests with logs.
 
-1. On the Mac, run `php scripts/lint.php`, `php scripts/smoke.php`, `composer validate --strict --no-check-publish`, and `composer test`.
-2. Push a reviewed commit to `main`. Create an annotated release tag only after relevant validation and deployment checks.
-3. In cPanel → Git Version Control → OPGateway → Pull or Deploy, run **Update from Remote** and verify the latest commit.
-4. Run **Deploy HEAD Commit**. Check the cPanel deployment log.
-5. Verify `https://opgateway.arsamnet.com/health` returns `{"status":"ok"}` and `/v1/domains` returns HTTP 503 with `{"error":"gateway_not_configured"}`.
-6. Check that `/.env`, `/composer.json`, `/.git/config`, `/src/autoload.php` and `/storage/` cannot be fetched publicly. Any HTTP 200 on a private file is a deployment blocker.
-7. Confirm the deployed `.htaccess` still contains its cPanel-generated sections and the required rewrite rules.
-8. Confirm both old database-test URLs return 404. Remove any separate private diagnostic config file manually via File Manager after confirming it is not used elsewhere.
+- `admin.configuration_invalid`: missing/malformed APP_URL or `LOGIN_RATE_LIMIT_KEY`.
+- `admin.database_connection_failed`: review DB host, port, credentials and grants.
+- `admin.schema_inspection_failed`, `admin.schema_incomplete`: inspect migration ledger in phpMyAdmin.
+- `admin.session_start_failed`: check private PHP session storage and cookie configuration.
+- `http.unhandled_exception`: inspect category metadata; do not expose underlying exceptions publicly.
 
-For rollback, use a reviewed non-destructive revert commit followed by manual Update from Remote / Deploy HEAD Commit. Do not rewrite Git history or reset the cPanel-managed checkout.
+Typical MySQL categories: 1045 authentication failure, 1049 unknown database, 2002/2003 connection failure, 1146 missing table, 1044/1142 privilege issues, 1524 authentication plugin issue. On the current production host use `DB_HOST=db`; locally `localhost` may choose Unix socket instead of TCP `127.0.0.1`.
 
-## Known limitations
-
-This is only a foundation. The Openprovider API is still blocked, and the platform has no users, database migrations, tenant isolation or provider integration. Never route real API clients to this version.
-
-References:
-- https://docs.cpanel.net/knowledge-base/web-services/guide-to-git-deployment/
-- https://docs.cpanel.net/knowledge-base/web-services/guide-to-git-set-up-deployment/
+Do not deploy public `phpinfo`, database-probe or setup scripts. See [database.md](database.md) for schema/administrator procedures.
