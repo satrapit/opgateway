@@ -2,6 +2,12 @@
 
 ## [Unreleased]
 
+- Differentiate rejected explicit POST Origin from missing Origin;
+  accept a missing Origin only on same-origin HTML navigation indicated by
+  Fetch Metadata, followed by mandatory session CSRF and setup-token checks.
+- Add focused tests for the administrator setup Origin policy.
+
+
 - Configure provider-specific database hostname `db` and centralize
   native PDO connection settings through DatabaseConfig.
 - Remove the obsolete public DB test PHP file, its routed endpoint,

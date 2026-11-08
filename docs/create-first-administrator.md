@@ -9,7 +9,8 @@ commit can create a user in the production database.
 
 ## Safety checks
 
-1. Back up the production database using phpMyAdmin Export.\n   Do not re-import migrated data merely to enable the administrator.
+1. Back up the production database using phpMyAdmin Export.
+   Do not re-import migrated data merely to enable the administrator.
 2. Use read-only SQL in the existing database:
    `SELECT COUNT(*) AS users_count FROM users;`
    `SELECT COUNT(*) AS roles_count FROM roles;`
@@ -59,7 +60,14 @@ ADMIN_UI_ENABLED=false
 Open `https://opgateway.arsamnet.com/setup/administrator` over HTTPS
 from that exact IP. Enter the intended admin email, a strong unique
 password (at least 12 characters), and the one-time setup token.
-Submit **once**; do not repeatedly retry failures. A successful response
+Submit **once**; do not repeatedly retry failures. If a 403 occurs, inspect
+private `opgateway.jsonl`: `setup.origin_mismatch` means the browser
+Origin header differs from exact APP_URL, while `setup.origin_missing`
+means Origin is absent and Fetch Metadata did not assert same-origin
+navigation. Explicit mismatches are never bypassed. When Origin is absent
+but `Sec-Fetch-Site: same-origin` and `Sec-Fetch-Mode: navigate` are present,
+the existing session-bound CSRF check and setup token remain mandatory.
+Never send passwords, session cookies, form bodies, or setup tokens in chat. A successful response
 contains `"status":"administrator_created"` with HTTP 201.
 
 Immediately set `SETUP_ENABLED=false`, clear `SETUP_TOKEN_HASH`

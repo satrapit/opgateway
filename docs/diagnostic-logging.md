@@ -38,7 +38,8 @@ environment values. No raw user-controlled context is accepted.
 - `setup.identity_state_query_failed`: read-only users/roles count failed.
 - `setup.already_initialized`: some user or role already exists.
 - `setup.session_start_failed`: unable to establish secure PHP session.
-- `setup.origin_denied`: POST Origin missing or mismatched against APP_URL; no headers recorded.
+- `setup.origin_mismatch`: explicit POST Origin differs from configured APP_URL (or is `null`); no header values logged.
+- `setup.origin_missing`: no usable Origin or trusted same-origin navigation Fetch Metadata; no header values logged.
 - `setup.content_type_denied`: invalid form POST Content-Type; no headers recorded.
 - `setup.provisioning_failed`: first-admin token/registration or database operation failed; no secret details recorded.
 - `setup.administrator_created`: first administrator successfully created.
