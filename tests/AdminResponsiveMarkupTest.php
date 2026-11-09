@@ -45,6 +45,10 @@ final class AdminResponsiveMarkupTest extends TestCase
             self::assertSame(1, substr_count($html, 'class="opg-record-grid"'), $section);
             self::assertSame(1, substr_count($html, 'opg-desktop-table'), $section);
             self::assertSame(1, substr_count($html, 'role="listitem"'), $section);
+            self::assertStringContainsString('aria-label="Sign out"', $html);
+            self::assertStringNotContainsString('</i> Sign out', $html);
+            self::assertStringNotContainsString('Workspace overview</h1>', $html);
+            self::assertStringContainsString('aria-current="page"', $html);
             preg_match_all('/\\bid="([^"]+)"/', $html, $ids);
             self::assertCount(count(array_unique($ids[1])), $ids[1], $section);
         }
