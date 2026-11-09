@@ -95,3 +95,38 @@ Use a non-secret, form-encoded stub body to confirm `/admin/review`
 and `/admin/provision` yield 404 while
 `ADMIN_ACTIONS_ENABLED=false`. Never enable mutation flags to run
 this negative test.
+
+## Record-dialog UX slice — verification boundaries (2026-11-10)
+
+The developer verified **148 PHPUnit tests / 792 assertions**, **10/10**
+smoke checks, no NPM audit vulnerabilities, and all **7/7** responsive
+browser checks for commit `20fb975` (the independent-page baseline).
+The new progressive-enhancement dialog slice was committed **after**
+that verification. These baseline results do not prove its success.
+
+The current dialog slice must be verified with:
+
+1. `php scripts/lint.php`; `./vendor/bin/phpunit --display-phpunit-notices
+   --display-warnings`; `php scripts/smoke.php`.
+2. `cd frontend && npm ci && npm run lint && npm run build`,
+   `git diff --check` and no license sidecar or remote runtime asset.
+3. While `ADMIN_ACTIONS_ENABLED=false`, authenticate an admin on a
+   local-only database and test User/Owner/Client/Pending IP/Approved IP
+   record-details dialogs, Escape, close buttons, focus restoration,
+   320/390/768/1024/1440px, dark mode, and JS/CSP console errors.
+   No mutation forms should be present in this read-only state.
+4. The dialog-enhanced `create_client`, `request_ip`, `disable_client`
+   and `revoke_ip` interaction can only be browser-verified in an
+   **isolated local test database**, after a separate explicit review
+   of activating `ADMIN_ACTIONS_ENABLED=true`; never change production
+   flags just to exercise a UI modal. Confirm that cancel/Escape submits
+   nothing, that real form fields remain identical, and that no-JS
+   fallbacks still work. Destructive backend checks remain authoritative.
+5. Server POST responses retain their existing redirect/status behavior;
+   **do not report toast/success/error-message functionality as complete**.
+   True operation result notices require a separately reviewed
+   server-side response design.
+
+Do not reset or pop the previously preserved local UI stash over this
+branch. The branch stays Draft until the above checks and authorized
+operations are signed off.
