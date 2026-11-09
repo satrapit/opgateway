@@ -4,7 +4,9 @@ A security-first PHP 8.3 / MySQL gateway foundation for the Openprovider API on 
 
 **Status:** Administrator login/logout, bounded review queues and an independently gated approved-owner portal with one-time API key issuance/revocation are available when explicitly enabled. Seven administrator lifecycle operations (approve user/client/IP, create client, request IP, disable client, revoke IP) are implemented but independently disabled by default; the client and credential management modules enforce ownership checks, but **all public `/v1` provider routes remain disabled (HTTP 503)**. This is not a production-ready upstream proxy.
 
-**Admin UI migration (in progress):** A TailAdmin Free/Twig 3 first vertical slice is in the repository behind an additional **default-off** `ADMIN_TWIG_UI_ENABLED` switch. Until the integrated Composer lock resolution, local webpack build, static asset deployment and browser/security verification are complete, keep this switch **false** in all environments. Legacy admin HTML remains the runtime default.
+**Admin UI migration (in progress):** When enabled locally, TailAdmin/Twig now separates management into `/admin`, `/admin/users`, `/admin/owners`, `/admin/clients`, `/admin/ips/pending` and `/admin/ips/approved`; all routes require the existing administrator HTTPS/exact IP/session/role gates. The old single-page anchor navigation is retired in this feature branch. **Do not merge/deploy before local tests and security/browser review.**
+
+**Admin UI migration details:** A TailAdmin Free/Twig 3 first vertical slice is in the repository behind an additional **default-off** `ADMIN_TWIG_UI_ENABLED` switch. Until the integrated Composer lock resolution, local webpack build, static asset deployment and browser/security verification are complete, keep this switch **false** in all environments. Legacy admin HTML remains the runtime default.
 
 ## Hosting model
 

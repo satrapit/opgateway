@@ -20,30 +20,16 @@ Alpine.data('adminShell', () => ({
     const media = window.matchMedia('(prefers-color-scheme: dark)');
     media.addEventListener?.('change', () => this.applyTheme());
 
+    // A workspace link navigates to a distinct server-rendered page.
+    // The new response supplies its own active navigation state.
     const nav = this.$refs.sidebar?.querySelector('nav');
-    if (nav) {
-      this.updateActiveNavigation();
-      nav.addEventListener('click', (event) => {
-        const target = event.target;
-        const link = target instanceof Element ? target.closest('a[href^="#"]') : null;
-        if (!link || !nav.contains(link)) return;
-
-        // Update immediately. Hashchange also keeps browser Back/Forward
-        // and dashboard summary-card anchor navigation synchronized.
-        this.updateActiveNavigation(link.hash);
-        if (window.matchMedia('(max-width: 1023px)').matches) {
-          this.closeSidebar(false);
-          window.requestAnimationFrame(() => {
-            const heading = document.getElementById(link.hash.slice(1))?.querySelector('h2');
-            if (heading) {
-              heading.setAttribute('tabindex', '-1');
-              heading.focus({ preventScroll: true });
-            }
-          });
-        }
-      });
-      window.addEventListener('hashchange', () => this.updateActiveNavigation());
-    }
+    nav?.addEventListener('click', (event) => {
+      const link = event.target instanceof Element
+        ? event.target.closest('a[href^="/admin"]') : null;
+      if (link && nav.contains(link) && this.sidebarOpen) {
+        this.closeSidebar(false);
+      }
+    });
 
     document.addEventListener('keydown', (event) => {
       if (!this.sidebarOpen) return;
@@ -68,16 +54,6 @@ Alpine.data('adminShell', () => ({
       const form = event.target.closest?.('form[data-confirm]');
       if (form && !window.confirm(form.dataset.confirm)) event.preventDefault();
     });
-  },
-
-  updateActiveNavigation(hash = window.location.hash) {
-    const anchors = Array.from(this.$refs.sidebar?.querySelectorAll('nav a[href^="#"]') ?? []);
-    if (anchors.length === 0) return;
-    const selected = anchors.some((anchor) => anchor.hash === hash) ? hash : '#overview';
-    for (const anchor of anchors) {
-      if (anchor.hash === selected) anchor.setAttribute('aria-current', 'location');
-      else anchor.removeAttribute('aria-current');
-    }
   },
 
   openSidebar(event) {

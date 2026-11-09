@@ -18,4 +18,18 @@ interface AdminPageRenderer
         ?array $pending = null,
         bool $actionsEnabled = false,
     ): string;
+
+    /**
+     * Render one allowlisted administrative workspace page.
+     * The data shape is identical to dashboard(); only presentation changes.
+     *
+     * @param array<string,mixed>|null $pending Already-authorized, bounded DB data.
+     */
+    public function section(
+        string $section,
+        string $csrfToken,
+        string $email,
+        ?array $pending = null,
+        bool $actionsEnabled = false,
+    ): string;
 }

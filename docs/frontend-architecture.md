@@ -73,3 +73,17 @@ there are no network icon requests. All five DB-backed review groups render
 mobile/medium-size cards (under 1280px) and conventional tables at xl widths.
 No POST names, CSRF, authorizations, state transitions or default-off switches
 change. Locks and compiled assets need regeneration on the developer Mac.
+
+## Separate admin workspace pages (2026-11-10)
+
+The one-page anchor navigation was replaced by six explicit server-rendered
+pages. `TwigAdminPageRenderer::section()` allowlists internal section
+identifiers; `PrivateBrowserAdapter` allowlists GET paths and invokes the
+same fresh session, role and bounded overview-query checks. The legacy
+renderer continues to serve only `/admin`. Each detail template is scoped
+to one queue and reuses the existing card/table classes and action macros.
+`/admin` now contains only summarized, labeled visible counts and links,
+not every management table. No arbitrary URL-derived Twig template path
+is evaluated. Nav active state derives from the server-rendered page,
+not Alpine hash tracking. The logout button has a screen-reader label
+and a locally bundled icon without visible text.

@@ -15,12 +15,14 @@
     </div>
     <nav class="space-y-1 px-4 py-6" aria-label="Administrator sections">
       <p class="px-3 pb-2 text-xs font-semibold uppercase tracking-widest text-gray-400">Workspace</p>
-      <a class="opg-nav-link" href="#overview" aria-current="location"><i data-lucide="layout-dashboard" class="opg-icon" aria-hidden="true"></i> Overview</a>
-      <a class="opg-nav-link" href="#users"><i data-lucide="user-check" class="opg-icon" aria-hidden="true"></i> User approvals</a>
-      <a class="opg-nav-link" href="#owners"><i data-lucide="users" class="opg-icon" aria-hidden="true"></i> Account owners</a>
-      <a class="opg-nav-link" href="#clients"><i data-lucide="server" class="opg-icon" aria-hidden="true"></i> API clients</a>
-      <a class="opg-nav-link" href="#pending-ips"><i data-lucide="clock" class="opg-icon" aria-hidden="true"></i> Pending IPs</a>
-      <a class="opg-nav-link" href="#approved-ips"><i data-lucide="shield-check" class="opg-icon" aria-hidden="true"></i> Approved IPs</a>
+      <a class="opg-nav-link" href="/admin"{% if active_section == 'overview' %} aria-current="page"{% endif %}><i data-lucide="layout-dashboard" class="opg-icon" aria-hidden="true"></i> Overview</a>
+      <p class="px-3 pb-2 pt-6 text-xs font-semibold uppercase tracking-widest text-gray-400">Account management</p>
+      <a class="opg-nav-link" href="/admin/users"{% if active_section == 'users' %} aria-current="page"{% endif %}><i data-lucide="user-check" class="opg-icon" aria-hidden="true"></i> User approvals</a>
+      <a class="opg-nav-link" href="/admin/owners"{% if active_section == 'owners' %} aria-current="page"{% endif %}><i data-lucide="users" class="opg-icon" aria-hidden="true"></i> Account owners</a>
+      <p class="px-3 pb-2 pt-6 text-xs font-semibold uppercase tracking-widest text-gray-400">API access</p>
+      <a class="opg-nav-link" href="/admin/clients"{% if active_section == 'clients' %} aria-current="page"{% endif %}><i data-lucide="server" class="opg-icon" aria-hidden="true"></i> API clients</a>
+      <a class="opg-nav-link" href="/admin/ips/pending"{% if active_section == 'pending_ips' %} aria-current="page"{% endif %}><i data-lucide="clock" class="opg-icon" aria-hidden="true"></i> Pending IPs</a>
+      <a class="opg-nav-link" href="/admin/ips/approved"{% if active_section == 'approved_ips' %} aria-current="page"{% endif %}><i data-lucide="shield-check" class="opg-icon" aria-hidden="true"></i> Approved IPs</a>
     </nav>
     <div class="mt-auto border-t border-gray-200 px-6 py-4 text-xs leading-5 text-gray-500 dark:border-gray-800 dark:text-gray-400">
       Managed API access · Private operator area
@@ -49,7 +51,7 @@
         </form>
       </div>
     </header>
-    <main id="main-content" class="mx-auto w-full max-w-screen-2xl px-4 py-6 sm:px-6 lg:px-8 lg:py-8">
+    <main id="main-content" class="mx-auto w-full min-w-0 max-w-screen-2xl px-4 py-6 sm:px-6 lg:px-8 lg:py-8">
       {% block dashboard_content %}{% endblock %}
       <footer class="pb-5 pt-8 text-center text-xs text-gray-500 dark:text-gray-400">OPGateway · Security-sensitive administrator workspace</footer>
     </main>

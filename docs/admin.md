@@ -6,7 +6,12 @@
 |---|---|---|
 | GET | `/admin/login` | Login form with session-bound CSRF |
 | POST | `/admin/login` | Validate password, administrator role and rate limits; HTTP 303 to `/admin` |
-| GET | `/admin` | Authenticated review queues; buttons appear only when actions enabled |
+| GET | `/admin` | Summary cards (counts of bounded visible records) and links to independent pages |
+| GET | `/admin/users` | Verified pending users; optional approval forms |
+| GET | `/admin/owners` | Approved owners; optional disabled client provisioning |
+| GET | `/admin/clients` | Active/disabled API clients; optional activation and IP request forms |
+| GET | `/admin/ips/pending` | Pending exact IP allowlist entries and optional approval |
+| GET | `/admin/ips/approved` | Approved exact IP entries and optional revocation |
 | POST | `/admin/review` | Approve user/client/IP, disable an active client, or revoke an IP; separately enabled |
 | POST | `/admin/provision` | Create a disabled client or request an unapproved IP; separately enabled |
 | POST | `/admin/logout` | Validate CSRF and session; HTTP 303 to `/admin/login` |
@@ -66,3 +71,24 @@ Client credential generation and user self-service remain a separate security-se
 - Incorrect password or missing admin role: the login form shows a generic failure.
 
 For a fresh database, use the one-time administrator SQL in [database.md](database.md). Do **not** rerun provisioning on an existing administrator.
+
+## TailAdmin workspace information architecture
+
+The additional `ADMIN_TWIG_UI_ENABLED=true` gate selects an independently
+navigable, server-rendered interface (not a single page of anchor jumps).
+The six pages are /admin, /admin/users, /admin/owners, /admin/clients,
+/admin/ips/pending and /admin/ips/approved. All detailed pages require
+the same fresh account and administrator role checks as /admin, after
+the trusted HTTPS, exact IP and schema checks. In legacy mode, the five
+new GET paths return 404; no new public endpoints exist.
+
+The Overview displays only five bounded counts and deep links, not the
+full review tables. Each detailed route shows exactly one authorized
+review queue with a responsive card/table presentation. The active nav
+item and page title come from a fixed server-side section key (and remain
+accurate on refresh, deep links and Back/Forward). The Logout control
+is icon-only with an accessible label and still posts the same CSRF form.
+Actions and provisioning continue to use the original strict POST
+form fields and separate `ADMIN_ACTIONS_ENABLED` gate. Never infer
+that a 401 from a logged-out mutation request proves the flag is off:
+with the flag disabled an otherwise valid POST should yield 404.

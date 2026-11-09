@@ -9,8 +9,8 @@ use OPGateway\View\TwigRenderer;
 use PHPUnit\Framework\TestCase;
 
 /**
- * Presentation contracts: mobile records and desktop tables must use the
- * same already-authorized data and preserve action/CSRF semantics.
+ * Each independent admin page must have both accessible small-screen cards
+ * and desktop tables, without leaking data from unrelated queues.
  */
 final class AdminResponsiveMarkupTest extends TestCase
 {
@@ -37,55 +37,61 @@ final class AdminResponsiveMarkupTest extends TestCase
         ];
     }
 
-    public function testAllFiveQueuesProvideCardsAndDesktopTables(): void
+    public function testEachDetailPageHasExactlyOneResponsiveListing(): void
     {
         $view = new TwigAdminPageRenderer(new TwigRenderer(dirname(__DIR__) . '/templates'));
-        $html = $view->dashboard(self::CSRF, 'Administrator', self::data(), true);
-
-        self::assertSame(5, substr_count($html, 'class="opg-record-grid"'));
-        self::assertSame(5, substr_count($html, 'opg-desktop-table'));
-        self::assertSame(5, substr_count($html, 'role="listitem"'));
-        self::assertStringContainsString('&lt;script&gt;alert(1)&lt;/script&gt;', $html);
-        self::assertStringNotContainsString('<script>alert(1)</script>', $html);
-        self::assertStringContainsString('aria-current="location"', $html);
-
-        foreach ([
-            'approve_user', 'create_client', 'disable_client',
-            'request_ip', 'approve_ip', 'revoke_ip',
-        ] as $action) {
-            self::assertStringContainsString('name="action" value="' . $action . '"', $html);
+        foreach (['users', 'owners', 'clients', 'pending_ips', 'approved_ips'] as $section) {
+            $html = $view->section($section, self::CSRF, 'Administrator', self::data(), true);
+            self::assertSame(1, substr_count($html, 'class="opg-record-grid"'), $section);
+            self::assertSame(1, substr_count($html, 'opg-desktop-table'), $section);
+            self::assertSame(1, substr_count($html, 'role="listitem"'), $section);
+            preg_match_all('/\\bid="([^"]+)"/', $html, $ids);
+            self::assertCount(count(array_unique($ids[1])), $ids[1], $section);
         }
-
-        // Both responsive presentations send only the existing strict form names.
-        self::assertStringContainsString('name="_csrf" value="' . self::CSRF . '"', $html);
-        self::assertStringContainsString('name="target_id" value="15"', $html);
-        self::assertStringContainsString('name="value"', $html);
-        self::assertStringContainsString('data-lucide="shield-x"', $html);
-        self::assertStringContainsString('id="opg-mobile-create_client-9"', $html);
-        self::assertStringContainsString('id="opg-desktop-create_client-9"', $html);
-        self::assertStringContainsString('id="opg-mobile-request_ip-15"', $html);
-        self::assertStringContainsString('id="opg-desktop-request_ip-15"', $html);
-        preg_match_all('/\\bid="([^"]+)"/', $html, $matches);
-        self::assertCount(count(array_unique($matches[1])), $matches[1]);
-
     }
 
-    public function testReadOnlyViewDoesNotExposeMutatingFormsInEitherLayout(): void
+    public function testActionsArePresentedOnlyOnTheirCorrectPages(): void
     {
         $view = new TwigAdminPageRenderer(new TwigRenderer(dirname(__DIR__) . '/templates'));
-        $html = $view->dashboard(self::CSRF, 'Administrator', self::data(), false);
+        foreach ([
+            'users' => ['approve_user'],
+            'owners' => ['create_client'],
+            'clients' => ['disable_client', 'request_ip'],
+            'pending_ips' => ['approve_ip'],
+            'approved_ips' => ['revoke_ip'],
+        ] as $section => $actions) {
+            $html = $view->section($section, self::CSRF, 'Administrator', self::data(), true);
+            foreach ($actions as $action) {
+                self::assertStringContainsString('name="action" value="' . $action . '"', $html);
+            }
+            self::assertStringContainsString('name="_csrf" value="' . self::CSRF . '"', $html);
+        }
+        $users = $view->section('users', self::CSRF, 'Administrator', self::data(), true);
+        self::assertStringContainsString('&lt;script&gt;alert(1)&lt;/script&gt;', $users);
+        self::assertStringNotContainsString('<script>alert(1)</script>', $users);
 
-        self::assertSame(5, substr_count($html, 'class="opg-record-grid"'));
-        self::assertStringNotContainsString('action="/admin/review"', $html);
-        self::assertStringNotContainsString('action="/admin/provision"', $html);
-        self::assertStringContainsString('Read-only mode', $html);
+        $owners = $view->section('owners', self::CSRF, 'Administrator', self::data(), true);
+        self::assertStringContainsString('id="opg-mobile-create_client-9"', $owners);
+        self::assertStringContainsString('id="opg-desktop-create_client-9"', $owners);
+        $clients = $view->section('clients', self::CSRF, 'Administrator', self::data(), true);
+        self::assertStringContainsString('id="opg-mobile-request_ip-15"', $clients);
+        self::assertStringContainsString('id="opg-desktop-request_ip-15"', $clients);
+    }
+
+    public function testReadOnlyPagesNeverIncludeMutationForms(): void
+    {
+        $view = new TwigAdminPageRenderer(new TwigRenderer(dirname(__DIR__) . '/templates'));
+        foreach (['overview', 'users', 'owners', 'clients', 'pending_ips', 'approved_ips'] as $section) {
+            $html = $view->section($section, self::CSRF, 'Administrator', self::data(), false);
+            self::assertStringNotContainsString('action="/admin/review"', $html, $section);
+            self::assertStringNotContainsString('action="/admin/provision"', $html, $section);
+        }
     }
 
     public function testLoginIncludesLocallyBundledIconThemeControl(): void
     {
         $view = new TwigAdminPageRenderer(new TwigRenderer(dirname(__DIR__) . '/templates'));
         $html = $view->login(self::CSRF);
-
         self::assertStringContainsString('data-lucide="sun"', $html);
         self::assertStringContainsString('data-lucide="moon"', $html);
         self::assertStringContainsString('data-lucide="monitor"', $html);

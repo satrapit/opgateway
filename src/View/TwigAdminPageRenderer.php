@@ -35,6 +35,34 @@ final readonly class TwigAdminPageRenderer implements AdminPageRenderer
         ?array $pending = null,
         bool $actionsEnabled = false,
     ): string {
+        return $this->section('overview', $csrfToken, $email, $pending, $actionsEnabled);
+    }
+
+    /**
+     * Only predeclared page keys can be rendered; never interpolate URL input
+     * into a Twig file name.
+     *
+     * @param array<string,mixed>|null $pending
+     */
+    public function section(
+        string $section,
+        string $csrfToken,
+        string $email,
+        ?array $pending = null,
+        bool $actionsEnabled = false,
+    ): string {
+        $titles = [
+            'overview' => 'Overview',
+            'users' => 'User approvals',
+            'owners' => 'Account owners',
+            'clients' => 'API clients',
+            'pending_ips' => 'Pending IP requests',
+            'approved_ips' => 'Approved IPs',
+        ];
+        if (!array_key_exists($section, $titles)) {
+            throw new InvalidArgumentException('Unknown admin section.');
+        }
+
         self::validateCsrf($csrfToken);
         if (strlen($email) > 254) {
             throw new InvalidArgumentException('Invalid display value.');
@@ -51,6 +79,8 @@ final readonly class TwigAdminPageRenderer implements AdminPageRenderer
         ];
 
         return $this->twig->render('admin/dashboard.html.twig', [
+            'active_section' => $section,
+            'section_title' => $titles[$section],
             'csrf_token' => $csrfToken,
             'administrator_label' => $email,
             'actions_enabled' => $actionsEnabled,

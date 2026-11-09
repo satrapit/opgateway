@@ -1,0 +1,35 @@
+<section id="overview" aria-labelledby="overview-title">
+  <div class="mb-6 flex flex-wrap items-end justify-between gap-4">
+    <div>
+      <p class="mb-1 text-sm font-medium text-brand-600 dark:text-brand-300">Administrator overview</p>
+      <h2 id="overview-title" class="text-2xl font-semibold tracking-tight text-gray-900 sm:text-3xl dark:text-white">Access management</h2>
+      <p class="mt-2 text-sm text-gray-500 dark:text-gray-400">Choose a workspace to manage accounts, clients and IP access. Counts represent at most 50 visible records per area.</p>
+    </div>
+    <span class="opg-badge {{ actions_enabled ? 'opg-badge-green' : 'opg-badge-neutral' }}">{{ actions_enabled ? 'Review actions enabled' : 'Read-only mode' }}</span>
+  </div>
+
+  {% if not review_available %}
+    <div class="opg-alert" role="status">Management data is not configured. No records are displayed.</div>
+  {% else %}
+  <div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
+    {% set cards = [
+      {name:'Pending users', value:visible_counts.pending_users, anchor:'/admin/users', icon:'users'},
+      {name:'Approved owners', value:visible_counts.owners, anchor:'/admin/owners', icon:'user-check'},
+      {name:'API clients', value:visible_counts.clients, anchor:'/admin/clients', icon:'server'},
+      {name:'Pending IP requests', value:visible_counts.pending_ips, anchor:'/admin/ips/pending', icon:'clock'},
+      {name:'Approved IPs', value:visible_counts.approved_ips, anchor:'/admin/ips/approved', icon:'shield-check'}
+    ] %}
+    {% for card in cards %}
+    <a href="{{ card.anchor }}" class="opg-stat-card group">
+      <div class="mb-5 flex items-center justify-between">
+        <span class="inline-flex size-11 items-center justify-center rounded-xl bg-brand-50 text-brand-600 dark:bg-brand-500/15 dark:text-brand-300"><i data-lucide="{{ card.icon }}" class="opg-icon" aria-hidden="true"></i></span>
+        <i data-lucide="arrow-up-right" class="opg-icon text-gray-400 transition-transform group-hover:translate-x-0.5" aria-hidden="true"></i>
+      </div>
+      <p class="text-sm font-medium text-gray-500 dark:text-gray-400">{{ card.name }}</p>
+      <p class="mt-2 text-3xl font-semibold tabular-nums text-gray-900 dark:text-white">{{ card.value }}</p>
+      <p class="mt-2 text-xs text-gray-400">Shown (max. 50)</p>
+    </a>
+    {% endfor %}
+  </div>
+  {% endif %}
+</section>
