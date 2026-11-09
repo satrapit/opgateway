@@ -65,3 +65,12 @@ test -s ../public/assets/admin/theme-init.js
 ```
 
 Commit fresh `composer.lock`, `frontend/package-lock.json` and three matching `/public/assets/admin/` files. Then verify local HTTPS/IP/CSRF/role boundaries, real login and read-only dashboard, both mobile and desktop widths (320/375/390/768/1024/1440), keyboard focus/drawer behavior, dark/light/system preferences including login, CSP and owner portal regression.
+
+## Reproducible stylesheet whitespace
+
+`npm run build` now runs the Webpack production build followed by
+`frontend/scripts/normalize-css.mjs`. This only removes trailing empty
+lines and appends exactly one POSIX newline to the generated
+`public/assets/admin/app.css`; it does not modify the source stylesheet
+or change CSS selectors. The generated files remain version-controlled.
+`git diff --check` should remain clean after repeat builds.
