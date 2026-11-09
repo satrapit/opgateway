@@ -1,0 +1,1 @@
+!function(){"use strict";let e="system";try{const t=window.localStorage.getItem("opgateway-theme");"light"!==t&&"dark"!==t||(e=t)}catch(e){}const t=window.matchMedia&&window.matchMedia("(prefers-color-scheme: dark)").matches,a="dark"===e||"system"===e&&t;document.documentElement.classList.toggle("dark",Boolean(a)),document.documentElement.dataset.theme=e}();
