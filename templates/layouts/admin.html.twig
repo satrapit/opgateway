@@ -1,11 +1,11 @@
 {% extends 'layouts/auth.html.twig' %}
-{% block title %}Dashboard{% endblock %}
+{% block title %}{{ section_title }}{% endblock %}
 {% block content %}
 <div class="opg-shell min-h-screen lg:flex" x-data="adminShell">
   <div class="opg-backdrop" x-show="backdropVisible" x-on:click="closeSidebar" x-cloak aria-hidden="true"></div>
   <aside id="admin-sidebar" class="opg-sidebar" x-ref="sidebar" x-bind:class="sidebarClass" aria-label="Main navigation" tabindex="-1">
     <div class="flex items-center justify-between gap-3 border-b border-gray-200 px-6 py-6 dark:border-gray-800">
-      <a class="inline-flex items-center gap-3 font-semibold text-gray-900 dark:text-white" href="/admin#overview">
+      <a class="inline-flex items-center gap-3 font-semibold text-gray-900 dark:text-white" href="/admin">
         <span class="flex size-10 shrink-0 items-center justify-center rounded-xl bg-brand-500 text-lg font-bold text-white" aria-hidden="true">O</span>
         <span class="text-xl tracking-tight">OPGateway</span>
       </a>
@@ -32,9 +32,9 @@
     <header class="sticky top-0 z-20 flex min-h-20 items-center justify-between gap-4 border-b border-gray-200 bg-white/95 px-4 shadow-sm backdrop-blur sm:px-6 lg:px-8 dark:border-gray-800 dark:bg-gray-900/95">
       <div class="flex min-w-0 items-center gap-3">
         <button type="button" class="opg-icon-button lg:hidden" x-on:click="openSidebar" x-bind:aria-expanded="sidebarOpen" aria-controls="admin-sidebar" aria-label="Open navigation"><i data-lucide="menu" class="opg-icon" aria-hidden="true"></i></button>
-        <div class="hidden min-w-0 sm:block">
-          <p class="text-xs font-medium tracking-wide text-gray-500 dark:text-gray-400">OPGateway / Administration</p>
-          <h1 class="truncate text-lg font-semibold text-gray-900 dark:text-white">Workspace overview</h1>
+        <div class="min-w-0">
+          <p class="hidden text-xs font-medium tracking-wide text-gray-500 sm:block dark:text-gray-400">OPGateway / Administration</p>
+          <h1 class="truncate text-sm font-semibold text-gray-900 sm:text-lg dark:text-white">{{ section_title }}</h1>
         </div>
       </div>
       <div class="flex items-center gap-2 sm:gap-3">
@@ -47,7 +47,7 @@
         <div class="hidden max-w-48 truncate text-sm font-medium text-gray-700 sm:block dark:text-gray-300">{{ administrator_label }}</div>
         <form method="post" action="/admin/logout">
           <input type="hidden" name="_csrf" value="{{ csrf_token }}">
-          <button type="submit" class="opg-secondary-button"><i data-lucide="log-out" class="opg-icon" aria-hidden="true"></i> Sign out</button>
+          <button type="submit" class="opg-icon-button" aria-label="Sign out" title="Sign out"><i data-lucide="log-out" class="opg-icon" aria-hidden="true"></i></button>
         </form>
       </div>
     </header>
