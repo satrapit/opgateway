@@ -61,6 +61,13 @@ final class AdminResponsiveMarkupTest extends TestCase
         self::assertStringContainsString('name="target_id" value="15"', $html);
         self::assertStringContainsString('name="value"', $html);
         self::assertStringContainsString('data-lucide="shield-x"', $html);
+        self::assertStringContainsString('id="opg-mobile-create_client-9"', $html);
+        self::assertStringContainsString('id="opg-desktop-create_client-9"', $html);
+        self::assertStringContainsString('id="opg-mobile-request_ip-15"', $html);
+        self::assertStringContainsString('id="opg-desktop-request_ip-15"', $html);
+        preg_match_all('/\\bid="([^"]+)"/', $html, $matches);
+        self::assertCount(count(array_unique($matches[1])), $matches[1]);
+
     }
 
     public function testReadOnlyViewDoesNotExposeMutatingFormsInEitherLayout(): void

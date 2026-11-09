@@ -11,13 +11,13 @@
 </form>
 {% endmacro %}
 
-{% macro provision(csrf, action, target_id, title, label, placeholder, maxlength = 128) %}
+{% macro provision(csrf, action, target_id, title, label, placeholder, maxlength = 128, variant = 'desktop') %}
 <form method="post" action="/admin/provision" class="opg-provision-form">
   <input type="hidden" name="_csrf" value="{{ csrf }}">
   <input type="hidden" name="action" value="{{ action }}">
   <input type="hidden" name="target_id" value="{{ target_id }}">
-  <label class="opg-sr-only" for="opg-{{ action }}-{{ target_id }}">{{ label }}</label>
-  <input class="opg-small-input" id="opg-{{ action }}-{{ target_id }}" name="value" type="text" maxlength="{{ maxlength }}" placeholder="{{ placeholder }}" required>
+  <label class="opg-sr-only" for="opg-{{ variant }}-{{ action }}-{{ target_id }}">{{ label }}</label>
+  <input class="opg-small-input" id="opg-{{ variant }}-{{ action }}-{{ target_id }}" name="value" type="text" maxlength="{{ maxlength }}" placeholder="{{ placeholder }}" required>
   <button type="submit" class="opg-small-button"><i data-lucide="plus" class="opg-icon" aria-hidden="true"></i> {{ title }}</button>
 </form>
 {% endmacro %}
