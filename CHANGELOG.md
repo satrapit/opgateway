@@ -2,6 +2,9 @@
 
 ## [Unreleased]
 
+- Add locally bundled, CSP-compatible record details, provisioning and destructive-action dialogs on the five independent admin pages. Native details and original POST forms remain usable without JavaScript; server-side contracts and feature gates remain unchanged.
+- Add clear target context, cancel/escape/focus restoration and mobile-sized dialogs; cover strict POST form field invariants and read-only rendering in focused tests. Build/browser validation required.
+
 - Replace the single long admin dashboard and anchor-only Sidebar navigation with six explicit, authenticated Twig workspace pages (overview, users, owners, clients, pending IPs and approved IPs). Navigation selection, title and deep links are server-driven.
 - Scope bounded tables and responsive cards to one relevant detail page each; preserve the existing strict action form payloads and security feature flags. Make sign-out icon-only with its accessible label.
 - Add per-route role/session/Twig scoping regression tests. Local build and browser verification are pending.

@@ -1,9 +1,10 @@
 import '../css/app.css';
 import Alpine from '@alpinejs/csp';
+import { initializeAdminDialogs } from './admin-dialogs.js';
 import {
   createIcons, Menu, X, Sun, Moon, Monitor, LayoutDashboard, UserCheck,
   Users, Server, Clock, ShieldCheck, ShieldX, ArrowUpRight, LogOut,
-  Plus, Check, Ban,
+  Plus, Check, Ban, Eye, ShieldAlert,
 } from 'lucide';
 
 /**
@@ -49,10 +50,6 @@ Alpine.data('adminShell', () => ({
       } else if (!event.shiftKey && document.activeElement === last) {
         event.preventDefault(); first.focus();
       }
-    });
-    document.addEventListener('submit', (event) => {
-      const form = event.target.closest?.('form[data-confirm]');
-      if (form && !window.confirm(form.dataset.confirm)) event.preventDefault();
     });
   },
 
@@ -102,10 +99,12 @@ Alpine.data('adminShell', () => ({
 }));
 
 Alpine.start();
+initializeAdminDialogs();
 createIcons({
   icons: {
     Menu, X, Sun, Moon, Monitor, LayoutDashboard, UserCheck, Users, Server,
     Clock, ShieldCheck, ShieldX, ArrowUpRight, LogOut, Plus, Check, Ban,
+    Eye, ShieldAlert,
   },
   attrs: { 'stroke-width': 1.85 },
 });

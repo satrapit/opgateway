@@ -1,0 +1,15 @@
+{# Details are limited to fields the administrator can already read in this listing.
+   Native <details> is the no-JavaScript fallback; JS enhances its summary to a dialog. #}
+{% macro details(kind, heading, fields) %}
+<details class="opg-record-details" data-opg-record-details data-record-heading="{{ heading }}">
+  <summary class="opg-detail-summary"><i data-lucide="eye" class="opg-icon" aria-hidden="true"></i> {{ kind }} details</summary>
+  <dl class="opg-details-grid">
+    {% for field in fields %}
+    <div class="min-w-0">
+      <dt class="opg-detail-term">{{ field.label }}</dt>
+      <dd class="opg-detail-value">{{ field.value }}</dd>
+    </div>
+    {% endfor %}
+  </dl>
+</details>
+{% endmacro %}

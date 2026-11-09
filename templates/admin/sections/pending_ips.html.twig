@@ -1,4 +1,5 @@
 {% import 'components/forms.html.twig' as action %}
+{% import 'components/records.html.twig' as record %}
 <section id="pending-ips" aria-labelledby="pending-ips-title" class="opg-panel">
   <div class="opg-panel-header">
     <div>
@@ -17,7 +18,12 @@
         <div class="min-w-0"><p class="opg-record-title font-mono">{{ ip.address }}</p><p class="opg-muted mt-1">Client: {{ ip.client_label }}</p></div>
         <span class="opg-badge opg-badge-amber shrink-0">Pending</span>
       </div>
-      <div class="opg-record-actions">{% if actions_enabled %}{{ action.review(csrf_token, 'approve_ip', ip.id, 'Approve IP') }}{% else %}<span class="opg-muted">Read only</span>{% endif %}</div>
+      <div class="opg-record-actions">
+        {{ record.details('IP', ip.address, [
+  {label:'IP address', value:ip.address},
+  {label:'Client', value:ip.client_label},
+  {label:'Approval', value:'Pending'}
+]) }}{% if actions_enabled %}{{ action.review(csrf_token, 'approve_ip', ip.id, 'Approve IP') }}{% else %}<span class="opg-muted">Read only</span>{% endif %}</div>
     </article>
     {% endfor %}
   </div>
@@ -28,7 +34,11 @@
       {% for ip in queues.ips %}
       <tr>
         <td class="font-mono text-sm">{{ ip.address }}</td><td>{{ ip.client_label }}</td><td><span class="opg-badge opg-badge-amber">Pending</span></td>
-        <td class="text-end">{% if actions_enabled %}{{ action.review(csrf_token, 'approve_ip', ip.id, 'Approve IP') }}{% else %}<span class="opg-muted">Read only</span>{% endif %}</td>
+        <td class="text-end">{{ record.details('IP', ip.address, [
+  {label:'IP address', value:ip.address},
+  {label:'Client', value:ip.client_label},
+  {label:'Approval', value:'Pending'}
+]) }} {% if actions_enabled %}{{ action.review(csrf_token, 'approve_ip', ip.id, 'Approve IP') }}{% else %}<span class="opg-muted">Read only</span>{% endif %}</td>
       </tr>
       {% endfor %}
       </tbody>

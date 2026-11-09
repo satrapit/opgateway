@@ -52,3 +52,19 @@ Lucide's and Feather's upstream license notices are preserved under
 `frontend/LUCIDE-LICENSE`. The production minimizer retains bundled
 license comments inside `app.js` rather than generating an additional
 un-deployed `app.js.LICENSE.txt` sidecar.
+
+## Record interaction patterns (dialog enhancement)
+
+- Mobile-first native `<details>` offers available record context with
+  no JavaScript. With JS, the same escaped content opens in an accessible
+  native `<dialog>` with focus restoration and Escape/Cancel.
+- Owner and client provisioning forms are first rendered as real strict
+  server-side forms; local JS upgrades them to modal sheets without
+  cloning or modifying submitted fields or passwords/CSRF values.
+- Destructive actions show a second confirmation step with the already
+  authorized record label or exact IP. Always rely on server-side
+  authorization and CSRF; no dialog is a security boundary.
+- Preserve `dialog::backdrop`, TailAdmin tokens, 44px control heights,
+  content wrapping at 320px, and dark/system/light modes.
+- No simulated toasts for redirects: actual success/failure messaging
+  requires a separately reviewed backend change to response semantics.

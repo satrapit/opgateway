@@ -92,3 +92,32 @@ Actions and provisioning continue to use the original strict POST
 form fields and separate `ADMIN_ACTIONS_ENABLED` gate. Never infer
 that a 401 from a logged-out mutation request proves the flag is off:
 with the flag disabled an otherwise valid POST should yield 404.
+
+## Accessible record dialogs (progressive enhancement)
+
+On Twig admin section pages, `components/records.html.twig` adds a native
+`<details>` summary for each authorized row/card. This remains usable when
+JavaScript is unavailable. The local `admin-dialogs.js` module upgrades the
+summary to a native `<dialog>` using cloned, already escaped DOM content
+(no fetch, `innerHTML`, arbitrary URL-driven template, secrets, or extra
+backend queries).
+
+Authorized `create_client` and `request_ip` forms remain real
+`POST /admin/provision` elements with exactly `_csrf`, `action`,
+`target_id`, `value`. JavaScript replaces each inline form with an
+action launcher only after initialization, then moves the **same form**
+node into the dialog. Without JavaScript, the form stays inline.
+Client creation remains disabled by default until separately activated;
+requested IP entries remain pending until approved. No new status data
+or privileged details are exposed by the dialog.
+
+`disable_client` and `revoke_ip` use a native confirmation dialog
+showing the escaped target label/IP before re-submitting the **same**
+`POST /admin/review` form with its original CSRF and fields. Escape
+and Cancel never submit. Fallback uses the browser confirmation
+dialog; without JS the server-side CSRF and authorization checks still
+apply, though there is no client-side confirmation. Navigation after
+a successful/denied POST retains the existing backend contract:
+there is no fabricated success toast or unreviewed redirect change.
+`ADMIN_ACTIONS_ENABLED=false` must remain in production and local
+read-only review until explicit administrative-action tests.

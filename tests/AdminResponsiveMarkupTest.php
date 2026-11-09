@@ -45,6 +45,10 @@ final class AdminResponsiveMarkupTest extends TestCase
             self::assertSame(1, substr_count($html, 'class="opg-record-grid"'), $section);
             self::assertSame(1, substr_count($html, 'opg-desktop-table'), $section);
             self::assertSame(1, substr_count($html, 'role="listitem"'), $section);
+            self::assertSame(2, substr_count($html, 'data-opg-record-details'), $section);
+            self::assertStringContainsString('id="opg-record-dialog"', $html);
+            self::assertStringContainsString('id="opg-provision-dialog"', $html);
+            self::assertStringContainsString('id="opg-confirm-dialog"', $html);
             self::assertStringContainsString('aria-label="Sign out"', $html);
             self::assertStringNotContainsString('</i> Sign out', $html);
             self::assertStringNotContainsString('Workspace overview</h1>', $html);
@@ -90,6 +94,40 @@ final class AdminResponsiveMarkupTest extends TestCase
             self::assertStringNotContainsString('action="/admin/review"', $html, $section);
             self::assertStringNotContainsString('action="/admin/provision"', $html, $section);
         }
+    }
+
+    public function testProgressiveEnhancementDoesNotAddPostedFormFields(): void
+    {
+        $view = new TwigAdminPageRenderer(new TwigRenderer(dirname(__DIR__) . '/templates'));
+        foreach (['users', 'owners', 'clients', 'pending_ips', 'approved_ips'] as $section) {
+            $html = $view->section($section, self::CSRF, 'Administrator', self::data(), true);
+
+            preg_match_all('~<form\\b[^>]*action="/admin/(review|provision)"[^>]*>(.*?)</form>~s',
+                $html, $forms, PREG_SET_ORDER);
+            self::assertNotEmpty($forms, $section);
+            foreach ($forms as $form) {
+                preg_match_all('/\\bname="([^"]+)"/', $form[2], $fieldMatches);
+                $names = $fieldMatches[1];
+                sort($names);
+                $expected = $form[1] === 'provision'
+                    ? ['_csrf', 'action', 'target_id', 'value']
+                    : ['_csrf', 'action', 'target_id'];
+                sort($expected);
+                self::assertSame($expected, $names, $section);
+            }
+        }
+
+        $owners = $view->section('owners', self::CSRF, 'Administrator', self::data(), true);
+        self::assertSame(2, substr_count($owners, 'data-opg-provision'));
+        $clients = $view->section('clients', self::CSRF, 'Administrator', self::data(), true);
+        self::assertSame(2, substr_count($clients, 'data-opg-provision'));
+        self::assertSame(2, substr_count($clients, 'data-confirm-target="Mobile client name"'));
+        $ips = $view->section('approved_ips', self::CSRF, 'Administrator', self::data(), true);
+        self::assertSame(2, substr_count($ips, 'data-confirm-target="192.0.2.15"'));
+
+        $disabled = $view->section('owners', self::CSRF, 'Administrator', self::data(), false);
+        self::assertStringNotContainsString('data-opg-provision', $disabled);
+        self::assertStringContainsString('data-opg-record-details', $disabled);
     }
 
     public function testLoginIncludesLocallyBundledIconThemeControl(): void

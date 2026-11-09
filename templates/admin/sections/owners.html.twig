@@ -1,4 +1,5 @@
 {% import 'components/forms.html.twig' as action %}
+{% import 'components/records.html.twig' as record %}
 <section id="owners" aria-labelledby="owners-title" class="opg-panel">
   <div class="opg-panel-header">
     <div>
@@ -17,7 +18,12 @@
         <div class="min-w-0"><p class="opg-record-title">{{ owner.email }}</p><p class="opg-muted mt-1">User #{{ owner.id }}</p></div>
         <span class="opg-badge opg-badge-green shrink-0">Approved</span>
       </div>
-      <div class="opg-record-actions">{% if actions_enabled %}{{ action.provision(csrf_token, 'create_client', owner.id, 'Create client', 'Client name', 'New client label', 128, 'mobile') }}{% else %}<span class="opg-muted">Read only</span>{% endif %}</div>
+      <div class="opg-record-actions">
+        {{ record.details('Owner', owner.email, [
+  {label:'User ID', value:owner.id},
+  {label:'Email', value:owner.email},
+  {label:'Approval', value:'Approved'}
+]) }}{% if actions_enabled %}{{ action.provision(csrf_token, 'create_client', owner.id, 'Create client', 'Client name', 'New client label', 128, 'mobile') }}{% else %}<span class="opg-muted">Read only</span>{% endif %}</div>
     </article>
     {% endfor %}
   </div>
@@ -29,7 +35,11 @@
       <tr>
         <td><div class="font-medium text-gray-900 dark:text-white">{{ owner.email }}</div><span class="opg-muted">User #{{ owner.id }}</span></td>
         <td><span class="opg-badge opg-badge-green">Approved</span></td>
-        <td>{% if actions_enabled %}{{ action.provision(csrf_token, 'create_client', owner.id, 'Create client', 'Client name', 'New client label') }}{% else %}<span class="opg-muted">Read only</span>{% endif %}</td>
+        <td>{{ record.details('Owner', owner.email, [
+  {label:'User ID', value:owner.id},
+  {label:'Email', value:owner.email},
+  {label:'Approval', value:'Approved'}
+]) }} {% if actions_enabled %}{{ action.provision(csrf_token, 'create_client', owner.id, 'Create client', 'Client name', 'New client label') }}{% else %}<span class="opg-muted">Read only</span>{% endif %}</td>
       </tr>
       {% endfor %}
       </tbody>
