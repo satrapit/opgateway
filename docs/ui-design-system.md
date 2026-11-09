@@ -47,3 +47,8 @@ are covered. Record values (IPv6, emails, client labels) wrap at word boundaries
 and overflow points. The Sidebar sets the active `aria-current="location"`
 on click and `hashchange`, closes the mobile drawer after selection and
 moves focus to the destination heading. Test real browser behavior before release.
+
+Lucide's and Feather's upstream license notices are preserved under
+`frontend/LUCIDE-LICENSE`. The production minimizer retains bundled
+license comments inside `app.js` rather than generating an additional
+un-deployed `app.js.LICENSE.txt` sidecar.

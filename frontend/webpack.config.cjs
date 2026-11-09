@@ -3,6 +3,7 @@
 const path = require('path');
 const MiniCssExtractPlugin = require('mini-css-extract-plugin');
 const CopyWebpackPlugin = require('copy-webpack-plugin');
+const TerserPlugin = require('terser-webpack-plugin');
 
 module.exports = {
   mode: 'production',
@@ -26,6 +27,17 @@ module.exports = {
       patterns: [{ from: path.resolve(__dirname, 'src/js/theme-init.js'), to: 'theme-init.js' }],
     }),
   ],
-  optimization: { minimize: true },
+  optimization: {
+    minimize: true,
+    minimizer: [
+      new TerserPlugin({
+        // Keep third-party copyright and license comments in app.js itself.
+        // A separate app.js.LICENSE.txt would not be copied by our strict
+        // cPanel allowlist and would leave a misleading missing-file banner.
+        extractComments: false,
+        terserOptions: { format: { comments: 'some' } },
+      }),
+    ],
+  },
   target: 'web',
 };

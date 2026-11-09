@@ -74,3 +74,24 @@ lines and appends exactly one POSIX newline to the generated
 `public/assets/admin/app.css`; it does not modify the source stylesheet
 or change CSS selectors. The generated files remain version-controlled.
 `git diff --check` should remain clean after repeat builds.
+
+## Local Lucide license bundling (November 2026)
+
+After adding Lucide, Webpack's default Terser minimizer emitted
+`public/assets/admin/app.js.LICENSE.txt` while the cPanel deployment
+allowlisted only three runtime assets. The build explicitly configures
+`TerserPlugin({ extractComments: false, terserOptions: { format:
+{ comments: 'some' } } })` to **retain relevant copyright/license
+comments inside the versioned `app.js`**. The full unmodified Lucide/Feather
+license is retained in `frontend/LUCIDE-LICENSE`, alongside the TailAdmin
+license. The production build must not create a sidecar file. Check with
+`test ! -e public/assets/admin/app.js.LICENSE.txt` and inspect the
+minified JS for copyright/license notices before staging.
+
+For the default-off admin routes, a body-less POST without
+`Content-Length` deliberately returns 413 from
+`BoundedRequestBody`; it does not test the later mutation feature flag.
+Use a non-secret, form-encoded stub body to confirm `/admin/review`
+and `/admin/provision` yield 404 while
+`ADMIN_ACTIONS_ENABLED=false`. Never enable mutation flags to run
+this negative test.
