@@ -27,3 +27,23 @@ Keep MIT and original copyright for actual reused source. Import only tokens and
 ## Source and build entrypoints
 
 `frontend/src/css/app.css` imports Tailwind v4 with TailAdmin Free-compatible brand tokens and shared semantic components, `frontend/src/js/app.js` uses the Alpine CSP build for theme/drawer/confirmation behavior, and `frontend/src/js/theme-init.js` resolves the light/dark/system preference before styles. `frontend/webpack.config.cjs` builds into `public/assets/admin/`, with no external runtime CDN. These are **source artifacts** until `npm run build` has been run and the compiled files verified and committed. The admin Twig feature flag must remain off before that.
+
+## Local icon library and responsive records
+
+Lucide SVG icons are imported selectively from the `lucide` npm package and
+bundled into `public/assets/admin/app.js`. Templates declare
+`data-lucide="icon-name"`; the single global bootstrap replaces them with
+inline SVG, with no network dependency, external font, inline JavaScript or CDN.
+Icons are decorative unless an accessible text alternative is provided by a
+button label / ARIA label. The theme control is icon-only, announces the current
+mode, and cycles system → light → dark; its SVG visibility is CSS-controlled
+from `html[data-theme]`. Preserve `frontend/LUCIDE-LICENSE` in distributions.
+
+At widths below 1280px, review queues render server-side semantic record cards
+instead of horizontally scrolling tables. Wider layouts retain the desktop
+tables; both representations use exactly the same authorized bounded data,
+conditional action form macros and server-issued CSRF tokens. All five queues
+are covered. Record values (IPv6, emails, client labels) wrap at word boundaries
+and overflow points. The Sidebar sets the active `aria-current="location"`
+on click and `hashchange`, closes the mobile drawer after selection and
+moves focus to the destination heading. Test real browser behavior before release.

@@ -4,7 +4,10 @@
   <input type="hidden" name="_csrf" value="{{ csrf }}">
   <input type="hidden" name="action" value="{{ action }}">
   <input type="hidden" name="target_id" value="{{ target_id }}">
-  <button type="submit" class="{{ destructive ? 'opg-danger-button' : 'opg-small-button' }}">{{ title }}</button>
+  <button type="submit" class="{{ destructive ? 'opg-danger-button' : 'opg-small-button' }}">
+    <i data-lucide="{{ action == 'disable_client' ? 'ban' : (action == 'revoke_ip' ? 'shield-x' : 'check') }}" class="opg-icon" aria-hidden="true"></i>
+    {{ title }}
+  </button>
 </form>
 {% endmacro %}
 
@@ -15,6 +18,6 @@
   <input type="hidden" name="target_id" value="{{ target_id }}">
   <label class="opg-sr-only" for="opg-{{ action }}-{{ target_id }}">{{ label }}</label>
   <input class="opg-small-input" id="opg-{{ action }}-{{ target_id }}" name="value" type="text" maxlength="{{ maxlength }}" placeholder="{{ placeholder }}" required>
-  <button type="submit" class="opg-small-button">{{ title }}</button>
+  <button type="submit" class="opg-small-button"><i data-lucide="plus" class="opg-icon" aria-hidden="true"></i> {{ title }}</button>
 </form>
 {% endmacro %}

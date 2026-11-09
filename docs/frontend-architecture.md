@@ -60,3 +60,16 @@ Review and commit the generated `composer.lock`, `frontend/package-lock.json` an
 ## Consolidation (2026-11-09)
 
 The feature branch and newer `main` had different renderer and asset architectures. The single canonical implementation is the injected `AdminPageRenderer` / `TwigAdminPageRenderer`, `frontend/src/js/app.js`, and `/assets/admin/` of `main`. The earlier parallel templates, `TwigBrowserViews` and root compiled assets are not deployed. The original commits remain in history; locks and generated bundles must be rebuilt from this canonical source. The independent default-off `ADMIN_TWIG_UI_ENABLED` remains mandatory, and the HTTP entrypoint fails closed for missing private Twig or static assets after opt-in.
+
+## Navigation, cards and icon remediation
+
+After 2026-11-10 feedback, the Twig administrator shell uses a single
+CSP-compatible Alpine component for Sidebar and accessible navigation state,
+with DOM click + `hashchange` synchronization. Link navigation closes the
+mobile drawer without restoring focus to the header; Escape and explicit close
+return focus to the opener. Icons are selectively bundled from local Lucide
+npm sources by Webpack and instantiated only from allowlisted template names;
+there are no network icon requests. All five DB-backed review groups render
+mobile/medium-size cards (under 1280px) and conventional tables at xl widths.
+No POST names, CSRF, authorizations, state transitions or default-off switches
+change. Locks and compiled assets need regeneration on the developer Mac.

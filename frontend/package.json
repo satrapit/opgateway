@@ -8,7 +8,8 @@
     "lint": "node --check src/js/app.js && node --check src/js/theme-init.js && node --check scripts/normalize-css.mjs"
   },
   "dependencies": {
-    "@alpinejs/csp": "^3.17.5"
+    "@alpinejs/csp": "^3.17.5",
+    "lucide": "^1.70.0"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4.3.3",
