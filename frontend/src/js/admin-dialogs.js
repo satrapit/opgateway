@@ -6,7 +6,7 @@
  * to form action, method, field names, CSRF or existing server redirects.
  * Record content is cloned from Twig-escaped DOM; never use innerHTML.
  */
-export function initializeAdminDialogs() {
+export function initializeAdminDialogs(renderLocalIcons = () => {}) {
   const recordDialog = document.getElementById('opg-record-dialog');
   const provisionDialog = document.getElementById('opg-provision-dialog');
   const confirmDialog = document.getElementById('opg-confirm-dialog');
@@ -97,6 +97,9 @@ export function initializeAdminDialogs() {
       form.querySelector('label')?.classList.remove('opg-sr-only');
       document.getElementById('opg-provision-dialog-body').replaceChildren(form);
       provisionDialog.showModal();
+      // The original form was detached during the initial icon pass. Render
+      // its local Lucide markup only after reattaching it to the dialog.
+      renderLocalIcons();
       input.focus();
     });
     form.replaceWith(trigger);

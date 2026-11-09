@@ -98,9 +98,7 @@ Alpine.data('adminShell', () => ({
   },
 }));
 
-Alpine.start();
-initializeAdminDialogs();
-createIcons({
+const renderLocalIcons = () => createIcons({
   icons: {
     Menu, X, Sun, Moon, Monitor, LayoutDashboard, UserCheck, Users, Server,
     Clock, ShieldCheck, ShieldX, ArrowUpRight, LogOut, Plus, Check, Ban,
@@ -108,3 +106,7 @@ createIcons({
   },
   attrs: { 'stroke-width': 1.85 },
 });
+
+Alpine.start();
+initializeAdminDialogs(renderLocalIcons);
+renderLocalIcons();
