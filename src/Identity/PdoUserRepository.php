@@ -19,8 +19,8 @@ final readonly class PdoUserRepository implements UserRepository
     public function insertPending(string $email, string $passwordHash): int
     {
         $statement = $this->pdo->prepare(<<<'SQL'
-INSERT INTO users (email, password_hash, status, created_at, updated_at)
-VALUES (?, ?, 'pending', UTC_TIMESTAMP(6), UTC_TIMESTAMP(6))
+INSERT INTO users (email, password_hash, status, signup_source, created_at, updated_at)
+VALUES (?, ?, 'pending', 'self_service', UTC_TIMESTAMP(6), UTC_TIMESTAMP(6))
 SQL);
         $statement->execute([$email, $passwordHash]);
 

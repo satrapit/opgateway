@@ -10,9 +10,9 @@ use OPGateway\Identity\LoginAccountRepository;
 use OPGateway\Identity\AdministratorAuthorization;
 
 /**
- * Authentication boundary for HTTPS-only, IP-allowlisted admin browser.
+ * Authentication boundary for HTTPS-only, rate-limited admin browser.
  *
- * The HTTP adapter verifies HTTPS and source IP, starts the session,
+ * The HTTP adapter verifies HTTPS and the canonical Host, starts the session,
  * supplies a CSPRNG request ID and bounds submitted form data.
  * Browser Origin is not an authorization dependency here: an existing
  * server-side CSRF token and same-site secure cookie protect POST mutations.

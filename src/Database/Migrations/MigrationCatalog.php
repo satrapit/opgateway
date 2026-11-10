@@ -20,6 +20,7 @@ final class MigrationCatalog
             new CreateIdentityTables(),
             new CreateEmailVerificationTokens(),
             new CreateLoginSecurityTables(),
+            new CreateGatewayIntegrationTables(),
         ];
 
         $versions = array_map(static fn (Migration $migration): string => $migration->version(), $migrations);

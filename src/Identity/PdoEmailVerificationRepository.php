@@ -15,7 +15,7 @@ use Throwable;
  */
 final readonly class PdoEmailVerificationRepository implements EmailVerificationRepository
 {
-    public function __construct(private PDO $pdo)
+    public function __construct(private PDO $pdo, private bool $autoApproveSelfService = false)
     {
     }
 
@@ -59,11 +59,26 @@ SQL);
                 return false;
             }
 
-            $updateUser = $this->pdo->prepare(<<<'SQL'
+            // Only accounts explicitly created through public self-service
+            // may be auto-approved after proving mailbox ownership.
+            // Legacy/manual registrations retain administrator approval.
+            $sql = $this->autoApproveSelfService
+                ? <<<'SQL'
+UPDATE users
+SET email_verified_at = UTC_TIMESTAMP(6),
+    approved_at = CASE WHEN signup_source = 'self_service'
+        THEN UTC_TIMESTAMP(6) ELSE approved_at END,
+    status = CASE WHEN signup_source = 'self_service'
+        THEN 'active' ELSE status END,
+    updated_at = UTC_TIMESTAMP(6)
+WHERE id = ? AND email_verified_at IS NULL AND status = 'pending'
+SQL
+                : <<<'SQL'
 UPDATE users
 SET email_verified_at = UTC_TIMESTAMP(6), updated_at = UTC_TIMESTAMP(6)
 WHERE id = ? AND email_verified_at IS NULL AND status = 'pending'
-SQL);
+SQL;
+            $updateUser = $this->pdo->prepare($sql);
             $updateUser->execute([$userId]);
             if ($updateUser->rowCount() !== 1) {
                 $this->pdo->rollBack();
