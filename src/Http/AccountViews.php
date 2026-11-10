@@ -20,10 +20,6 @@ final class AccountViews
         $csrf = self::csrf($csrfToken);
         $notice = $failed ? '<p role="alert">Sign-in was not successful.</p>' : '';
         $signupLink = $allowRegistration ? '<p><a href="/account/register">Create an account</a></p>' : '';
-        $integrationHtml = $integrationEnabled
-            ? self::integrationForms($csrf, $overview['clients'], $provider)
-            : '';
-
         $body = <<<HTML
 <main>
   <h1>OPGateway account</h1>
@@ -165,6 +161,9 @@ HTML);
         $clientList = self::listing($clients);
         $keyList = self::listing($credentials);
         $ipList = self::listing($ips);
+        $integrationHtml = $integrationEnabled
+            ? self::integrationForms($csrf, $overview['clients'], $provider)
+            : '';
 
         $body = <<<HTML
 <main>
