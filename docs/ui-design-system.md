@@ -27,3 +27,65 @@ Keep MIT and original copyright for actual reused source. Import only tokens and
 ## Source and build entrypoints
 
 `frontend/src/css/app.css` imports Tailwind v4 with TailAdmin Free-compatible brand tokens and shared semantic components, `frontend/src/js/app.js` uses the Alpine CSP build for theme/drawer/confirmation behavior, and `frontend/src/js/theme-init.js` resolves the light/dark/system preference before styles. `frontend/webpack.config.cjs` builds into `public/assets/admin/`, with no external runtime CDN. These are **source artifacts** until `npm run build` has been run and the compiled files verified and committed. The admin Twig feature flag must remain off before that.
+
+## Local icon library and responsive records
+
+Lucide SVG icons are imported selectively from the `lucide` npm package and
+bundled into `public/assets/admin/app.js`. Templates declare
+`data-lucide="icon-name"`; the single global bootstrap replaces them with
+inline SVG, with no network dependency, external font, inline JavaScript or CDN.
+Icons are decorative unless an accessible text alternative is provided by a
+button label / ARIA label. The theme control is icon-only, announces the current
+mode, and cycles system → light → dark; its SVG visibility is CSS-controlled
+from `html[data-theme]`. Preserve `frontend/LUCIDE-LICENSE` in distributions.
+
+At widths below 1280px, review queues render server-side semantic record cards
+instead of horizontally scrolling tables. Wider layouts retain the desktop
+tables; both representations use exactly the same authorized bounded data,
+conditional action form macros and server-issued CSRF tokens. All five queues
+are covered. Record values (IPv6, emails, client labels) wrap at word boundaries
+and overflow points. The Sidebar sets the active `aria-current="location"`
+on click and `hashchange`, closes the mobile drawer after selection and
+moves focus to the destination heading. Test real browser behavior before release.
+
+Lucide's and Feather's upstream license notices are preserved under
+`frontend/LUCIDE-LICENSE`. The production minimizer retains bundled
+license comments inside `app.js` rather than generating an additional
+un-deployed `app.js.LICENSE.txt` sidecar.
+
+## Record interaction patterns (dialog enhancement)
+
+- Mobile-first native `<details>` offers available record context with
+  no JavaScript. With JS, the same escaped content opens in an accessible
+  native `<dialog>` with focus restoration and Escape/Cancel.
+- Owner and client provisioning forms are first rendered as real strict
+  server-side forms; local JS upgrades them to modal sheets without
+  cloning or modifying submitted fields or passwords/CSRF values.
+- Destructive actions show a second confirmation step with the already
+  authorized record label or exact IP. Always rely on server-side
+  authorization and CSRF; no dialog is a security boundary.
+- Preserve `dialog::backdrop`, TailAdmin tokens, 44px control heights,
+  content wrapping at 320px, and dark/system/light modes.
+- No simulated toasts for redirects: actual success/failure messaging
+  requires a separately reviewed backend change to response semantics.
+
+## Compact row-action menu & motion refinements
+
+Both headers use an 80px block size so their bottom borders align.
+Desktop and mobile list items now share a 44px vertical-ellipsis
+options summary with accessible title and native browser hover tooltip.
+The popover contains ordinary controls and native record details, so it
+is **not** misrepresented as an ARIA menu. Forms keep their existing
+strict field names and action endpoints, with no inline extra fields.
+The menu is scrollable and flips above the final list items when useful.
+
+Popover opening uses 130ms and native-dialog entrance uses 160ms;
+hover effects are deliberately limited to color/background. The
+`prefers-reduced-motion` media query suppresses animations/transitions.
+Native `<dialog>` backdrops respond only to interactions outside the
+actual content rectangle, including touch pointer input; clicking
+within the dialog never dismisses it. Escape/Cancel restore focus.
+
+An authorized successful action uses a fixed server-owned PRG route
+belonging to that action rather than always showing Overview. Existing
+form semantics, security gates and error statuses remain unchanged.

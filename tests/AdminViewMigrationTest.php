@@ -37,10 +37,10 @@ final class AdminViewMigrationTest extends TestCase
 
         $pages = $this->createMock(AdminPageRenderer::class);
         $pages->expects(self::once())->method('dashboard')
-            ->with(self::isType('string'), 'Administrator', null, false)
+            ->with(self::isString(), 'Administrator', null, false)
             ->willReturn('<main id="twig-admin">Rendered by Twig view</main>');
         $pages->expects(self::once())->method('login')
-            ->with(self::isType('string'), false)
+            ->with(self::isString(), false)
             ->willReturn('<main id="twig-login">Secure login</main>');
 
         $auth = new BrowserAuthController(

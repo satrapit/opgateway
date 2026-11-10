@@ -56,3 +56,34 @@ git status --short
 ```
 
 Review and commit the generated `composer.lock`, `frontend/package-lock.json` and **only** `public/assets/admin/app.css`, `app.js`, `theme-init.js` after checking for `sourceMappingURL`, third-party runtime URLs and secrets. Do not enable `ADMIN_TWIG_UI_ENABLED` before these artifacts are committed and a restricted cPanel asset deployment allowlist has been added and verified. No server-side npm/composer commands may be required. On cPanel, private `vendor/` must be prepared from the lock on a matching PHP environment and transferred to the private checkout via File Manager or other approved out-of-band process, never to Document Root. The static bundles must be staged in a controlled allowlist. In local testing, the new flag can be enabled only after the dependencies and asset files are ready; test separately from Production.
+
+## Consolidation (2026-11-09)
+
+The feature branch and newer `main` had different renderer and asset architectures. The single canonical implementation is the injected `AdminPageRenderer` / `TwigAdminPageRenderer`, `frontend/src/js/app.js`, and `/assets/admin/` of `main`. The earlier parallel templates, `TwigBrowserViews` and root compiled assets are not deployed. The original commits remain in history; locks and generated bundles must be rebuilt from this canonical source. The independent default-off `ADMIN_TWIG_UI_ENABLED` remains mandatory, and the HTTP entrypoint fails closed for missing private Twig or static assets after opt-in.
+
+## Navigation, cards and icon remediation
+
+After 2026-11-10 feedback, the Twig administrator shell uses a single
+CSP-compatible Alpine component for Sidebar and accessible navigation state,
+with DOM click + `hashchange` synchronization. Link navigation closes the
+mobile drawer without restoring focus to the header; Escape and explicit close
+return focus to the opener. Icons are selectively bundled from local Lucide
+npm sources by Webpack and instantiated only from allowlisted template names;
+there are no network icon requests. All five DB-backed review groups render
+mobile/medium-size cards (under 1280px) and conventional tables at xl widths.
+No POST names, CSRF, authorizations, state transitions or default-off switches
+change. Locks and compiled assets need regeneration on the developer Mac.
+
+## Separate admin workspace pages (2026-11-10)
+
+The one-page anchor navigation was replaced by six explicit server-rendered
+pages. `TwigAdminPageRenderer::section()` allowlists internal section
+identifiers; `PrivateBrowserAdapter` allowlists GET paths and invokes the
+same fresh session, role and bounded overview-query checks. The legacy
+renderer continues to serve only `/admin`. Each detail template is scoped
+to one queue and reuses the existing card/table classes and action macros.
+`/admin` now contains only summarized, labeled visible counts and links,
+not every management table. No arbitrary URL-derived Twig template path
+is evaluated. Nav active state derives from the server-rendered page,
+not Alpine hash tracking. The logout button has a screen-reader label
+and a locally bundled icon without visible text.

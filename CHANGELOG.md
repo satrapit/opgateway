@@ -2,6 +2,23 @@
 
 ## [Unreleased]
 
+- Align sidebar and content headers to 80px with matching border baselines; consolidate full-size row actions into accessible vertical-ellipsis menus on both mobile and desktop, preserving original strict form submissions.
+- Allow outside/backdrop dismissal of native dialogs without posting or discarding original server-side validation, and add subtle reduced-motion-aware 130–160ms animations.
+- Route successfully authorized Twig management POSTs back to their owning section through an explicit static action-to-path map (legacy POST redirect remains unchanged); add compact layout and routing tests.
+
+- Add locally bundled, CSP-compatible record details, provisioning and destructive-action dialogs on the five independent admin pages. Native details and original POST forms remain usable without JavaScript; server-side contracts and feature gates remain unchanged.
+- Add clear target context, cancel/escape/focus restoration and mobile-sized dialogs; cover strict POST form field invariants and read-only rendering in focused tests. Build/browser validation required.
+
+- Replace the single long admin dashboard and anchor-only Sidebar navigation with six explicit, authenticated Twig workspace pages (overview, users, owners, clients, pending IPs and approved IPs). Navigation selection, title and deep links are server-driven.
+- Scope bounded tables and responsive cards to one relevant detail page each; preserve the existing strict action form payloads and security feature flags. Make sign-out icon-only with its accessible label.
+- Add per-route role/session/Twig scoping regression tests. Local build and browser verification are pending.
+
+- Fix admin Sidebar link navigation: close the off-canvas drawer after selecting a section, move keyboard focus to that section and synchronize the active navigation state with URL hashes.
+- Replace horizontally scrolling admin review tables on mobile/medium screens with five wrapped, responsive server-rendered record-card lists while retaining accessible tables on wide desktops and the same strict action forms.
+- Adopt a single local tree-shaken Lucide icon library across the administrator shell, record summaries and form buttons; add an icon-only light/dark/system switch with no external resources. Pending lock/build/browser validation.
+
+- Unify the concurrent TailAdmin/Twig implementations on a single injected admin page renderer and `/assets/admin/` build pipeline; require local assets and private Twig before explicit UI opt-in, add login theme selection and bounded cPanel deploy allowlist. Rebuild and visual/security verification are pending.
+
 - Begin a default-disabled Twig 3/TailAdmin Free admin UI migration with a private strict-autoescaping renderer, TailAdmin Free-inspired auth/dashboard templates, five real bounded review queues, reusable unchanged POST contracts, CSP-safe Alpine/webpack source, and focused adapter/template tests. The legacy admin view remains the default until dependencies, locks, assets and browser testing are complete.
 - Add permanent `AGENTS.md` agent standards, UI architecture, visual tokens and build/deployment migration documentation; no workflow or automatic server build added.
 

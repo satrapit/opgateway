@@ -1,0 +1,62 @@
+{% import 'components/forms.html.twig' as action %}
+{% import 'components/records.html.twig' as record %}
+<section id="users" aria-labelledby="users-title" class="opg-panel">
+  <div class="opg-panel-header">
+    <div>
+      <h2 id="users-title" class="opg-section-title">Pending user approvals</h2>
+      <p class="opg-section-subtitle">Email-verified users waiting for a manual operator decision.</p>
+    </div>
+    <span class="opg-count">{{ queues.users|length }} shown</span>
+  </div>
+  {% if queues.users is empty %}
+  <p class="opg-empty" role="status">No verified users are currently waiting for approval.</p>
+  {% else %}
+  <div class="opg-record-grid" role="list" aria-label="Pending users cards">
+    {% for user in queues.users %}
+    <article class="opg-record-card" role="listitem">
+      <div class="flex min-w-0 items-start justify-between gap-3">
+        <div class="min-w-0"><p class="opg-record-title">{{ user.email }}</p><p class="opg-muted mt-1">User #{{ user.id }}</p></div>
+        <span class="opg-badge opg-badge-amber shrink-0">Pending</span>
+      </div>
+      <div class="opg-record-actions">
+<details class="opg-row-menu" data-opg-row-menu>
+  <summary class="opg-row-menu-trigger" aria-label="More options for {{ user.email }}" title="More options for {{ user.email }}" data-tooltip="More options"><i data-lucide="ellipsis-vertical" class="opg-icon" aria-hidden="true"></i></summary>
+  <div class="opg-action-popover" aria-label="Options for {{ user.email }}">
+
+        {{ record.details('User', user.email, [
+  {label:'User ID', value:user.id},
+  {label:'Email', value:user.email},
+  {label:'Approval', value:'Awaiting approval'}
+]) }}{% if actions_enabled %}{{ action.review(csrf_token, 'approve_user', user.id, 'Approve user') }}{% else %}<span class="opg-muted">Read only</span>{% endif %}
+  </div>
+</details>
+</div>
+    </article>
+    {% endfor %}
+  </div>
+  <div class="opg-table-wrap opg-desktop-table" tabindex="0" role="region" aria-label="Pending users table">
+    <table class="opg-table">
+      <thead><tr><th scope="col">User</th><th scope="col">Status</th><th scope="col" class="text-end">Action</th></tr></thead>
+      <tbody>
+      {% for user in queues.users %}
+      <tr>
+        <td><div class="font-medium text-gray-900 dark:text-white">{{ user.email }}</div><span class="opg-muted">User #{{ user.id }}</span></td>
+        <td><span class="opg-badge opg-badge-amber">Awaiting approval</span></td>
+        <td class="text-end"><details class="opg-row-menu" data-opg-row-menu>
+  <summary class="opg-row-menu-trigger" aria-label="More options for {{ user.email }}" title="More options for {{ user.email }}" data-tooltip="More options"><i data-lucide="ellipsis-vertical" class="opg-icon" aria-hidden="true"></i></summary>
+  <div class="opg-action-popover" aria-label="Options for {{ user.email }}">
+{{ record.details('User', user.email, [
+  {label:'User ID', value:user.id},
+  {label:'Email', value:user.email},
+  {label:'Approval', value:'Awaiting approval'}
+]) }} {% if actions_enabled %}{{ action.review(csrf_token, 'approve_user', user.id, 'Approve user') }}{% else %}<span class="opg-muted">Read only</span>{% endif %}
+  </div>
+</details>
+</td>
+      </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% endif %}
+</section>

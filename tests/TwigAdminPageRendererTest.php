@@ -59,35 +59,53 @@ final class TwigAdminPageRendererTest extends TestCase
         self::assertStringNotContainsString('<script>alert(1)</script>', $html);
     }
 
-    public function testDashboardUsesOnlyBoundedRealRowsAndEscapesOutput(): void
+    public function testOverviewIsOnlySummaryNotOneLongQueuePage(): void
     {
-        if (!class_exists(TwigEnvironment::class)) {
-            $this->expectException(RuntimeException::class);
-            new TwigRenderer(dirname(__DIR__) . '/templates');
-            return;
-        }
         $pages = new TwigAdminPageRenderer(new TwigRenderer(dirname(__DIR__) . '/templates'));
         $queues = [
             'users' => [['id' => 4, 'email' => '<script>alert(1)</script>']],
-            'owners' => [['id' => 9, 'email' => 'owner@example.test']],
-            'clients' => [['id' => 15, 'label' => '<client>', 'status' => 'active',
-                'owner_email' => 'owner@example.test']],
-            'ips' => [['id' => 19, 'client_label' => '<client>', 'address' => '192.0.2.15']],
-            'approved_ips' => [],
+            'owners' => [], 'clients' => [], 'ips' => [], 'approved_ips' => [],
         ];
         $html = $pages->dashboard(self::CSRF, 'Administrator', $queues, true);
-        self::assertStringContainsString('&lt;script&gt;alert(1)&lt;/script&gt;', $html);
-        self::assertStringNotContainsString('<script>alert(1)</script>', $html);
-        self::assertStringContainsString('name="action" value="approve_user"', $html);
+        self::assertStringContainsString('Access management', $html);
+        self::assertStringContainsString('Shown (max. 50)', $html);
+        self::assertStringContainsString('href="/admin/users"', $html);
+        self::assertStringNotContainsString('Pending user approvals', $html);
+        self::assertStringNotContainsString('&lt;script&gt;alert(1)&lt;/script&gt;', $html);
+        self::assertStringNotContainsString('action="/admin/review"', $html);
+        self::assertStringNotContainsString('action="/admin/provision"', $html);
+    }
+
+    public function testDedicatedClientPagePreservesExactActionsAndEscaping(): void
+    {
+        $pages = new TwigAdminPageRenderer(new TwigRenderer(dirname(__DIR__) . '/templates'));
+        $queues = [
+            'users' => [],
+            'owners' => [],
+            'clients' => [['id' => 15, 'label' => '<client>', 'status' => 'active',
+                'owner_email' => 'owner@example.test']],
+            'ips' => [], 'approved_ips' => [],
+        ];
+        $html = $pages->section('clients', self::CSRF, 'Administrator', $queues, true);
+        self::assertStringContainsString('&lt;client&gt;', $html);
+        self::assertStringNotContainsString('<client>', $html);
         self::assertStringContainsString('name="action" value="disable_client"', $html);
         self::assertStringContainsString('name="action" value="request_ip"', $html);
         self::assertStringContainsString('name="target_id" value="15"', $html);
-        self::assertStringContainsString('Shown (max. 50)', $html);
         self::assertStringNotContainsString('secret_hash', $html);
+        self::assertStringNotContainsString('Pending user approvals', $html);
+        self::assertStringContainsString('aria-current="page"', $html);
 
-        $readOnly = $pages->dashboard(self::CSRF, 'Administrator', $queues, false);
+        $readOnly = $pages->section('clients', self::CSRF, 'Administrator', $queues, false);
         self::assertStringNotContainsString('action="/admin/review"', $readOnly);
         self::assertStringNotContainsString('action="/admin/provision"', $readOnly);
+    }
+
+    public function testUnrecognizedSectionCannotSelectTemplate(): void
+    {
+        $pages = new TwigAdminPageRenderer(new TwigRenderer(dirname(__DIR__) . '/templates'));
+        $this->expectException(InvalidArgumentException::class);
+        $pages->section('../.env', self::CSRF, 'Administrator');
     }
 
     public function testMalformedCsrfAlwaysFailsEvenIfDependencyUnavailable(): void

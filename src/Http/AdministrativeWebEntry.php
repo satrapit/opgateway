@@ -128,6 +128,24 @@ final readonly class AdministrativeWebEntry
         // Opt-in view migration. The legacy renderer remains intact if
         // Twig or compiled assets have not yet been deployed.
         $twigEnabled = ($this->config['ADMIN_TWIG_UI_ENABLED'] ?? '') === 'true';
+        if ($twigEnabled) {
+            // Explicit opt-in requires private Composer runtime and the exact
+            // prebuilt local assets. No runtime build or unsafe fallback.
+            $root = dirname(__DIR__, 2);
+            foreach ([
+                'vendor/autoload.php',
+                'public/assets/admin/app.css',
+                'public/assets/admin/app.js',
+                'public/assets/admin/theme-init.js',
+            ] as $relative) {
+                $file = $root . '/' . $relative;
+                if (!is_file($file) || is_link($file)) {
+                    DiagnosticLog::record('admin.twig_assets_unavailable', 503);
+                    return self::error(503);
+                }
+            }
+        }
+
         $pages = $twigEnabled
             ? new TwigAdminPageRenderer(new TwigRenderer(dirname(__DIR__, 2) . '/templates'))
             : null;

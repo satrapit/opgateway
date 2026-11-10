@@ -1,9 +1,16 @@
 import '../css/app.css';
 import Alpine from '@alpinejs/csp';
+import { initializeAdminDialogs } from './admin-dialogs.js';
+import { initializeRowMenus } from './row-menus.js';
+import {
+  createIcons, Menu, X, Sun, Moon, Monitor, LayoutDashboard, UserCheck,
+  Users, Server, Clock, ShieldCheck, ShieldX, ArrowUpRight, LogOut,
+  Plus, Check, Ban, Eye, ShieldAlert, EllipsisVertical,
+} from 'lucide';
 
 /**
- * TailAdmin Free interaction conventions with Alpine's CSP-safe evaluator.
- * This module never reads, stores or forwards application credentials.
+ * CSP-compatible TailAdmin Free operator interactions.
+ * Lucide icons are bundled into app.js; no runtime CDN, font or fetch.
  */
 Alpine.data('adminShell', () => ({
   sidebarOpen: false,
@@ -14,9 +21,25 @@ Alpine.data('adminShell', () => ({
     this.refreshThemeLabel();
     const media = window.matchMedia('(prefers-color-scheme: dark)');
     media.addEventListener?.('change', () => this.applyTheme());
+
+    // A workspace link navigates to a distinct server-rendered page.
+    // The new response supplies its own active navigation state.
+    const nav = this.$refs.sidebar?.querySelector('nav');
+    nav?.addEventListener('click', (event) => {
+      const link = event.target instanceof Element
+        ? event.target.closest('a[href^="/admin"]') : null;
+      if (link && nav.contains(link) && this.sidebarOpen) {
+        this.closeSidebar(false);
+      }
+    });
+
     document.addEventListener('keydown', (event) => {
       if (!this.sidebarOpen) return;
-      if (event.key === 'Escape') { this.closeSidebar(); return; }
+      if (event.key === 'Escape') {
+        event.preventDefault();
+        this.closeSidebar();
+        return;
+      }
       if (event.key !== 'Tab') return;
       const items = Array.from(this.$refs.sidebar?.querySelectorAll(
         'a[href], button:not([disabled]), input:not([disabled])',
@@ -29,10 +52,6 @@ Alpine.data('adminShell', () => ({
         event.preventDefault(); first.focus();
       }
     });
-    document.addEventListener('submit', (event) => {
-      const form = event.target.closest?.('form[data-confirm]');
-      if (form && !window.confirm(form.dataset.confirm)) event.preventDefault();
-    });
   },
 
   openSidebar(event) {
@@ -41,17 +60,22 @@ Alpine.data('adminShell', () => ({
     document.body.classList.add('opg-drawer-open');
     this.$nextTick(() => this.$refs.sidebar?.focus());
   },
-  closeSidebar() {
+  closeSidebar(restoreFocus = true) {
     if (!this.sidebarOpen) return;
     this.sidebarOpen = false;
     document.body.classList.remove('opg-drawer-open');
-    this.$nextTick(() => this.lastActivator?.focus());
+    if (restoreFocus !== false) {
+      this.$nextTick(() => this.lastActivator?.focus());
+    }
   },
   get sidebarClass() {
     return this.sidebarOpen ? 'is-open' : '';
   },
   get backdropVisible() {
     return this.sidebarOpen;
+  },
+  get themeControlLabel() {
+    return 'Color theme: ' + this.themeLabel + '. Activate to change';
   },
   cycleTheme() {
     const modes = ['system', 'light', 'dark'];
@@ -74,4 +98,17 @@ Alpine.data('adminShell', () => ({
     this.themeLabel = chosen[0].toUpperCase() + chosen.slice(1);
   },
 }));
+
+const renderLocalIcons = () => createIcons({
+  icons: {
+    Menu, X, Sun, Moon, Monitor, LayoutDashboard, UserCheck, Users, Server,
+    Clock, ShieldCheck, ShieldX, ArrowUpRight, LogOut, Plus, Check, Ban,
+    Eye, ShieldAlert, EllipsisVertical,
+  },
+  attrs: { 'stroke-width': 1.85 },
+});
+
 Alpine.start();
+initializeRowMenus();
+initializeAdminDialogs(renderLocalIcons);
+renderLocalIcons();

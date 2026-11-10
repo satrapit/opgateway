@@ -67,7 +67,20 @@ final readonly class PrivateBrowserAdapter
                 ?? BrowserViews::login($this->session->csrfToken(), true), $result['status']);
         }
 
-        if ($path === '/admin' && $method === 'GET') {
+        // Separate, explicitly allowlisted GET pages for the Twig admin UI.
+        // Legacy mode retains only the historical /admin dashboard. Every
+        // new page uses the same fresh administrator authorization boundary.
+        $sections = [
+            '/admin/users' => 'users',
+            '/admin/owners' => 'owners',
+            '/admin/clients' => 'clients',
+            '/admin/ips/pending' => 'pending_ips',
+            '/admin/ips/approved' => 'approved_ips',
+        ];
+        if ($method === 'GET' && ($path === '/admin' || isset($sections[$path]))) {
+            if ($path !== '/admin' && $this->pages === null) {
+                return self::error(404);
+            }
             $userId = $this->session->currentUserId($this->accounts);
             if ($userId === null) {
                 return self::redirect('/admin/login');
@@ -75,9 +88,14 @@ final readonly class PrivateBrowserAdapter
             if (!$this->administrators->isAdministrator($userId)) {
                 return self::error(403);
             }
-            // Role and account eligibility have been rechecked before
-            // querying any personally identifying review data.
+            // Authorization before every bounded read of sensitive review data.
             $pending = $this->overview?->pending();
+            if ($path !== '/admin') {
+                return self::html($this->pages->section(
+                    $sections[$path], $this->session->csrfToken(),
+                    'Administrator', $pending, $this->review !== null,
+                ));
+            }
             return self::html($this->pages?->dashboard(
                 $this->session->csrfToken(), 'Administrator', $pending,
                 $this->review !== null,
@@ -122,7 +140,7 @@ final readonly class PrivateBrowserAdapter
                 $form['action'], (int) $form['target_id'],
             );
             return $result['status'] === 200
-                ? self::redirect('/admin')
+                ? self::redirect(AdminMutationRedirect::forAction($form['action'], $this->pages !== null))
                 : self::json($result['status'], ['error' => $result['code']]);
         }
 
@@ -159,7 +177,7 @@ final readonly class PrivateBrowserAdapter
                 $form['action'], (int) $form['target_id'], $form['value'],
             );
             return $result['status'] === 200
-                ? self::redirect('/admin')
+                ? self::redirect(AdminMutationRedirect::forAction($form['action'], $this->pages !== null))
                 : self::json($result['status'], ['error' => $result['code']]);
         }
 

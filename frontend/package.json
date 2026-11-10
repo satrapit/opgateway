@@ -4,11 +4,12 @@
   "version": "0.1.0",
   "license": "MIT",
   "scripts": {
-    "build": "webpack --config webpack.config.cjs",
-    "lint": "node --check src/js/app.js && node --check src/js/theme-init.js"
+    "build": "webpack --config webpack.config.cjs && node scripts/normalize-css.mjs",
+    "lint": "node --check src/js/app.js && node --check src/js/admin-dialogs.js && node --check src/js/row-menus.js && node --check src/js/theme-init.js && node --check scripts/normalize-css.mjs"
   },
   "dependencies": {
-    "@alpinejs/csp": "^3.17.5"
+    "@alpinejs/csp": "^3.17.5",
+    "lucide": "^1.70.0"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4.3.3",
@@ -19,7 +20,8 @@
     "webpack": "^5.110.3",
     "webpack-cli": "^7.2.3",
     "mini-css-extract-plugin": "^2.9.0",
-    "copy-webpack-plugin": "^14.0.0"
+    "copy-webpack-plugin": "^14.0.0",
+    "terser-webpack-plugin": "^5.3.14"
   },
   "type": "module"
 }

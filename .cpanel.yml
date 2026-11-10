@@ -1,12 +1,30 @@
 ---
-# The cPanel-managed .htaccess, php.ini and .user.ini stay on the server.
-# Deploy only the explicitly approved application entrypoint.
-# No secrets, runtime logs, private source code, or Git metadata are copied.
+# Manual cPanel Git Version Control deployment. Public allowlist only.
+# Do not copy private PHP source, vendor, templates, .env, logs, or Git metadata.
 deployment:
   tasks:
     - export DEPLOYPATH=/home/arsamnet/opgateway.arsamnet.com
     - /bin/test -d "$DEPLOYPATH"
     - /bin/test -f "$DEPLOYPATH/.htaccess"
     - /bin/test -f public/index.php
+    - /bin/test ! -L public/index.php
     - /bin/test ! -L "$DEPLOYPATH/index.php"
+    - /bin/test ! -L public/assets
+    - /bin/test ! -L public/assets/admin
+    - /bin/test -s public/assets/admin/app.css
+    - /bin/test -s public/assets/admin/app.js
+    - /bin/test -s public/assets/admin/theme-init.js
+    - /bin/test ! -L public/assets/admin/app.css
+    - /bin/test ! -L public/assets/admin/app.js
+    - /bin/test ! -L public/assets/admin/theme-init.js
+    - /bin/test ! -L "$DEPLOYPATH/assets"
+    - /bin/mkdir -p "$DEPLOYPATH/assets"
+    - /bin/test ! -L "$DEPLOYPATH/assets/admin"
+    - /bin/mkdir -p "$DEPLOYPATH/assets/admin"
+    - /bin/test ! -L "$DEPLOYPATH/assets/admin/app.css"
+    - /bin/test ! -L "$DEPLOYPATH/assets/admin/app.js"
+    - /bin/test ! -L "$DEPLOYPATH/assets/admin/theme-init.js"
+    - /bin/cp -f public/assets/admin/app.css "$DEPLOYPATH/assets/admin/app.css"
+    - /bin/cp -f public/assets/admin/app.js "$DEPLOYPATH/assets/admin/app.js"
+    - /bin/cp -f public/assets/admin/theme-init.js "$DEPLOYPATH/assets/admin/theme-init.js"
     - /bin/cp -f public/index.php "$DEPLOYPATH/index.php"
