@@ -30,7 +30,7 @@ use OPGateway\View\TwigRenderer;
 use OPGateway\View\TwigAdminPageRenderer;
 
 /**
- * Opt-in admin browser HTTP entry; fail-closed until explicitly enabled.
+ * Single administrator browser entrypoint; requires trusted HTTPS and current admin role.
  *
  * All administrator functions use the existing admin role and CSRF checks.
  * No provider proxy is routed through this entrypoint.

@@ -22,12 +22,13 @@ use PDO;
 use Throwable;
 
 /**
- * Explicitly opted-in and authenticated Openprovider-compatible API path.
- * Only the gateway-issued bearer from an approved, active client + its
- * exactly approved transport source IP can reach the fixed provider host.
+ * Authenticated Openprovider-compatible API entrypoint.
+ * Only a gateway-issued bearer from an approved, active client and its
+ * exactly approved source IP can reach the fixed provider host.
  *
- * Writes, which may charge a reseller, require another independent flag.
- * We never expose an upstream bearer, password, or exception in responses.
+ * Potentially paid or mutating provider operations are rejected in the
+ * reviewed route policy, with no environment-flag bypass.
+ * Never disclose provider bearers, passwords or exception details.
  */
 final readonly class GatewayHttpEntry
 {
