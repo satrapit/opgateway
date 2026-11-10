@@ -64,6 +64,16 @@ final class AdminStaticAssetPerformanceTest extends TestCase
         self::assertStringContainsString('Header always unset Cache-Control', $rules);
         self::assertStringContainsString('public/assets/admin/.htaccess', $deployment);
         self::assertStringNotContainsString('/bin/cp -f public/.htaccess', $deployment);
+        $built = $root . '/public/assets/admin/.htaccess';
+        self::assertFileExists($built);
+        self::assertTrue(is_file($built) && !is_link($built),
+            'Build must output a regular .htaccess, never a directory');
+        self::assertSame(file_get_contents($root . '/frontend/src/cache.htaccess'),
+            file_get_contents($built));
+        self::assertFileDoesNotExist($root . '/public/assets/admin/.htaccess/cache.htaccess');
+        $webpack = file_get_contents($root . '/frontend/webpack.config.cjs');
+        self::assertIsString($webpack);
+        self::assertStringContainsString("toType: 'file'", $webpack);
     }
 
     public function testAssetVersionChangesWithContent(): void
