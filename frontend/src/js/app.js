@@ -1,10 +1,11 @@
 import '../css/app.css';
 import Alpine from '@alpinejs/csp';
 import { initializeAdminDialogs } from './admin-dialogs.js';
+import { initializeRowMenus } from './row-menus.js';
 import {
   createIcons, Menu, X, Sun, Moon, Monitor, LayoutDashboard, UserCheck,
   Users, Server, Clock, ShieldCheck, ShieldX, ArrowUpRight, LogOut,
-  Plus, Check, Ban, Eye, ShieldAlert,
+  Plus, Check, Ban, Eye, ShieldAlert, EllipsisVertical,
 } from 'lucide';
 
 /**
@@ -102,11 +103,12 @@ const renderLocalIcons = () => createIcons({
   icons: {
     Menu, X, Sun, Moon, Monitor, LayoutDashboard, UserCheck, Users, Server,
     Clock, ShieldCheck, ShieldX, ArrowUpRight, LogOut, Plus, Check, Ban,
-    Eye, ShieldAlert,
+    Eye, ShieldAlert, EllipsisVertical,
   },
   attrs: { 'stroke-width': 1.85 },
 });
 
 Alpine.start();
+initializeRowMenus();
 initializeAdminDialogs(renderLocalIcons);
 renderLocalIcons();

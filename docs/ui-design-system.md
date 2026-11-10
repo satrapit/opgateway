@@ -68,3 +68,24 @@ un-deployed `app.js.LICENSE.txt` sidecar.
   content wrapping at 320px, and dark/system/light modes.
 - No simulated toasts for redirects: actual success/failure messaging
   requires a separately reviewed backend change to response semantics.
+
+## Compact row-action menu & motion refinements
+
+Both headers use an 80px block size so their bottom borders align.
+Desktop and mobile list items now share a 44px vertical-ellipsis
+options summary with accessible title and native browser hover tooltip.
+The popover contains ordinary controls and native record details, so it
+is **not** misrepresented as an ARIA menu. Forms keep their existing
+strict field names and action endpoints, with no inline extra fields.
+The menu is scrollable and flips above the final list items when useful.
+
+Popover opening uses 130ms and native-dialog entrance uses 160ms;
+hover effects are deliberately limited to color/background. The
+`prefers-reduced-motion` media query suppresses animations/transitions.
+Native `<dialog>` backdrops respond only to interactions outside the
+actual content rectangle, including touch pointer input; clicking
+within the dialog never dismisses it. Escape/Cancel restore focus.
+
+An authorized successful action uses a fixed server-owned PRG route
+belonging to that action rather than always showing Overview. Existing
+form semantics, security gates and error statuses remain unchanged.

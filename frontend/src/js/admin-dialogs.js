@@ -29,6 +29,27 @@ export function initializeAdminDialogs(renderLocalIcons = () => {}) {
     button.addEventListener('click', () => button.closest('dialog')?.close());
   }
 
+  // Clicking the actual modal backdrop closes it. Avoid closing on clicks
+  // inside dialog padding/content and ignore pointer drags across the edge.
+  for (const dialog of [recordDialog, provisionDialog, confirmDialog]) {
+    let startedOutside = false;
+    const outside = (event) => {
+      const rect = dialog.getBoundingClientRect();
+      return event.target === dialog && (
+        event.clientX < rect.left || event.clientX > rect.right
+        || event.clientY < rect.top || event.clientY > rect.bottom
+      );
+    };
+    dialog.addEventListener('pointerdown', (event) => {
+      startedOutside = outside(event);
+    });
+    dialog.addEventListener('pointerup', (event) => {
+      if (startedOutside && outside(event)) dialog.close();
+      startedOutside = false;
+    });
+    dialog.addEventListener('pointercancel', () => { startedOutside = false; });
+  }
+
   // Details: the native summary is still usable without JS. With JS, the
   // server-escaped existing definition list is cloned into a focused dialog.
   let recordActivator = null;

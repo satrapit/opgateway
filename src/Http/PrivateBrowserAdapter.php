@@ -140,7 +140,7 @@ final readonly class PrivateBrowserAdapter
                 $form['action'], (int) $form['target_id'],
             );
             return $result['status'] === 200
-                ? self::redirect('/admin')
+                ? self::redirect(AdminMutationRedirect::forAction($form['action'], $this->pages !== null))
                 : self::json($result['status'], ['error' => $result['code']]);
         }
 
@@ -177,7 +177,7 @@ final readonly class PrivateBrowserAdapter
                 $form['action'], (int) $form['target_id'], $form['value'],
             );
             return $result['status'] === 200
-                ? self::redirect('/admin')
+                ? self::redirect(AdminMutationRedirect::forAction($form['action'], $this->pages !== null))
                 : self::json($result['status'], ['error' => $result['code']]);
         }
 

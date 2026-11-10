@@ -19,11 +19,18 @@
         <span class="opg-badge opg-badge-green shrink-0">Approved</span>
       </div>
       <div class="opg-record-actions">
+<details class="opg-row-menu" data-opg-row-menu>
+  <summary class="opg-row-menu-trigger" aria-label="More options for {{ ip.address }}" title="More options for {{ ip.address }}" data-tooltip="More options"><i data-lucide="ellipsis-vertical" class="opg-icon" aria-hidden="true"></i></summary>
+  <div class="opg-action-popover" aria-label="Options for {{ ip.address }}">
+
         {{ record.details('IP', ip.address, [
   {label:'IP address', value:ip.address},
   {label:'Client', value:ip.client_label},
   {label:'Approval', value:'Approved'}
-]) }}{% if actions_enabled %}{{ action.review(csrf_token, 'revoke_ip', ip.id, 'Revoke IP', true, ip.address) }}{% else %}<span class="opg-muted">Read only</span>{% endif %}</div>
+]) }}{% if actions_enabled %}{{ action.review(csrf_token, 'revoke_ip', ip.id, 'Revoke IP', true, ip.address) }}{% else %}<span class="opg-muted">Read only</span>{% endif %}
+  </div>
+</details>
+</div>
     </article>
     {% endfor %}
   </div>
@@ -34,11 +41,17 @@
       {% for ip in queues.approved_ips %}
       <tr>
         <td class="font-mono text-sm">{{ ip.address }}</td><td>{{ ip.client_label }}</td><td><span class="opg-badge opg-badge-green">Approved</span></td>
-        <td class="text-end">{{ record.details('IP', ip.address, [
+        <td class="text-end"><details class="opg-row-menu" data-opg-row-menu>
+  <summary class="opg-row-menu-trigger" aria-label="More options for {{ ip.address }}" title="More options for {{ ip.address }}" data-tooltip="More options"><i data-lucide="ellipsis-vertical" class="opg-icon" aria-hidden="true"></i></summary>
+  <div class="opg-action-popover" aria-label="Options for {{ ip.address }}">
+{{ record.details('IP', ip.address, [
   {label:'IP address', value:ip.address},
   {label:'Client', value:ip.client_label},
   {label:'Approval', value:'Approved'}
-]) }} {% if actions_enabled %}{{ action.review(csrf_token, 'revoke_ip', ip.id, 'Revoke IP', true, ip.address) }}{% else %}<span class="opg-muted">Read only</span>{% endif %}</td>
+]) }} {% if actions_enabled %}{{ action.review(csrf_token, 'revoke_ip', ip.id, 'Revoke IP', true, ip.address) }}{% else %}<span class="opg-muted">Read only</span>{% endif %}
+  </div>
+</details>
+</td>
       </tr>
       {% endfor %}
       </tbody>

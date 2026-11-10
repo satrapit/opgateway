@@ -19,11 +19,18 @@
         <span class="opg-badge opg-badge-amber shrink-0">Pending</span>
       </div>
       <div class="opg-record-actions">
+<details class="opg-row-menu" data-opg-row-menu>
+  <summary class="opg-row-menu-trigger" aria-label="More options for {{ user.email }}" title="More options for {{ user.email }}" data-tooltip="More options"><i data-lucide="ellipsis-vertical" class="opg-icon" aria-hidden="true"></i></summary>
+  <div class="opg-action-popover" aria-label="Options for {{ user.email }}">
+
         {{ record.details('User', user.email, [
   {label:'User ID', value:user.id},
   {label:'Email', value:user.email},
   {label:'Approval', value:'Awaiting approval'}
-]) }}{% if actions_enabled %}{{ action.review(csrf_token, 'approve_user', user.id, 'Approve user') }}{% else %}<span class="opg-muted">Read only</span>{% endif %}</div>
+]) }}{% if actions_enabled %}{{ action.review(csrf_token, 'approve_user', user.id, 'Approve user') }}{% else %}<span class="opg-muted">Read only</span>{% endif %}
+  </div>
+</details>
+</div>
     </article>
     {% endfor %}
   </div>
@@ -35,11 +42,17 @@
       <tr>
         <td><div class="font-medium text-gray-900 dark:text-white">{{ user.email }}</div><span class="opg-muted">User #{{ user.id }}</span></td>
         <td><span class="opg-badge opg-badge-amber">Awaiting approval</span></td>
-        <td class="text-end">{{ record.details('User', user.email, [
+        <td class="text-end"><details class="opg-row-menu" data-opg-row-menu>
+  <summary class="opg-row-menu-trigger" aria-label="More options for {{ user.email }}" title="More options for {{ user.email }}" data-tooltip="More options"><i data-lucide="ellipsis-vertical" class="opg-icon" aria-hidden="true"></i></summary>
+  <div class="opg-action-popover" aria-label="Options for {{ user.email }}">
+{{ record.details('User', user.email, [
   {label:'User ID', value:user.id},
   {label:'Email', value:user.email},
   {label:'Approval', value:'Awaiting approval'}
-]) }} {% if actions_enabled %}{{ action.review(csrf_token, 'approve_user', user.id, 'Approve user') }}{% else %}<span class="opg-muted">Read only</span>{% endif %}</td>
+]) }} {% if actions_enabled %}{{ action.review(csrf_token, 'approve_user', user.id, 'Approve user') }}{% else %}<span class="opg-muted">Read only</span>{% endif %}
+  </div>
+</details>
+</td>
       </tr>
       {% endfor %}
       </tbody>

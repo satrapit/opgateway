@@ -46,6 +46,10 @@ final class AdminResponsiveMarkupTest extends TestCase
             self::assertSame(1, substr_count($html, 'opg-desktop-table'), $section);
             self::assertSame(1, substr_count($html, 'role="listitem"'), $section);
             self::assertSame(2, substr_count($html, 'data-opg-record-details'), $section);
+            self::assertSame(2, substr_count($html, 'data-opg-row-menu'), $section);
+            self::assertSame(2, substr_count($html, 'data-lucide="ellipsis-vertical"'), $section);
+            self::assertSame(2, substr_count($html, 'data-tooltip="More options"'), $section);
+            self::assertStringContainsString('title="More options for ', $html);
             self::assertStringContainsString('id="opg-record-dialog"', $html);
             self::assertStringContainsString('id="opg-provision-dialog"', $html);
             self::assertStringContainsString('id="opg-confirm-dialog"', $html);
@@ -93,6 +97,9 @@ final class AdminResponsiveMarkupTest extends TestCase
             $html = $view->section($section, self::CSRF, 'Administrator', self::data(), false);
             self::assertStringNotContainsString('action="/admin/review"', $html, $section);
             self::assertStringNotContainsString('action="/admin/provision"', $html, $section);
+            if ($section !== 'overview') {
+                self::assertSame(2, substr_count($html, 'data-opg-row-menu'), $section);
+            }
         }
     }
 

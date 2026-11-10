@@ -163,3 +163,134 @@ html[data-theme="dark"] .opg-theme-icon[data-theme-icon="dark"] { display: inlin
 .opg-dialog-form .opg-small-input { width: 100%; max-width: 100%; min-height: 2.75rem; }
 .opg-dialog-form .opg-small-button { align-self: flex-end; min-height: 2.75rem; }
 .opg-modal-launcher { white-space: normal; text-align: center; }
+
+
+/* Compact, consistent row actions. The same native <details> menu works
+   with pointer, keyboard and no JavaScript; it never needs horizontal scroll. */
+.opg-panel:has(.opg-row-menu), .opg-panel:has(.opg-row-menu) .opg-table-wrap {
+  overflow: visible;
+}
+.opg-table td { padding-block: .5rem; }
+.opg-table td:has(.opg-row-menu[open]) { position: relative; z-index: 35; }
+.opg-row-menu { display: inline-block; position: relative; margin-inline-start: auto; vertical-align: middle; }
+.opg-row-menu-trigger {
+  display: inline-flex;
+  width: 2.75rem;
+  height: 2.75rem;
+  align-items: center;
+  justify-content: center;
+  border-radius: .625rem;
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--color-gray-600);
+  list-style: none;
+  cursor: pointer;
+  transition: background-color .13s ease, color .13s ease, border-color .13s ease;
+}
+.opg-row-menu-trigger::-webkit-details-marker { display: none; }
+.opg-row-menu-trigger::marker { content: ''; }
+.opg-row-menu-trigger:hover, .opg-row-menu[open] > .opg-row-menu-trigger {
+  background: var(--color-brand-50);
+  color: var(--color-brand-600);
+  border-color: var(--color-brand-100);
+}
+.dark .opg-row-menu-trigger { color: var(--color-gray-300); }
+.dark .opg-row-menu-trigger:hover, .dark .opg-row-menu[open] > .opg-row-menu-trigger {
+  color: var(--color-brand-300);
+  background: rgb(70 95 255 / .16);
+  border-color: var(--color-gray-700);
+}
+.opg-action-popover {
+  position: absolute;
+  z-index: 60;
+  inset-inline-end: 0;
+  inset-block-start: calc(100% + .25rem);
+  display: flex;
+  flex-direction: column;
+  gap: .25rem;
+  width: min(16.5rem, calc(100vw - 2rem));
+  max-height: min(65dvh, 22rem);
+  overflow-y: auto;
+  padding: .5rem;
+  border: 1px solid var(--color-gray-200);
+  border-radius: .875rem;
+  background: var(--color-white);
+  color: var(--color-gray-800);
+  box-shadow: 0 12px 30px rgb(15 23 42 / .15);
+  animation: opg-menu-enter .13s ease-out;
+}
+.dark .opg-action-popover {
+  border-color: var(--color-gray-700);
+  background: var(--color-gray-900);
+  color: var(--color-gray-100);
+}
+.opg-action-popover > div { display: flex; flex-direction: column; gap: .25rem; margin: 0; }
+.opg-action-popover > form, .opg-action-popover > .opg-record-details, .opg-action-popover > div { width: 100%; }
+.opg-action-popover form { max-width: 100%; }
+.opg-action-popover .opg-small-button,
+.opg-action-popover .opg-danger-button,
+.opg-action-popover .opg-secondary-button,
+.opg-action-popover .opg-detail-summary {
+  display: flex;
+  width: 100%;
+  min-height: 2.5rem;
+  align-items: center;
+  justify-content: flex-start;
+  border-radius: .625rem;
+  padding: .5rem .75rem;
+  font-size: .875rem;
+  line-height: 1.4;
+  text-align: start;
+  white-space: normal;
+  transition: background-color .13s ease, color .13s ease;
+}
+.opg-action-popover .opg-provision-form { display: flex; flex-direction: column; align-items: stretch; }
+.opg-action-popover .opg-small-input { width: 100%; max-width: 100%; }
+.opg-action-popover .opg-muted { display: block; padding: .5rem .75rem; }
+.opg-record-card { position: relative; }
+.opg-record-card > .flex:first-child { padding-inline-end: 2.75rem; }
+.opg-record-card:has(.opg-row-menu[open]) { z-index: 40; }
+.opg-record-card .opg-record-actions {
+  position: absolute;
+  inset-block-start: .75rem;
+  inset-inline-end: .75rem;
+  display: block;
+  width: auto;
+  margin: 0;
+  padding: 0;
+  border: none;
+}
+.opg-record-card .opg-row-menu { display: block; }
+/* Prevent bottom-of-list menus from dropping beneath the viewport. */
+.opg-table tr:nth-last-child(-n+2) .opg-action-popover,
+.opg-record-card:nth-last-child(-n+2) .opg-action-popover {
+  inset-block-start: auto;
+  inset-block-end: calc(100% + .25rem);
+}
+/* Browser enhancement chooses the direction from actual viewport space;
+   native no-script fallback still flips the final rows. */
+.opg-row-menu.opg-open-down .opg-action-popover {
+  inset-block-start: calc(100% + .25rem);
+  inset-block-end: auto;
+}
+.opg-row-menu.opg-open-up .opg-action-popover {
+  inset-block-start: auto;
+  inset-block-end: calc(100% + .25rem);
+}
+.opg-dialog[open] { animation: opg-dialog-enter .16s ease-out; }
+@keyframes opg-menu-enter {
+  from { opacity: 0; transform: translateY(-3px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes opg-dialog-enter {
+  from { opacity: 0; transform: translateY(5px) scale(.992); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .opg-row-menu-trigger, .opg-action-popover, .opg-dialog[open],
+  .opg-action-popover .opg-small-button, .opg-action-popover .opg-danger-button,
+  .opg-action-popover .opg-secondary-button, .opg-action-popover .opg-detail-summary {
+    animation: none !important;
+    transition: none !important;
+  }
+}

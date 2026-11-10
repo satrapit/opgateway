@@ -5,7 +5,7 @@
   "license": "MIT",
   "scripts": {
     "build": "webpack --config webpack.config.cjs && node scripts/normalize-css.mjs",
-    "lint": "node --check src/js/app.js && node --check src/js/admin-dialogs.js && node --check src/js/theme-init.js && node --check scripts/normalize-css.mjs"
+    "lint": "node --check src/js/app.js && node --check src/js/admin-dialogs.js && node --check src/js/row-menus.js && node --check src/js/theme-init.js && node --check scripts/normalize-css.mjs"
   },
   "dependencies": {
     "@alpinejs/csp": "^3.17.5",

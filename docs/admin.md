@@ -30,7 +30,7 @@ ADMIN_UI_ALLOWED_IP=
 LOGIN_RATE_LIMIT_KEY=
 ```
 
-Keep `ADMIN_ACTIONS_ENABLED=false` until new tests and real hosting permissions are verified. Enabling the UI alone does **not** enable write actions. The new forms use the same default-off `ADMIN_ACTIONS_ENABLED` switch, and allow only `create_client` and `request_ip` with exact `_csrf`, `action`, `target_id` and `value` fields. The value is a 1–128 byte printable label or one exact IPv4/IPv6 address; arbitrary names, ranges/CIDR and proxy-provided addresses are not accepted. Approved actions use the same CSRF-protected form POST (exact `_csrf`, `action`, `target_id` keys). Form IDs must be positive decimal integers, and extra fields are rejected. Successful actions redirect to `/admin` without exposing resource details; denials and throttling return generic errors. SQL state changes and metadata-only security events share a transaction, so an audit write failure rolls back the mutation. The action limiter allows at most 20 per administrator and 40 per source IP within a 15-minute window, using HMAC-isolated counters in existing `login_rate_limits`.
+Keep `ADMIN_ACTIONS_ENABLED=false` until new tests and real hosting permissions are verified. Enabling the UI alone does **not** enable write actions. The new forms use the same default-off `ADMIN_ACTIONS_ENABLED` switch, and allow only `create_client` and `request_ip` with exact `_csrf`, `action`, `target_id` and `value` fields. The value is a 1–128 byte printable label or one exact IPv4/IPv6 address; arbitrary names, ranges/CIDR and proxy-provided addresses are not accepted. Approved actions use the same CSRF-protected form POST (exact `_csrf`, `action`, `target_id` keys). Form IDs must be positive decimal integers, and extra fields are rejected. Successful Twig admin actions use a fixed Post/Redirect/Get destination based on the allowlisted operation (`/admin/users`, `/admin/owners`, `/admin/clients`, `/admin/ips/pending`, or `/admin/ips/approved`), rather than returning to the Overview. Legacy admin HTML still redirects to `/admin`. The server never accepts a return URL from POST data, Referer, Origin, or query parameters. Denials and throttling retain generic error statuses. SQL state changes and metadata-only security events share a transaction, so an audit write failure rolls back the mutation. The action limiter allows at most 20 per administrator and 40 per source IP within a 15-minute window, using HMAC-isolated counters in existing `login_rate_limits`.
 
 Set `ADMIN_UI_ENABLED=true` only after the administrator is provisioned. `APP_URL` must be an HTTPS origin with no trailing slash. `ADMIN_UI_ALLOWED_IP` must equal PHP's trusted `REMOTE_ADDR`, **not** an unverified `X-Forwarded-For` value. This is one exact IPv4 or IPv6 address, not a CIDR range.
 
@@ -116,8 +116,31 @@ showing the escaped target label/IP before re-submitting the **same**
 `POST /admin/review` form with its original CSRF and fields. Escape
 and Cancel never submit. Fallback uses the browser confirmation
 dialog; without JS the server-side CSRF and authorization checks still
-apply, though there is no client-side confirmation. Navigation after
-a successful/denied POST retains the existing backend contract:
-there is no fabricated success toast or unreviewed redirect change.
+apply, though there is no client-side confirmation. After an authorized successful Twig action, the server returns HTTP 303 to that operation's corresponding section. Denied actions retain the existing error response; there is no fabricated success toast.
 `ADMIN_ACTIONS_ENABLED=false` must remain in production and local
 read-only review until explicit administrative-action tests.
+
+## Compact per-record actions and modal dismissal
+
+The sidebar logo header and main page header both have fixed `h-20`
+(80px) to align their bottom borders at desktop and mobile sizes.
+Each data record now offers a 44px, icon-only, titled vertical-ellipsis
+native `<details>` options control on desktop **and** mobile. Its
+content contains existing record details and (when allowed) the original
+POST form actions. It is not assigned `role="menu"` because its forms
+and nested `<details>` have ordinary document semantics. With JS, only
+one menu remains open, pointer interaction outside closes it and Escape
+closes it with focus restoration. Without JS, the native `<details>`
+remains functional. Desktop rows no longer need space for large inline
+action forms; mobile buttons float near the status label.
+
+All three modal dialogs also close if a pointer interaction begins and
+ends on the **backdrop outside the dialog's rectangle**; clicking inside
+never dismisses a form. Cancel, Escape and backdrop dismissal never POST.
+Themes use the existing self-hosted styles; menu and dialog entry
+transitions are 130–160ms with full reduced-motion support.
+
+The fixed `AdminMutationRedirect` mapping applies **only after** an
+authorized action succeeds and only for the Twig UI. It does not
+change rate limits, CSRF, source IP, admin role checks or failure
+response semantics. No arbitrary `return_to` field is accepted.

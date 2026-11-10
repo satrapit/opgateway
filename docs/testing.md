@@ -130,3 +130,17 @@ The current dialog slice must be verified with:
 Do not reset or pop the previously preserved local UI stash over this
 branch. The branch stays Draft until the above checks and authorized
 operations are signed off.
+
+## Compact menu and redirect UX follow-up (pending developer verification)
+
+User feedback identified mismatched header baselines, tall action-heavy
+table rows, non-dismissible dialog backdrops, and successful write
+requests redirecting to Overview. New code introduces shared 80px
+header heights, native 44px ellipsis record menus, pointer-outside
+dialog closing, subtle reduced-motion-aware animations and an
+explicit allowlisted action-to-page PRG mapping. **No new browser tests
+or PHPUnit results are claimed for these changes until the developer
+rebuilds from the new branch head.** Execute all PHP lint/PHPUnit/smoke,
+`npm ci`/lint/build, check the 320–1440px range, test keyboard and
+tap interactions plus successful operation destinations on a disposable
+local DB, with mutations disabled by default in every other setting.

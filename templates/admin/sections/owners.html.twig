@@ -19,11 +19,18 @@
         <span class="opg-badge opg-badge-green shrink-0">Approved</span>
       </div>
       <div class="opg-record-actions">
+<details class="opg-row-menu" data-opg-row-menu>
+  <summary class="opg-row-menu-trigger" aria-label="More options for {{ owner.email }}" title="More options for {{ owner.email }}" data-tooltip="More options"><i data-lucide="ellipsis-vertical" class="opg-icon" aria-hidden="true"></i></summary>
+  <div class="opg-action-popover" aria-label="Options for {{ owner.email }}">
+
         {{ record.details('Owner', owner.email, [
   {label:'User ID', value:owner.id},
   {label:'Email', value:owner.email},
   {label:'Approval', value:'Approved'}
-]) }}{% if actions_enabled %}{{ action.provision(csrf_token, 'create_client', owner.id, 'Create client', 'Client name', 'New client label', 128, 'mobile') }}{% else %}<span class="opg-muted">Read only</span>{% endif %}</div>
+]) }}{% if actions_enabled %}{{ action.provision(csrf_token, 'create_client', owner.id, 'Create client', 'Client name', 'New client label', 128, 'mobile') }}{% else %}<span class="opg-muted">Read only</span>{% endif %}
+  </div>
+</details>
+</div>
     </article>
     {% endfor %}
   </div>
@@ -35,11 +42,17 @@
       <tr>
         <td><div class="font-medium text-gray-900 dark:text-white">{{ owner.email }}</div><span class="opg-muted">User #{{ owner.id }}</span></td>
         <td><span class="opg-badge opg-badge-green">Approved</span></td>
-        <td>{{ record.details('Owner', owner.email, [
+        <td><details class="opg-row-menu" data-opg-row-menu>
+  <summary class="opg-row-menu-trigger" aria-label="More options for {{ owner.email }}" title="More options for {{ owner.email }}" data-tooltip="More options"><i data-lucide="ellipsis-vertical" class="opg-icon" aria-hidden="true"></i></summary>
+  <div class="opg-action-popover" aria-label="Options for {{ owner.email }}">
+{{ record.details('Owner', owner.email, [
   {label:'User ID', value:owner.id},
   {label:'Email', value:owner.email},
   {label:'Approval', value:'Approved'}
-]) }} {% if actions_enabled %}{{ action.provision(csrf_token, 'create_client', owner.id, 'Create client', 'Client name', 'New client label') }}{% else %}<span class="opg-muted">Read only</span>{% endif %}</td>
+]) }} {% if actions_enabled %}{{ action.provision(csrf_token, 'create_client', owner.id, 'Create client', 'Client name', 'New client label') }}{% else %}<span class="opg-muted">Read only</span>{% endif %}
+  </div>
+</details>
+</td>
       </tr>
       {% endfor %}
       </tbody>
