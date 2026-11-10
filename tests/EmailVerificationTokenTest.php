@@ -31,8 +31,13 @@ final class EmailVerificationTokenTest extends TestCase
 
     public function testMigrationChecksumMatchesPhpMyAdminBundle(): void
     {
-        self::assertCount(3, MigrationCatalog::all());
         $migration = new CreateEmailVerificationTokens();
+        // The verification migration is immutable; later additive
+        // migrations must not break this historical checksum assertion.
+        self::assertContains(
+            $migration->version(),
+            array_map(static fn ($item): string => $item->version(), MigrationCatalog::all()),
+        );
         self::assertSame('202611070002_create_email_verification_tokens', $migration->version());
         self::assertSame('0bc2e4471188fb379f737af925ebce4dcfc00537ef7b7992b17d2153b57e7727', MigrationRunner::checksum($migration));
     }

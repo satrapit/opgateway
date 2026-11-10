@@ -53,5 +53,6 @@ A feature is done only when it uses the actual TailAdmin Free design language, T
 New registration, SMTP admin settings, Openprovider account encryption and
 proxy edge are in a feature branch. Follow docs/gateway-onboarding.md,
 keep everything default off, never edit earlier migration checksums, and
-never deploy before migration 004 and Composer lock/vendor tests. Existing
-admin role is the highest role; a separate super-admin role does not exist.
+never deploy before migration 004 and Composer lock/vendor tests. The existing
+admin role is sufficient for all privileged administrative operations.
+Do not add a super-admin role or new role migration.

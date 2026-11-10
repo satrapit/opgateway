@@ -11,9 +11,10 @@ Existing production is running alpha.3. Do not re-import its base schema.
 1. Gateway *user*: email/password with PHP password_hash. Browser login
    may originate from any IP over HTTPS, with CSRF, session, throttling and
    fresh account/administrator-role checks.
-2. Gateway *administrator*: eligible user with the live admin role. In the
-   current schema the admin role also controls system SMTP; there is not yet
-   a distinct super-admin role.
+2. Gateway *administrator*: eligible user with the existing admin role.
+   This is the only privileged administrative role required for the project,
+   including SMTP settings and user/client/IP approvals. No new role or
+   role migration is needed.
 3. Openprovider *reseller account*: dedicated API username/password. The
    user stores these in the authenticated dashboard. Password and upstream
    bearer are encrypted in private MySQL with AES-256-GCM and APP_KEY,
