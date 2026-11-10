@@ -172,8 +172,9 @@ final readonly class AccountWebEntry
             }
         }
 
+        $ownerOverview = new OwnerOverviewRepository($pdo);
         $adapter = new AccountBrowserAdapter(
-            $session, $login, $accounts, new OwnerOverviewRepository($pdo),
+            $session, $login, $accounts, $ownerOverview,
             $credentials, $integration, $registration !== null,
         );
 
@@ -206,6 +207,7 @@ final readonly class AccountWebEntry
             }
             return (new SelfServiceBrowserController(
                 $session, $accounts, $registration, $integration, $origin,
+                $login, $ownerOverview,
             ))->dispatch(
                 $method, $path,
                 isset($server['CONTENT_TYPE']) ? (string) $server['CONTENT_TYPE'] : null,

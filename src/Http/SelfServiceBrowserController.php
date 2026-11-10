@@ -7,6 +7,7 @@ namespace OPGateway\Http;
 use OPGateway\Clients\OwnerIntegrationService;
 use OPGateway\Identity\BrowserSession;
 use OPGateway\Identity\LoginAccountRepository;
+use OPGateway\Identity\GuardedLoginService;
 use OPGateway\Identity\SelfServiceRegistration;
 use InvalidArgumentException;
 
@@ -100,7 +101,7 @@ final readonly class SelfServiceBrowserController
             return self::error(415);
         }
         $fields = match ($path) {
-            '/account/provider/save' => ['_csrf', 'username', 'password'],
+            '/account/provider/save' => ['_csrf', 'username', 'password', 'current_password'],
             '/account/clients/create' => ['_csrf', 'label'],
             default => ['_csrf', 'client_id', 'ip'],
         };
@@ -110,6 +111,17 @@ final readonly class SelfServiceBrowserController
         }
         try {
             if ($path === '/account/provider/save') {
+                if ($this->reauth === null || $this->overview === null
+                    || strlen($form['current_password']) === 0
+                    || strlen($form['current_password']) > 1024) {
+                    return self::error(403);
+                }
+                $email = $this->overview->eligibleEmail($userId);
+                if ($email === null || $this->reauth->authenticate(
+                    $email, $form['current_password'], $sourceIp, $requestId,
+                ) !== $userId) {
+                    return self::error(403);
+                }
                 $result = $this->integration->saveAccount(
                     $userId, $form['username'], $form['password'], $sourceIp, $requestId,
                 );

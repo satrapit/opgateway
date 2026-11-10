@@ -36,7 +36,7 @@ Existing production is running alpha.3. Do not re-import its base schema.
    self_service become active/approved; legacy manual registrations remain
    under administrator approval.
 4. User logs in at /account/login. If ACCOUNT_INTEGRATION_ENABLED=true,
-   user sets their own Openprovider account credentials and creates disabled
+   user sets their own Openprovider account credentials (with gateway password re-confirmation) and creates disabled
    client and pending exact IPv4/IPv6 entries, with owner checks/audits.
 5. Administrator must explicitly activate clients and approve requested
    source IPs with the separately enabled ADMIN_ACTIONS_ENABLED gate.

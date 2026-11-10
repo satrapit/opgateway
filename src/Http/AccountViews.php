@@ -239,6 +239,9 @@ HTML;
     <input id="provider-username" name="username" value="{$username}" maxlength="254" autocomplete="off" required>
     <label for="provider-password">Openprovider API password</label>
     <input id="provider-password" name="password" type="password" maxlength="1024" autocomplete="new-password" required>
+    <label for="provider-confirm-password">Confirm your gateway account password</label>
+    <input id="provider-confirm-password" name="current_password" type="password"
+      maxlength="1024" autocomplete="current-password" required>
     <button type="submit">Save encrypted credentials</button>
   </form>
 </section>
