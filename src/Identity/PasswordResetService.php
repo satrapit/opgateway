@@ -91,7 +91,6 @@ SQL);
         if ($length < 12 || $length > 1024 || str_contains($password, "\0")) {
             throw new InvalidArgumentException('Invalid password.');
         }
-        $passwordHash = $this->hasher->hash($password);
         $this->pdo->beginTransaction();
         try {
             $read = $this->pdo->prepare(<<<'SQL'
@@ -108,6 +107,8 @@ SQL);
                 $this->pdo->rollBack();
                 return false;
             }
+            // Do not run expensive password hashing for invalid/expired tokens.
+            $passwordHash = $this->hasher->hash($password);
             $update = $this->pdo->prepare(<<<'SQL'
 UPDATE users SET password_hash = ?, updated_at = UTC_TIMESTAMP(6)
 WHERE id = ? AND status = 'active'

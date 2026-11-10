@@ -13,7 +13,9 @@
       <label class="opg-label" for="owner-password">Password</label>
       <input class="opg-input" id="owner-password" name="password" type="password" maxlength="1024" autocomplete="current-password" required{% if show_error %} aria-describedby="account-login-error"{% endif %}>
     </div>
+    {% if allow_registration %}
     <div class="text-right"><a class="text-sm font-semibold text-brand-600 hover:underline dark:text-brand-300" href="/account/forgot-password">Forgot password?</a></div>
+    {% endif %}
     <button type="submit" class="opg-primary-button w-full">Sign in</button>
   </form>
   {% if allow_registration %}
