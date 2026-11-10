@@ -27,7 +27,8 @@ admin approval. Admin lifecycle actions record metadata-only audit events.
 
 ## SMTP settings
 
-SMTP settings are stored only in `smtp_settings`, not in `.env`.
+SMTP uses seven `smtp.*` keys in the shared key/value `settings` table,
+not a dedicated table and never `.env`.
 Visit `/admin/settings/smtp` and provide host, port, encryption, account,
 password, sender address/name and the **current admin password**.
 
@@ -50,5 +51,5 @@ exact IP, issue and revoke a one-time key, then test allowed/denied
 requests. No destructive operations on real owner records.
 
 Release remains blocked until integrated browser/SMTP/database and provider
-tests pass. Production migration 004 requires a separate backup and
+tests pass. Production migrations 004–005 require a separate backup and
 coordinated deployment.

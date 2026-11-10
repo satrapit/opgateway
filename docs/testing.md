@@ -31,8 +31,8 @@ a substitute for real DB, SMTP, Openprovider and browser integration.
 ## Isolated database and mail test
 
 Use only the existing local `opgateway` development DB or a disposable
-clone, never the production DB. Migration 004 must be completed once
-before exercising new code. Verify 4 completed ledger entries and 12
+clone, never the production DB. Migration 004 must be completed first, then reviewed migration 005
+applied once. Verify 5 completed ledger entries and 12
 tables. Test admin SMTP UI, verified email signup, expired/replayed
 links, owner account, disabled client/IP, approvals, one-time key issue
 and revoke, denied wrong source IP and actual safe upstream read. Verify

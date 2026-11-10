@@ -49,7 +49,6 @@ final readonly class SmtpAdminController
             $html = $this->twig->render('admin/smtp.html.twig', [
                 'active_section' => 'smtp',
                 'section_title' => 'SMTP settings',
-                'smtp_settings_enabled' => true,
                 'administrator_label' => 'Administrator',
                 'csrf_token' => $this->session->csrfToken(),
                 'smtp' => $this->settings->summary(),

@@ -8,9 +8,12 @@ The current shared host requires `DB_HOST=db`. Local macOS usually uses `DB_HOST
 
 ## New empty database only
 
-Import `database/sql/opgateway_full_schema.sql` **once** into a fresh empty database using phpMyAdmin. On the next feature branch, verify 12 tables and four completed rows in `schema_migrations`. This SQL contains the three immutable migrations and checksums. **Never import into an existing populated database, re-run migrations or reset tables to fix a connection error.** The online app does not execute migrations.
+Import `database/sql/opgateway_full_schema.sql` **once** into a fresh empty database using phpMyAdmin. On the next feature branch, verify **12 final tables and 5 completed rows** in `schema_migrations`. It preserves all earlier migration statements and checksums. Migration 005
+migrates `smtp_settings` to generic key/value `settings` and then drops only
+the old SMTP table. **Never import into an existing populated database, re-run migrations or reset tables to fix a connection error.** The online app does not execute migrations.
 
-For the currently deployed alpha.3 schema there is nothing to import. The **next unreleased feature branch** introduces migration 004; after local validation, apply ONLY the additive upgrade script to the existing database, never the full schema. Backup before any intentional database operation.
+For the currently deployed alpha.3 schema there is nothing to import. The feature branch requires 004 followed by 005. The local DB already
+has 004: apply only 005 to it, after a backup; never re-run 004. Backup before any intentional database operation.
 
 ## First administrator — one-time manual SQL
 
@@ -74,7 +77,7 @@ Migration catalog versions:
 Do not edit existing migration SQL or checksums. The internal migration runner uses an advisory lock and durable ledger, and deliberately refuses unexpected or incomplete history. MySQL DDL does not support fully atomic rollback; it must never run automatically on a shared cPanel deployment.
 
 
-## Next migration (unreleased)
+## Unreleased migrations (manual only)
 
 - 202611100001_create_gateway_integrations: adds signup_source with DEFAULT
   manual, smtp_settings and provider_connections. No existing account is
@@ -82,6 +85,14 @@ Do not edit existing migration SQL or checksums. The internal migration runner u
 - On existing populated instances, execute ONLY the reviewed
   database/sql/upgrade_202611100001.sql in a verified, backed-up database
   and only after it passes in a disposable local copy.
-- This must precede deploying the new PHP source because SchemaReadiness
-  requires all catalog migrations and will fail closed with HTTP 503.
+- Migration 005 (`202611100002_unify_settings_storage`) creates
+  `settings(setting_key, setting_value, updated_at)`; copies seven `smtp.*`
+  values, including the **unchanged encrypted password**, and removes the
+  old `smtp_settings` table.
+- For databases already on 004, execute only
+  `database/sql/upgrade_202611100002.sql` once after a verified backup.
+  For alpha.3 databases apply both scripts in order.
+- Readiness requires **five** completed migrations. Never deploy new PHP
+  before upgrading the database. MySQL DDL may auto-commit: if execution
+  fails partway, stop and inspect; do not simply rerun.
 - The original migrations and their checksums are never rewritten.

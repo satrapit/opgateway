@@ -6,7 +6,7 @@ TailAdmin/Twig admin panel and a self-service account portal.
 > **Unreleased feature branch:** `main` / production remains at
 > v0.1.0-alpha.3. Do not deploy or merge this branch before live SMTP,
 > registration, IP, provider, security and browser integration testing.
-> The local database was manually upgraded to migration 004; production
+> The local database has migration 004; it needs migration 005 next. Production
 > must never be upgraded without a verified backup and deployment plan.
 
 ## One application, no feature-flag maze
@@ -24,8 +24,10 @@ TailAdmin/Twig admin panel and a self-service account portal.
 
 Configuration is deliberately small. **Only MySQL connection values belong in
 `.env`** (`DB_HOST`, `DB_PORT`, `DB_NAME`, `DB_USER`,
-`DB_PASSWORD`). SMTP settings are encrypted and managed in the database,
-through the `admin` role. The application has no `*_ENABLED` switches.
+`DB_PASSWORD`). All global application settings live in a single key/value `settings`
+table (`setting_key`, `setting_value`, `updated_at`), including encrypted
+`smtp.password`. The `admin` role manages SMTP; individual owner credentials
+remain separate in `provider_connections` for access control. The application has no `*_ENABLED` switches.
 Security policy is enforced by authentication/authorization, not runtime flags.
 
 The canonical HTTPS host comes from the configured web-server
@@ -40,8 +42,9 @@ backed up**; never save this key in MySQL, Git or the public directory.
 2. Copy `.env.example` to private `.env` and provide **local** DB credentials.
    If upgrading a local checkout, remove retired non-DB entries from .env.
 3. For an empty DB import `database/sql/opgateway_full_schema.sql` once.
-   For an existing alpha.3 DB, back up and run only reviewed incremental
-   migration `database/sql/upgrade_202611100001.sql` once.
+   For an existing alpha.3 DB, apply 004 then 005 in order after backup.
+   For the current local DB already at 004, run **only** reviewed
+   `database/sql/upgrade_202611100002.sql` (005).
 4. On first run create an admin using the existing reviewed SQL in
    [database documentation](docs/database.md), if none exists.
 5. Use HTTPS at a correctly configured canonical virtual host.

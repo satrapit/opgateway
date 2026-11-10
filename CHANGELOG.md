@@ -1,5 +1,18 @@
 # Changelog
 
+## Unreleased — Universal key/value settings (2026-11-10)
+
+- Migration 005 creates one global `settings` table (`setting_key`,
+  `setting_value`, `updated_at`), copies all SMTP settings including
+  unchanged encrypted password from 004, and drops old `smtp_settings`.
+- Keep migrations 001–004 and their checksums immutable. Existing local
+  databases at 004 require only the new manual 005 SQL after backup.
+- Update PDO SMTP storage to a single prepared multi-key upsert; retain
+  admin authentication, CSRF, password validation and metadata audit.
+- No new feature flags, separate SMTP table or new controller.
+- Production stays unchanged; fresh PHPUnit/MySQL/browser validation required.
+
+
 ## Unreleased — Remove runtime feature switches and unify paths (2026-11-10)
 
 - Restrict .env to five MySQL connection values. Keep the application crypto

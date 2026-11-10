@@ -28,7 +28,8 @@ Only show capabilities actually implemented: approved/verified users, approved o
 
 - **Only five DB connection values belong in private .env**; reject unknown keys. Never add flags or SMTP, provider, host or crypto settings there.
 - The server virtual host supplies canonical HTTPS `SERVER_NAME`, which must match `HTTP_HOST`. Do not use forwarded headers for security decisions.
-- Use the existing `admin` role for all admin operations. Do not add super-admin, dual renderers or feature toggles. SMTP lives in MySQL `smtp_settings`, edited from the admin Settings page.
+- Use the existing `admin` role for all admin operations. Do not add super-admin, dual renderers or feature toggles. All global settings are key/value rows in one MySQL `settings` table;
+  SMTP uses `smtp.*` keys and encrypted `smtp.password`, edited via Admin.
 - The application encryption secret is a single backed-up private file `storage/app-secret.key` with mode 0600, outside the web root; do not store its key in MySQL, .env or Git. Use separated HKDF key for HMAC rate limiting.
 - Keep fresh database eligibility/roles, secure short-lived sessions, CSRF, strict form parsing, exact API-client source IP approval, HMAC rate limits, metadata-only audit and fail-closed denials. These are security checks, not optional feature flags.
 - Upstream writes are not supported until narrowly scoped, reviewed operation policies exist. Never add a bypass toggle.
@@ -54,6 +55,6 @@ A feature is done only when it uses the actual TailAdmin Free design language, T
 New registration, SMTP admin settings, Openprovider account encryption and
 proxy edge are in a feature branch. Follow docs/gateway-onboarding.md,
 keep unreleased operations unavailable, never edit earlier migration checksums, and
-never deploy before migration 004 and Composer lock/vendor tests. The existing
+never deploy before migrations 004–005 and Composer lock/vendor tests. The existing
 admin role is sufficient for all privileged administrative operations.
 Do not add a super-admin role or new role migration.

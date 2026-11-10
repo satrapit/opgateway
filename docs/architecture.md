@@ -25,18 +25,18 @@ IP addresses require explicit admin review before API use.
 ## Configuration and storage
 
 Five MySQL connection keys are the **only** `.env` entries. Admin-editable
-SMTP configuration lives in the `smtp_settings` table. Per-owner
+SMTP configuration lives in the shared key/value `settings` table. Per-owner
 Openprovider credentials are in `provider_connections`. Both use
 AES-256-GCM with a separate private, backed-up
 `storage/app-secret.key` outside the database. Request throttling uses
 a domain-separated HKDF key. Canonical host and TLS are configured in
 the web-server virtual host, never accepted from untrusted forwarded headers.
 
-The four immutable migration definitions are applied explicitly in
+The five sequential migration definitions are applied explicitly in
 order; cPanel deploy never auto-migrates. Existing populated alpha.3
-databases require the additive migration 004 and a backup before using
-the new source. No new schema migration is introduced by the removal
-of feature flags.
+databases require migrations 004 and 005 and a backup before using
+the new source. Migration 005 consolidates global settings; removing feature flags
+itself did not require a schema migration.
 
 ## Out of scope before release
 

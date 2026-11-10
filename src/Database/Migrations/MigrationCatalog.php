@@ -21,6 +21,7 @@ final class MigrationCatalog
             new CreateEmailVerificationTokens(),
             new CreateLoginSecurityTables(),
             new CreateGatewayIntegrationTables(),
+            new UnifySettingsStorage(),
         ];
 
         $versions = array_map(static fn (Migration $migration): string => $migration->version(), $migrations);

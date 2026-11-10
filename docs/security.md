@@ -23,7 +23,8 @@ active client and valid non-revoked gateway bearer digest.
 
 ## SMTP, provider and application key
 
-SMTP configuration resides in MySQL `smtp_settings`, edited in the
+All global settings live in MySQL `settings` as key/value rows;
+SMTP uses `smtp.*` keys with encrypted `smtp.password`, edited in the
 administrator Settings screen after current-password recheck.
 Openprovider reseller credentials and cached upstream bearer reside in
 `provider_connections`. These values are AES-256-GCM encrypted with

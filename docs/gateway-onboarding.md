@@ -17,7 +17,8 @@ DB_PASSWORD=
 There are **no application feature flags**. All real routes use one code
 path. The single privileged role is `admin`; no superadmin.
 
-- SMTP settings live in MySQL `smtp_settings`, edited at
+- SMTP settings are `smtp.*` key/value entries in shared MySQL `settings`
+  (encrypted password), edited at
   `/admin/settings/smtp` with current-password confirmation and CSRF.
 - Owner-specific Openprovider reseller credentials live encrypted in
   `provider_connections` and are updated in the account portal.
@@ -35,13 +36,16 @@ path. The single privileged role is `admin`; no superadmin.
 
 ## Local onboarding flow
 
-1. On an independent local alpha.3 DB, verify and back up migration
-   history 001–003. Apply the reviewed additive
-   `database/sql/upgrade_202611100001.sql` (004) exactly once.
-   It adds `users.signup_source`, `smtp_settings` and
-   `provider_connections`; old users remain `manual`.
-2. Verify four `completed` migrations and 12 tables. **Never import
-   the full base schema over an existing populated DB.**
+1. The local database already has migration 004 completed; never
+   run it again. For a new alpha.3 database, run reviewed 004 once
+   after backup. It adds `users.signup_source`, the temporary
+   `smtp_settings` table and `provider_connections`. All existing
+   users remain `manual`.
+2. Back up and apply `database/sql/upgrade_202611100002.sql` (005)
+   **once** on the local DB, which already has 004. It copies SMTP values
+   into `settings` and removes `smtp_settings`. Verify **five** completed
+   migrations and **12** final tables. Never import full schema on an
+   existing populated DB.
 3. Use HTTPS with a correctly configured canonical vhost. Sign in as
    `admin`; open `/admin/settings/smtp` and save actual test SMTP.
 4. Register a new account, receive mail, submit a one-time verification
@@ -71,9 +75,9 @@ policies remain mandatory.
 
 ## Production deployment blocker
 
-The current production alpha.3 schema lacks migration 004. New code
+The current production alpha.3 schema lacks migrations 004 and 005. New code
 checks the complete migration ledger, so deploying before a manual,
-backed-up and verified schema upgrade would cause authenticated
+backed-up and verified schema upgrades would cause authenticated
 /admin and /account pages to return HTTP 503. The rollout needs a
 separate maintenance window and validation. Never run migrations
 automatically on cPanel. Keep this PR in Draft until finished.

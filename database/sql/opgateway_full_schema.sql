@@ -2,11 +2,13 @@
 -- CAUTION: existing users, tokens, clients and records are NOT migrated.
 -- Backup the current database before replacing it in cPanel.
 -- Select the correct EMPTY database in phpMyAdmin before import.
--- STOP if any tables exist. No DROP, TRUNCATE, or seed credentials.
+-- STOP if any tables exist. No existing user data is dropped or truncated.
+-- Migration 005 only drops the temporary legacy smtp_settings table from 004.
 -- DDL can implicitly commit, so never rerun a failed import blindly.
--- Exactly 12 tables and 4 completed migration records are expected.
+-- Exactly 12 final tables and 5 completed migration records are expected.
 -- Original migration DDL and checksums are preserved verbatim.
 -- No administrator, users, keys or whitelist entries are created.
+-- Migration 005 drops only the temporary legacy smtp_settings table created by 004.
 
 -- Migration 001: identity, clients and migration ledger
 CREATE TABLE schema_migrations (
@@ -186,6 +188,38 @@ CREATE TABLE provider_connections (
 UPDATE schema_migrations
 SET status = 'completed', completed_at = UTC_TIMESTAMP(6)
 WHERE version = '202611100001_create_gateway_integrations' AND checksum = 'b5d6333be067cc33d03c2773ca24134dbb7ff8248b1f514ae8d0eb52b44893fd' AND status = 'running';
+
+-- Migration 005: unify application settings in generic key/value storage
+INSERT INTO schema_migrations (version, checksum, status, started_at)
+VALUES ('202611100002_unify_settings_storage', 'cf5a225284549fe2f177fde4d5e6f6d2b61972f2035502eb55c9b2898ab5deae', 'running', UTC_TIMESTAMP(6));
+
+CREATE TABLE settings (
+    setting_key VARCHAR(128) NOT NULL,
+    setting_value TEXT NOT NULL,
+    updated_at DATETIME(6) NOT NULL,
+    PRIMARY KEY (setting_key)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+INSERT INTO settings (setting_key, setting_value, updated_at)
+SELECT 'smtp.host', host, updated_at FROM smtp_settings WHERE id = 1
+UNION ALL
+SELECT 'smtp.port', CAST(port AS CHAR), updated_at FROM smtp_settings WHERE id = 1
+UNION ALL
+SELECT 'smtp.encryption', encryption, updated_at FROM smtp_settings WHERE id = 1
+UNION ALL
+SELECT 'smtp.username', username, updated_at FROM smtp_settings WHERE id = 1
+UNION ALL
+SELECT 'smtp.password', password_cipher, updated_at FROM smtp_settings WHERE id = 1
+UNION ALL
+SELECT 'smtp.from_email', from_email, updated_at FROM smtp_settings WHERE id = 1
+UNION ALL
+SELECT 'smtp.from_name', from_name, updated_at FROM smtp_settings WHERE id = 1;
+
+DROP TABLE smtp_settings;
+
+UPDATE schema_migrations
+SET status = 'completed', completed_at = UTC_TIMESTAMP(6)
+WHERE version = '202611100002_unify_settings_storage' AND checksum = 'cf5a225284549fe2f177fde4d5e6f6d2b61972f2035502eb55c9b2898ab5deae' AND status = 'running';
 
 -- Read-only checks after successful import:
 SELECT DATABASE() AS selected_database;
