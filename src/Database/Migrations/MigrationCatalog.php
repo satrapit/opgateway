@@ -22,6 +22,7 @@ final class MigrationCatalog
             new CreateLoginSecurityTables(),
             new CreateGatewayIntegrationTables(),
             new UnifySettingsStorage(),
+            new CreatePasswordResetTokens(),
         ];
 
         $versions = array_map(static fn (Migration $migration): string => $migration->version(), $migrations);

@@ -5,7 +5,7 @@
 -- STOP if any tables exist. No existing user data is dropped or truncated.
 -- Migration 005 only drops the temporary legacy smtp_settings table from 004.
 -- DDL can implicitly commit, so never rerun a failed import blindly.
--- Exactly 12 final tables and 5 completed migration records are expected.
+-- Exactly 13 final tables and 6 completed migration records are expected.
 -- Original migration DDL and checksums are preserved verbatim.
 -- No administrator, users, keys or whitelist entries are created.
 -- Migration 005 drops only the temporary legacy smtp_settings table created by 004.
@@ -220,6 +220,27 @@ DROP TABLE smtp_settings;
 UPDATE schema_migrations
 SET status = 'completed', completed_at = UTC_TIMESTAMP(6)
 WHERE version = '202611100002_unify_settings_storage' AND checksum = 'cf5a225284549fe2f177fde4d5e6f6d2b61972f2035502eb55c9b2898ab5deae' AND status = 'running';
+
+-- Migration 006: password reset token digests
+INSERT INTO schema_migrations (version, checksum, status, started_at)
+VALUES ('202611100003_create_password_reset_tokens', '1559639668e3a95948159a0da3c6e114be68a20e936b641ae25fd7ab6e436c69', 'running', UTC_TIMESTAMP(6));
+
+CREATE TABLE password_reset_tokens (
+    id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+    user_id BIGINT UNSIGNED NOT NULL,
+    token_hash CHAR(64) NOT NULL,
+    expires_at DATETIME(6) NOT NULL,
+    consumed_at DATETIME(6) NULL,
+    created_at DATETIME(6) NOT NULL,
+    PRIMARY KEY (id),
+    UNIQUE KEY uq_password_reset_token_hash (token_hash),
+    KEY idx_password_reset_user (user_id),
+    KEY idx_password_reset_expiry (expires_at),
+    CONSTRAINT fk_password_reset_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+UPDATE schema_migrations SET status = 'completed', completed_at = UTC_TIMESTAMP(6)
+WHERE version = '202611100003_create_password_reset_tokens' AND checksum = '1559639668e3a95948159a0da3c6e114be68a20e936b641ae25fd7ab6e436c69' AND status = 'running';
 
 -- Read-only checks after successful import:
 SELECT DATABASE() AS selected_database;

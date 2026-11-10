@@ -9,6 +9,7 @@ use OPGateway\Identity\BrowserSession;
 use OPGateway\Identity\LoginAccountRepository;
 use OPGateway\Identity\GuardedLoginService;
 use OPGateway\Identity\SelfServiceRegistration;
+use OPGateway\Identity\PasswordResetService;
 use InvalidArgumentException;
 
 /**
@@ -26,6 +27,7 @@ final readonly class SelfServiceBrowserController
         private string $origin,
         private ?GuardedLoginService $reauth = null,
         private ?OwnerOverviewProvider $overview = null,
+        private ?PasswordResetService $passwordReset = null,
     ) {
     }
 
@@ -33,6 +35,7 @@ final readonly class SelfServiceBrowserController
     {
         return in_array($path, [
             '/account/register', '/account/verify', '/account/verify/resend',
+            '/account/forgot-password', '/account/reset-password',
             '/account/provider/save', '/account/clients/create', '/account/ips/request',
         ], true);
     }
@@ -42,6 +45,48 @@ final readonly class SelfServiceBrowserController
         string $method, string $path, ?string $contentType, ?string $body,
         string $sourceIp, string $requestId, string $rawQuery,
     ): array {
+        if (in_array($path, ['/account/forgot-password', '/account/reset-password'], true)) {
+            if ($this->passwordReset === null) {
+                return self::error(404);
+            }
+            if ($method === 'GET') {
+                if ($path === '/account/forgot-password') {
+                    return self::html(AccountViews::forgotPassword($this->session->csrfToken()));
+                }
+                $token = preg_match('/^token=([0-9a-fA-F]{64})$/D', $rawQuery, $matches) === 1
+                    ? $matches[1] : '';
+                return self::html(AccountViews::resetPasswordForm($this->session->csrfToken(), $token));
+            }
+            if ($method !== 'POST') {
+                return self::error(404);
+            }
+            if (!self::isForm($contentType)) {
+                return self::error(415);
+            }
+            $fields = $path === '/account/forgot-password'
+                ? ['_csrf', 'email']
+                : ['_csrf', 'token', 'password', 'password_confirmation'];
+            $form = $body === null ? null : StrictForm::decode($body, $fields);
+            if ($form === null || !$this->session->csrfValid($form['_csrf'])) {
+                return self::error($form === null ? 400 : 403);
+            }
+            if ($path === '/account/forgot-password') {
+                $result = $this->passwordReset->request($form['email'], $sourceIp, $this->origin);
+                return $result === 'limited' ? self::error(429)
+                    : self::html(AccountViews::resetRequestAccepted());
+            }
+            if (!hash_equals($form['password'], $form['password_confirmation'])) {
+                return self::error(400);
+            }
+            try {
+                $result = $this->passwordReset->reset($form['token'], $form['password']);
+            } catch (InvalidArgumentException) {
+                return self::error(400);
+            }
+            $this->session->rotateCsrf();
+            return self::html(AccountViews::resetResult($result));
+        }
+
         if (in_array($path, ['/account/register', '/account/verify', '/account/verify/resend'], true)) {
             if ($this->registration === null) {
                 return self::error(404);

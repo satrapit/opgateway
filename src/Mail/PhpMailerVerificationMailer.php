@@ -5,12 +5,12 @@ declare(strict_types=1);
 namespace OPGateway\Mail;
 
 use PHPMailer\PHPMailer\PHPMailer;
-use OPGateway\Identity\EmailVerificationToken;
+use OPGateway\Identity\PasswordResetMailer;
 use RuntimeException;
 use Throwable;
 
-/** Standards-based SMTP with strict peer verification and no debug output. */
-final readonly class PhpMailerVerificationMailer implements VerificationMailer
+/** SMTP verification and reset mail with peer TLS verification and no debug output. */
+final readonly class PhpMailerVerificationMailer implements VerificationMailer, PasswordResetMailer
 {
     public function __construct(private PdoSmtpSettings $settings)
     {
@@ -18,18 +18,37 @@ final readonly class PhpMailerVerificationMailer implements VerificationMailer
 
     public function sendVerification(string $email, string $token, string $appUrl): void
     {
+        $this->validateLink($email, $token, $appUrl);
+        $this->send($email, 'Verify your OPGateway email address',
+            "Verify your email using this one-time link:\n" . $appUrl . '/account/verify?token=' . $token
+            . "\n\nThe link expires in 30 minutes.\nIf you did not register, ignore this message.");
+    }
+
+    public function sendPasswordReset(string $email, string $token, string $origin): void
+    {
+        $this->validateLink($email, $token, $origin);
+        $this->send($email, 'Reset your OPGateway password',
+            "To choose a new password, open this one-time link:\n"
+            . $origin . '/account/reset-password?token=' . $token
+            . "\n\nThe link expires in 15 minutes.\nIf you did not request this, ignore this message.");
+    }
+
+    private function validateLink(string $email, string $token, string $origin): void
+    {
         if (filter_var($email, FILTER_VALIDATE_EMAIL) === false
-            || !preg_match('/^[a-f0-9]{64}$/D', $token)
-            || preg_match('~^https://[a-z0-9.-]+(?::[0-9]{1,5})?$~iD', $appUrl) !== 1
+            || preg_match('/^[a-f0-9]{64}$/D', $token) !== 1
+            || preg_match('~^https://[a-z0-9.-]+(?::[0-9]{1,5})?$~iD', $origin) !== 1
             || !class_exists(PHPMailer::class)) {
-            throw new RuntimeException('Secure SMTP delivery is unavailable.');
+            throw new RuntimeException('SMTP delivery is unavailable.');
         }
+    }
+
+    private function send(string $email, string $subject, string $message): void
+    {
         $config = $this->settings->connection();
         if ($config === null) {
             throw new RuntimeException('SMTP is not configured.');
         }
-
-        $link = $appUrl . '/account/verify?token=' . $token;
         $mailer = new PHPMailer(true);
         try {
             $mailer->isSMTP();
@@ -50,18 +69,14 @@ final readonly class PhpMailerVerificationMailer implements VerificationMailer
             $mailer->CharSet = PHPMailer::CHARSET_UTF8;
             $mailer->setFrom($config->fromEmail, $config->fromName);
             $mailer->addAddress($email);
-            $mailer->Subject = 'Verify your OPGateway email address';
-            $mailer->Body = "Verify your email using this one-time link:\n"
-                . $link . "\n\nThe link expires in 30 minutes."
-                . "\nIf you did not register, ignore this message.";
+            $mailer->Subject = $subject;
+            $mailer->Body = $message;
             $mailer->isHTML(false);
             if (!$mailer->send()) {
                 throw new RuntimeException('SMTP delivery failed.');
             }
-        } catch (Throwable $exception) {
-            // PHPMailer exceptions may contain host/user/address details.
-            // Never disclose the exception or its message to public clients.
-            throw new RuntimeException('SMTP delivery failed.', 0, $exception);
+        } catch (Throwable $error) {
+            throw new RuntimeException('SMTP delivery failed.', 0, $error);
         } finally {
             $mailer->smtpClose();
             $mailer->Password = '';

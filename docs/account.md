@@ -17,6 +17,12 @@ includes the confirmation field. Account sections `/account`, `/account/provider
 `/account/clients`, `/account/keys` and `/account/ips` are separate routes and
 render distinct Twig sections, not a single anchor-based page.
 
+Password recovery: `/account/forgot-password` requests a generic-response,
+rate-limited email with a 15-minute, single-use reset link. Only a digest
+is stored in MySQL. The reset POST validates password confirmation and
+CSRF and does not automatically sign the user in. Migration 006 must be
+applied manually before using updated source.
+
 Owner login is available at `/account/login`; registration is at
 `/account/register`. A new user signs up with email/password, confirms
 the 30-minute single-use verification email via a CSRF-protected POST,

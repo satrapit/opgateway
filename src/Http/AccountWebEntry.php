@@ -12,6 +12,8 @@ use OPGateway\Identity\PdoEmailVerificationRepository;
 use OPGateway\Identity\PdoUserRepository;
 use OPGateway\Identity\RegistrationService;
 use OPGateway\Identity\SelfServiceRegistration;
+use OPGateway\Identity\PasswordResetService;
+use OPGateway\Security\PdoPasswordResetLimiter;
 use OPGateway\Mail\PdoSmtpSettings;
 use OPGateway\Mail\PhpMailerVerificationMailer;
 use OPGateway\Provider\PdoProviderAccount;
@@ -121,6 +123,7 @@ final readonly class AccountWebEntry
         );
 
         $registration = null;
+        $passwordReset = null;
         $integration = new OwnerIntegrationService(
             $pdo,
             new PdoProviderAccount($pdo, $vault),
@@ -137,12 +140,16 @@ final readonly class AccountWebEntry
         require_once $composerAutoload;
         $smtp = new PdoSmtpSettings($pdo, $vault);
         if ($smtp->configured() && class_exists(\PHPMailer\PHPMailer\PHPMailer::class)) {
+            $mailer = new PhpMailerVerificationMailer($smtp);
+            $passwordReset = new PasswordResetService(
+                $pdo, new PasswordHasher(), new PdoPasswordResetLimiter($pdo, $secret), $mailer,
+            );
             $registration = new SelfServiceRegistration(
                 $pdo,
                 new RegistrationService(new PdoUserRepository($pdo), new PasswordHasher()),
                 new EmailVerificationService(new PdoEmailVerificationRepository($pdo, true)),
                 new PdoSignupLimiter($pdo, $secret),
-                new PhpMailerVerificationMailer($smtp),
+                $mailer,
             );
         }
 
@@ -178,9 +185,14 @@ final readonly class AccountWebEntry
                 ], true)) {
                 return self::error(503);
             }
+            if ($passwordReset === null && in_array($path, [
+                '/account/forgot-password', '/account/reset-password',
+            ], true)) {
+                return self::error(503);
+            }
             $response = (new SelfServiceBrowserController(
                 $session, $accounts, $registration, $integration, $origin,
-                $login, $ownerOverview,
+                $login, $ownerOverview, $passwordReset,
             ))->dispatch(
                 $method, $path,
                 isset($server['CONTENT_TYPE']) ? (string) $server['CONTENT_TYPE'] : null,

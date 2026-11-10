@@ -26,6 +26,7 @@ final class SelfServiceControllerPolicyTest extends TestCase
         );
         foreach ([
             '/account/register', '/account/verify', '/account/verify/resend',
+            '/account/forgot-password', '/account/reset-password',
             '/account/provider/save', '/account/clients/create', '/account/ips/request',
         ] as $path) {
             self::assertTrue(SelfServiceBrowserController::route($path));

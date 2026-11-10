@@ -8,12 +8,11 @@ The current shared host requires `DB_HOST=db`. Local macOS usually uses `DB_HOST
 
 ## New empty database only
 
-Import `database/sql/opgateway_full_schema.sql` **once** into a fresh empty database using phpMyAdmin. On the next feature branch, verify **12 final tables and 5 completed rows** in `schema_migrations`. It preserves all earlier migration statements and checksums. Migration 005
+Import `database/sql/opgateway_full_schema.sql` **once** into a fresh empty database using phpMyAdmin. On the next feature branch, verify **13 final tables and 6 completed rows** in `schema_migrations`. It preserves all earlier migration statements and checksums. Migration 005
 migrates `smtp_settings` to generic key/value `settings` and then drops only
 the old SMTP table. **Never import into an existing populated database, re-run migrations or reset tables to fix a connection error.** The online app does not execute migrations.
 
-For the currently deployed alpha.3 schema there is nothing to import. The feature branch requires 004 followed by 005. The local DB already
-has 004: apply only 005 to it, after a backup; never re-run 004. Backup before any intentional database operation.
+For the currently deployed alpha.3 schema there is nothing to import. The feature branch requires 004, 005 and 006 in order. The local development database already completed 005: apply only 006 after a verified backup. Backup before any intentional database operation.
 
 ## First administrator — one-time manual SQL
 
@@ -92,7 +91,10 @@ Do not edit existing migration SQL or checksums. The internal migration runner u
 - For databases already on 004, execute only
   `database/sql/upgrade_202611100002.sql` once after a verified backup.
   For alpha.3 databases apply both scripts in order.
-- Readiness requires **five** completed migrations. Never deploy new PHP
+- Migration 006 (`202611100003_create_password_reset_tokens`) adds a single
+  password reset token table. A local database already at 005 requires only
+  `database/sql/upgrade_202611100003.sql` after a backup.
+- Readiness requires **six** completed migrations. Never deploy new PHP
   before upgrading the database. MySQL DDL may auto-commit: if execution
   fails partway, stop and inspect; do not simply rerun.
 - The original migrations and their checksums are never rewritten.

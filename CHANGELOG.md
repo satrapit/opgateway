@@ -1,5 +1,13 @@
 # Changelog
 
+## Unreleased — Password recovery (2026-11-10)
+
+- Add shared Twig forgot-password and reset forms, strict CSRF and password confirmation.
+- Add generic-response email requests, independent HMAC request throttling and
+  hashed 15-minute single-use reset tokens sent through the existing SMTP settings.
+- Add manual migration 006. No changes to migrations 001–005 or production.
+- Pending local PHP/MySQL/mail/browser verification; PR remains Draft.
+
 ## Unreleased — Shared Admin/Account visual system (2026-11-10)
 
 - Replace the Account portal's legacy inline-styled PHP HTML with

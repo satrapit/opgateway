@@ -40,6 +40,56 @@ final class AccountViews
         ]);
     }
 
+    public static function forgotPassword(string $csrfToken): string
+    {
+        self::validateCsrf($csrfToken);
+        return self::render('account/forgot-password.html.twig', [
+            'page_title' => 'Forgot password',
+            'page_eyebrow' => 'Account recovery',
+            'page_description' => 'Enter your email to receive a reset link.',
+            'csrf_token' => $csrfToken,
+        ]);
+    }
+
+    public static function resetPasswordForm(string $csrfToken, string $token): string
+    {
+        self::validateCsrf($csrfToken);
+        if (preg_match('/^[a-f0-9]{64}$/iD', $token) !== 1) {
+            return self::resetResult(false);
+        }
+        return self::render('account/reset-password.html.twig', [
+            'page_title' => 'Reset password',
+            'page_eyebrow' => 'Account recovery',
+            'page_description' => 'Choose a new password.',
+            'csrf_token' => $csrfToken,
+            'token' => strtolower($token),
+        ]);
+    }
+
+    public static function resetRequestAccepted(): string
+    {
+        return self::status(
+            'Check your email', 'Account recovery',
+            'If that address has an active account, a reset link has been sent.',
+            '/account/login', 'Back to sign in',
+        );
+    }
+
+    public static function resetResult(bool $success): string
+    {
+        return $success
+            ? self::status(
+                'Password changed', 'Account recovery',
+                'Your password has been changed. Sign in with your new password.',
+                '/account/login', 'Sign in',
+            )
+            : self::status(
+                'Reset link unavailable', 'Account recovery',
+                'The link is invalid or expired. Request a new one.',
+                '/account/forgot-password', 'Request a new link',
+            );
+    }
+
     public static function registrationAccepted(): string
     {
         return self::status(

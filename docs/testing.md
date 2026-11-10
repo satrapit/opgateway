@@ -32,7 +32,7 @@ a substitute for real DB, SMTP, Openprovider and browser integration.
 
 Use only the existing local `opgateway` development DB or a disposable
 clone, never the production DB. Migration 004 must be completed first, then reviewed migration 005
-applied once. Verify 5 completed ledger entries and 12
+applied once, then migration 006 applied once. Verify 6 completed ledger entries and 13
 tables. Test admin SMTP UI, verified email signup, expired/replayed
 links, owner account, disabled client/IP, approvals, one-time key issue
 and revoke, denied wrong source IP and actual safe upstream read. Verify
@@ -51,7 +51,8 @@ assets as the admin portal. First rebuild the local assets with
 lint and PHPUnit, including `AccountDesignSystemTest`. Test account
 login/registration/verification, dark/light/system controls, mobile
 drawer at 320/375/390px, desktop at 1024/1440px, provider/account forms,
-and the one-time API key page. Validate actual browser asset responses
+and the one-time API key page. Test forgot-password email, expired and reused
+links, confirmation mismatch, and sign-in with the new password. Validate actual browser asset responses
 and strict `script-src 'self'` / `style-src 'self'` CSP with no inline CSS.
 
 ## UI and release review
