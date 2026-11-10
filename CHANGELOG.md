@@ -1,5 +1,16 @@
 # Changelog
 
+## Unreleased — Form submission and reset-link validation (2026-11-11)
+
+- On opening a password reset URL, check the hashed token against the database
+  for unused, unexpired and approved active account status; show the unavailable
+  status page instead of the password form after a token is used.
+- Keep the password-changing POST transaction and single-use enforcement.
+- Prevent repeated browser form submissions across Account and Admin after
+  native validation and any required confirmation, without changing CSRF or
+  submitter field semantics.
+- Local npm build, PHP unit tests and real browser verification are required.
+
 ## Unreleased — Password recovery (2026-11-10)
 
 - Add shared Twig forgot-password and reset forms, strict CSRF and password confirmation.

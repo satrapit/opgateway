@@ -55,6 +55,11 @@ final readonly class SelfServiceBrowserController
                 }
                 $token = preg_match('/^token=([0-9a-fA-F]{64})$/D', $rawQuery, $matches) === 1
                     ? $matches[1] : '';
+                // Do not show a writable form for consumed, expired or
+                // otherwise ineligible tokens. POST checks again atomically.
+                if (!$this->passwordReset->isUsable($token)) {
+                    return self::html(AccountViews::resetResult(false));
+                }
                 return self::html(AccountViews::resetPasswordForm($this->session->csrfToken(), $token));
             }
             if ($method !== 'POST') {

@@ -82,6 +82,28 @@ SQL);
         return 'accepted';
     }
 
+    /**
+     * Inspect a reset link without consuming it. GET requests, including
+     * mail security previews, must never change the token's state.
+     * The POST reset() method rechecks under a transaction and row lock.
+     */
+    public function isUsable(string $token): bool
+    {
+        if (preg_match('/^[a-f0-9]{64}$/iD', $token) !== 1) {
+            return false;
+        }
+        $read = $this->pdo->prepare(<<<'SQL'
+SELECT 1 FROM password_reset_tokens t
+JOIN users u ON u.id = t.user_id
+WHERE t.token_hash = ? AND t.consumed_at IS NULL
+AND t.expires_at > UTC_TIMESTAMP(6)
+AND u.status = 'active' AND u.email_verified_at IS NOT NULL
+AND u.approved_at IS NOT NULL LIMIT 1
+SQL);
+        $read->execute([hash('sha256', strtolower($token))]);
+        return $read->fetchColumn() !== false;
+    }
+
     public function reset(string $token, string $password): bool
     {
         if (preg_match('/^[a-f0-9]{64}$/iD', $token) !== 1) {
