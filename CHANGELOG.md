@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+## [0.1.0-alpha.3] - 2026-11-10
+
 - Keep the Sidebar logo header fixed while making the navigation links and footer independently scrollable on short desktop and mobile viewports.
 - Replace JavaScript-inserted Lucide icons with first-paint SVG sprite references, preload the local sprite/script, and version all public admin assets by content hash. Use immediate system fonts without external font requests.
 - Add a subdirectory-only static asset cache policy (long-term immutable URLs) without changing the cPanel-managed root .htaccess or allowing authenticated pages to be cached. Add release/asset regression tests.
