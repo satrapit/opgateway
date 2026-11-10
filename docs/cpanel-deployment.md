@@ -20,16 +20,19 @@ Composer, npm, database migration, cron or GitHub workflow runs.
 ## Controlled rollout
 
 1. **Do not deploy the draft PR yet.** On a disposable database, validate
-   migrations 004 and 005, admin login, SMTP, email verification, client/IP approval,
+   migrations 004, 005 and 006, admin login, SMTP, email verification,
+   password recovery, client/IP approval,
    API issuance and safe read-only Openprovider requests.
 2. Take and verify a production database backup, then review the existing
    three migration records.
 3. Coordinate a maintenance window to apply the additive
    `database/sql/upgrade_202611100001.sql` (004), then
-   `database/sql/upgrade_202611100002.sql` (005).
-   Deploying new PHP code before both are completed returns 503 on admin/account.
-4. Verify all five migration records and 12 final tables
-   (with `settings`, without `smtp_settings`) before enabling
+   `database/sql/upgrade_202611100002.sql` (005), then
+   `database/sql/upgrade_202611100003.sql` (006).
+   Deploying new PHP code before all three are completed returns 503 on admin/account.
+4. Verify all six migration records and 13 final tables
+   (with `settings` and `password_reset_tokens`, without `smtp_settings`)
+   before enabling
    real traffic. Do not re-import the full initial schema.
 5. On trusted local Mac run PHP lint, PHPUnit, smoke, Composer validation,
    frontend lint/build and browser tests. Commit reviewed vendor and static

@@ -36,20 +36,22 @@ path. The single privileged role is `admin`; no superadmin.
 
 ## Local onboarding flow
 
-1. The local database already has migration 004 completed; never
-   run it again. For a new alpha.3 database, run reviewed 004 once
-   after backup. It adds `users.signup_source`, the temporary
-   `smtp_settings` table and `provider_connections`. All existing
-   users remain `manual`.
-2. Back up and apply `database/sql/upgrade_202611100002.sql` (005)
-   **once** on the local DB, which already has 004. It copies SMTP values
-   into `settings` and removes `smtp_settings`. Verify **five** completed
-   migrations and **12** final tables. Never import full schema on an
-   existing populated DB.
+1. The existing local development database has completed migrations 001–005.
+   Back it up and apply **only** `database/sql/upgrade_202611100003.sql`
+   (006) once. Verify **six** completed migrations and **13** final tables.
+   Do not re-run previous upgrades or import the full schema into existing data.
+2. A fresh database created using the one-time full-schema artifact includes
+   all six migrations. A database still on alpha.3 must instead receive
+   the reviewed incremental upgrades 004, then 005, then 006 after backup.
+   Migration 005 moves encrypted SMTP data to `settings`; migration 006
+   adds `password_reset_tokens` without changing existing users.
 3. Use HTTPS with a correctly configured canonical vhost. Sign in as
    `admin`; open `/admin/settings/smtp` and save actual test SMTP.
 4. Register a new account, receive mail, submit a one-time verification
-   token, verify replay/expiration denial, and sign in.
+   token, verify replay/expiration denial, and sign in. Test forgot-password
+   request, email delivery, invalid/expired/replayed reset tokens, password
+   confirmation and signing in with the new password. Review existing session
+   invalidation before considering password recovery production-ready.
 5. Set the owner's Openprovider credentials, create a disabled client
    and request an IP. Admin activates the client and approves the IP.
 6. Issue an API key with a password recheck and call an allowed GET or
@@ -75,7 +77,7 @@ policies remain mandatory.
 
 ## Production deployment blocker
 
-The current production alpha.3 schema lacks migrations 004 and 005. New code
+The current production alpha.3 schema lacks migrations 004, 005 and 006. New code
 checks the complete migration ledger, so deploying before a manual,
 backed-up and verified schema upgrades would cause authenticated
 /admin and /account pages to return HTTP 503. The rollout needs a
