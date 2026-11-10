@@ -2,7 +2,7 @@
    Native <details> is the no-JavaScript fallback; JS enhances its summary to a dialog. #}
 {% macro details(kind, heading, fields) %}
 <details class="opg-record-details" data-opg-record-details data-record-heading="{{ heading }}">
-  <summary class="opg-detail-summary"><svg class="opg-icon" aria-hidden="true" focusable="false"><use href="{{ admin_assets.icons }}#opg-icon-eye"></use></svg> {{ kind }} details</summary>
+  <summary class="opg-detail-summary"><svg viewBox="0 0 24 24" class="opg-icon" aria-hidden="true" focusable="false"><use href="{{ admin_assets.icons }}#opg-icon-eye"></use></svg> {{ kind }} details</summary>
   <dl class="opg-details-grid">
     {% for field in fields %}
     <div class="min-w-0">

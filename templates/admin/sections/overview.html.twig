@@ -22,8 +22,8 @@
     {% for card in cards %}
     <a href="{{ card.anchor }}" class="opg-stat-card group">
       <div class="mb-5 flex items-center justify-between">
-        <span class="inline-flex size-11 items-center justify-center rounded-xl bg-brand-50 text-brand-600 dark:bg-brand-500/15 dark:text-brand-300"><svg class="opg-icon" aria-hidden="true" focusable="false"><use href="{{ admin_assets.icons }}#opg-icon-{{ card.icon }}"></use></svg></span>
-        <svg class="opg-icon text-gray-400 transition-transform group-hover:translate-x-0.5" aria-hidden="true" focusable="false"><use href="{{ admin_assets.icons }}#opg-icon-arrow-up-right"></use></svg>
+        <span class="inline-flex size-11 items-center justify-center rounded-xl bg-brand-50 text-brand-600 dark:bg-brand-500/15 dark:text-brand-300"><svg viewBox="0 0 24 24" class="opg-icon" aria-hidden="true" focusable="false"><use href="{{ admin_assets.icons }}#opg-icon-{{ card.icon }}"></use></svg></span>
+        <svg viewBox="0 0 24 24" class="opg-icon text-gray-400 transition-transform group-hover:translate-x-0.5" aria-hidden="true" focusable="false"><use href="{{ admin_assets.icons }}#opg-icon-arrow-up-right"></use></svg>
       </div>
       <p class="text-sm font-medium text-gray-500 dark:text-gray-400">{{ card.name }}</p>
       <p class="mt-2 text-3xl font-semibold tabular-nums text-gray-900 dark:text-white">{{ card.value }}</p>

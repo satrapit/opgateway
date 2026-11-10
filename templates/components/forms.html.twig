@@ -5,7 +5,7 @@
   <input type="hidden" name="action" value="{{ action }}">
   <input type="hidden" name="target_id" value="{{ target_id }}">
   <button type="submit" class="{{ destructive ? 'opg-danger-button' : 'opg-small-button' }}">
-    <svg class="opg-icon" aria-hidden="true" focusable="false"><use href="{{ admin_assets.icons }}#opg-icon-{{ action == 'disable_client' ? 'ban' : (action == 'revoke_ip' ? 'shield-x' : 'check') }}"></use></svg>
+    <svg viewBox="0 0 24 24" class="opg-icon" aria-hidden="true" focusable="false"><use href="{{ admin_assets.icons }}#opg-icon-{{ action == 'disable_client' ? 'ban' : (action == 'revoke_ip' ? 'shield-x' : 'check') }}"></use></svg>
     {{ title }}
   </button>
   {% if destructive %}<noscript><span class="opg-muted">This access change takes effect immediately when submitted.</span></noscript>{% endif %}
@@ -19,6 +19,6 @@
   <input type="hidden" name="target_id" value="{{ target_id }}">
   <label class="opg-sr-only" for="opg-{{ variant }}-{{ action }}-{{ target_id }}">{{ label }}</label>
   <input class="opg-small-input" id="opg-{{ variant }}-{{ action }}-{{ target_id }}" name="value" type="text" maxlength="{{ maxlength }}" placeholder="{{ placeholder }}" required>
-  <button type="submit" class="opg-small-button"><svg class="opg-icon" aria-hidden="true" focusable="false"><use href="{{ admin_assets.icons }}#opg-icon-plus"></use></svg> {{ title }}</button>
+  <button type="submit" class="opg-small-button"><svg viewBox="0 0 24 24" class="opg-icon" aria-hidden="true" focusable="false"><use href="{{ admin_assets.icons }}#opg-icon-plus"></use></svg> {{ title }}</button>
 </form>
 {% endmacro %}
