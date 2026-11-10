@@ -25,10 +25,10 @@ Use semantic headings, navigation, labels, legends, accessible status text, keyb
 Only show capabilities actually implemented: approved/verified users, approved owners, active/disabled API clients, IP whitelist requests and approvals, and authenticated/logout actions. Derive counters from real authorized queries and label bounded listings accurately. Keep future Usage, Security Events, API Docs and Settings out of live navigation until real authorized routes exist. No fake counters, endpoints, charts, filters or pagination.
 
 ## 9. HTTP security boundaries (must never be weakened)
-- `ADMIN_UI_ENABLED`: exact trusted HTTPS and `ADMIN_UI_ALLOWED_IP` from trusted `REMOTE_ADDR`; never trust forwarded headers.
+- `ADMIN_UI_ENABLED`: HTTPS and exact trusted APP_URL Host (no operator browser IP gate in next release); never trust forwarded headers. API client source IP policy remains mandatory and exact.
 - `ADMIN_ACTIONS_ENABLED`: independent default-off mutation gate.
 - `ACCOUNT_UI_ENABLED` and `ACCOUNT_KEYS_ENABLED`: separate default-off owner portal gates.
-- `GATEWAY_PROXY_ENABLED`: does not enable public `/v1`; keep it disabled until a validated API admission pipeline exists.
+- `GATEWAY_PROXY_ENABLED`: new default-off bearer/IP admission; do not enable until full local integration tests. `GATEWAY_PROXY_WRITE_ENABLED` separately gates costly or state-changing operations and remains disabled until route-level risk review.
 - Use fresh database account/role checks; secure short-lived server sessions, SameSite=Strict/HttpOnly/Secure cookies, strict CSRF and exact field parsing, source IP checks, HMAC-isolated MySQL rate limits, metadata-only audit and fail-closed denials.
 - Do not modify admin review POST payloads, routes, response status meanings or redirects without explicit review.
 - Do not log SQL, raw bodies, IPs, emails, tokens or passwords. A bearer key is displayed only once on its original successful POST; never in GET, logs, localStorage, headers, analytics or session state.
@@ -47,3 +47,11 @@ Keep architecture, UI tokens, template conventions, security/CSP, build, manual 
 
 ## 14. Definition of done
 A feature is done only when it uses the actual TailAdmin Free design language, Twig presentation, accessible mobile and desktop layouts, responsive light/dark/system behavior, real authorized backend data, tested server mutations, secure local assets, compatible manual cPanel deployment, unchanged default-off flags and updated documentation. **Never describe unrun tests/builds/browser audits as passing.**
+
+
+## 13. Unreleased self-service work
+New registration, SMTP admin settings, Openprovider account encryption and
+proxy edge are in a feature branch. Follow docs/gateway-onboarding.md,
+keep everything default off, never edit earlier migration checksums, and
+never deploy before migration 004 and Composer lock/vendor tests. Existing
+admin role is the highest role; a separate super-admin role does not exist.

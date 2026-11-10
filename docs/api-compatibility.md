@@ -18,3 +18,18 @@ A client must not receive the reseller token. The Gateway issues its own expirin
 ## Route approval
 
 Generate explicit method/path policies from a verified version-pinned spec. Reject unknown routes. Separate `/gateway/*` control-plane paths from `/v1/*` upstream-compatible routes. Financially consequential or tenant-unsafe endpoints remain disabled.
+
+
+## Unreleased transport and route subset
+
+The feature branch introduces a default-off explicit /v1 entry. It
+authenticates gateway-issued bearer keys (not Openprovider passwords) and
+checks the exact approved source IP and active owner/client in MySQL. The
+server alone obtains the Openprovider token using a fixed HTTPS host.
+
+Only a conservative syntax- and root-restricted subset is staged:
+JSON requests with bounded body/query sizes, fixed-host TLS and no
+redirects. The route allowlist is *not* a pinned full official OpenAPI spec
+and may reject supported methods/paths; do not promise full compatibility.
+Write operations remain independently off and need per-operation
+permissions/idempotency/financial risk review. See gateway-onboarding.md.

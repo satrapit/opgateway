@@ -1,5 +1,11 @@
 # OPGateway
 
+> **Release boundary:** v0.1.0-alpha.3 remains the last deployed release.
+> The self-service signup/SMTP/Openprovider relay is under development on
+> an opt-in feature branch and must **not** be deployed before local integration,
+> locked PHPMailer vendor, manual schema upgrade and security acceptance.
+
+
 A security-first PHP 8.3 / MySQL gateway foundation for the Openprovider API on shared cPanel hosting.
 
 **Status:** Administrator login/logout, bounded review queues and an independently gated approved-owner portal with one-time API key issuance/revocation are available when explicitly enabled. Seven administrator lifecycle operations (approve user/client/IP, create client, request IP, disable client, revoke IP) are implemented but independently disabled by default; the client and credential management modules enforce ownership checks, but **all public `/v1` provider routes remain disabled (HTTP 503)**. This is not a production-ready upstream proxy.
@@ -9,6 +15,14 @@ A security-first PHP 8.3 / MySQL gateway foundation for the Openprovider API on 
 **Admin dialog enhancement (in progress):** User/owner/client/IP details use native `<details>` when JavaScript is off and local `<dialog>` when enabled. Existing create-client and request-IP forms are progressively upgraded to dialogs; destructive access changes ask for an explicit target-aware confirmation. The row actions are now accessible, icon-only vertical-ellipsis menus on both mobile and desktop; both headers share an 80px baseline, modal backdrops dismiss on outside interaction, and successful Twig action POSTs redirect to their owning section using server-owned fixed paths. The same server-reviewed CSRF, role, IP, and default-off mutation gates remain in charge. Browser and integrated write-action testing of this new slice are still pending.
 
 **Admin UI migration details:** A TailAdmin Free/Twig 3 first vertical slice is in the repository behind an additional **default-off** `ADMIN_TWIG_UI_ENABLED` switch. Until the integrated Composer lock resolution, local webpack build, static asset deployment and browser/security verification are complete, keep this switch **false** in all environments. Legacy admin HTML remains the runtime default.
+
+## Next release: self-service integration (not live)
+
+See [Gateway onboarding and security rollout](docs/gateway-onboarding.md) for
+registration, one-time email verification, admin-configurable SMTP, encrypted
+per-owner Openprovider credentials, approved IP/client authorization, and the
+default-off upstream relay. Browser login IP restriction is retired in the
+feature implementation only; API source IP policy remains exact and mandatory.
 
 ## Hosting model
 

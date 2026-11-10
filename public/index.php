@@ -6,6 +6,7 @@ use OPGateway\Config\Environment;
 use OPGateway\Http\AdministrativeWebEntry;
 use OPGateway\Http\AccountWebEntry;
 use OPGateway\Http\FoundationApplication;
+use OPGateway\Http\GatewayHttpEntry;
 use OPGateway\Observability\DiagnosticLog;
 
 /**
@@ -34,6 +35,9 @@ try {
         $response = (new AdministrativeWebEntry($config))->handle($method, $path, $_SERVER);
     } elseif ($path === '/account' || str_starts_with($path, '/account/')) {
         $response = (new AccountWebEntry($config))->handle($method, $path, $_SERVER);
+    } elseif (($path === '/v1' || str_starts_with($path, '/v1/'))
+        && ($config['GATEWAY_PROXY_ENABLED'] ?? '') === 'true') {
+        $response = (new GatewayHttpEntry($config))->handle($method, $path, $_SERVER, $requestId);
     } else {
         $result = (new FoundationApplication($config))->handle(
             $method, $path, $_SERVER['REMOTE_ADDR'] ?? '',

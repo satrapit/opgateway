@@ -5,6 +5,9 @@ declare(strict_types=1);
 namespace OPGateway\Http;
 
 use OPGateway\Database\Migrations\MigrationCatalog;
+use OPGateway\Identity\AdministratorAuthorization;
+use OPGateway\Mail\PdoSmtpSettings;
+use OPGateway\Security\SealedSecret;
 use OPGateway\Database\Migrations\SchemaReadiness;
 use OPGateway\Database\PdoConnectionFactory;
 use OPGateway\Clients\ClientManagementService;
@@ -52,11 +55,10 @@ final readonly class AdministrativeWebEntry
             return self::error(404);
         }
 
-        if (($server['HTTPS'] ?? '') !== 'on'
-            || !self::exactIp(
-                (string) ($server['REMOTE_ADDR'] ?? ''),
-                $this->config['ADMIN_UI_ALLOWED_IP'] ?? '',
-            )) {
+        // Public admin login is protected by canonical HTTPS origin,
+        // account-password rate limits, secure session and fresh admin role
+        // checks. User-selected API client IP whitelists remain enforced.
+        if (($server['HTTPS'] ?? '') !== 'on') {
             return self::error(404);
         }
 
@@ -66,6 +68,12 @@ final readonly class AdministrativeWebEntry
             || !preg_match('/^[0-9a-f]{64}$/D', $key)) {
             DiagnosticLog::record('admin.configuration_invalid', 503);
             return self::error(503);
+        }
+        if (!hash_equals(
+            strtolower(substr($origin, strlen('https://'))),
+            strtolower((string) ($server['HTTP_HOST'] ?? '')),
+        )) {
+            return self::error(404);
         }
 
         if (!in_array('mysql', PDO::getAvailableDrivers(), true)) {
@@ -149,13 +157,29 @@ final readonly class AdministrativeWebEntry
         }
 
         $pages = $twigEnabled
-            ? new TwigAdminPageRenderer(new TwigRenderer(dirname(__DIR__, 2) . '/templates'))
+            ? new TwigAdminPageRenderer(
+                new TwigRenderer(dirname(__DIR__, 2) . '/templates'),
+                ($this->config['ADMIN_SMTP_SETTINGS_ENABLED'] ?? '') === 'true',
+            )
             : null;
 
         $adapter = new PrivateBrowserAdapter(
             $session, $auth, $accounts, $admins,
             new AdminOverviewRepository($pdo), $review, $pages,
         );
+
+        if ($path === '/admin/settings/smtp') {
+            if (($this->config['ADMIN_SMTP_SETTINGS_ENABLED'] ?? '') !== 'true'
+                || !$twigEnabled) {
+                return self::error(404);
+            }
+            try {
+                $vault = new SealedSecret($this->config['APP_KEY'] ?? '');
+            } catch (\InvalidArgumentException) {
+                DiagnosticLog::record('admin.encryption_key_invalid', 503);
+                return self::error(503);
+            }
+        }
 
         $body = null;
         if ($method === 'POST') {
@@ -174,6 +198,23 @@ final readonly class AdministrativeWebEntry
             }
         }
 
+        if ($path === '/admin/settings/smtp') {
+            $login = new GuardedLoginService(
+                new LoginAuthenticator($accounts, new PasswordHasher()),
+                new PdoLoginAttemptLimiter($pdo, hex2bin($key)),
+                new PdoSecurityEventRecorder($pdo),
+            );
+            $response = (new SmtpAdminController(
+                $session, $accounts, $admins, $login,
+                new PdoSmtpSettings($pdo, $vault),
+                new TwigRenderer(dirname(__DIR__, 2) . '/templates'),
+                $pdo,
+            ))->handle(
+                $method,
+                isset($server['CONTENT_TYPE']) ? (string) $server['CONTENT_TYPE'] : null,
+                $body, (string) ($server['REMOTE_ADDR'] ?? ''), bin2hex(random_bytes(16)),
+            );
+        } else {
         $response = $adapter->dispatch(
             $method,
             $path,
@@ -183,6 +224,7 @@ final readonly class AdministrativeWebEntry
             bin2hex(random_bytes(16)),
             $body,
         );
+        }
 
         // Only Twig HTML pages need local scripts and styles. Existing
         // owner/legacy browser CSP is untouched.
@@ -192,13 +234,6 @@ final readonly class AdministrativeWebEntry
                 . "base-uri 'none'; frame-ancestors 'none'; object-src 'none'";
         }
         return $response;
-    }
-
-    private static function exactIp(string $actual, string $allowed): bool
-    {
-        $a = @inet_pton($actual);
-        $b = @inet_pton($allowed);
-        return is_string($a) && is_string($b) && hash_equals($b, $a);
     }
 
     /** @return array{status:int,content_type:string,body:string,location?:string} */

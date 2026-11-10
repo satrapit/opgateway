@@ -2,6 +2,9 @@
 
 ## [Unreleased]
 
+- Begin default-off self-service account signup, email verification and SMTP administration with encrypted credentials and an additive manually-reviewed schema migration (004).
+- Introduce opt-in owner Openprovider account storage, disabled client/IP request forms and a bounded, authenticated exact-IP gateway API edge. Upstream writes remain independently disabled; integration testing, composer lock and production migration are outstanding.
+
 ## [0.1.0-alpha.3] - 2026-11-10
 
 - Keep the Sidebar logo header fixed while making the navigation links and footer independently scrollable on short desktop and mobile viewports.

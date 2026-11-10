@@ -77,3 +77,22 @@ as appropriate; use the normal cPanel manual Deploy HEAD Commit flow.
 Verify through browser DevTools: icon sprite loads from same-origin, no blank
 icons during navigation, 200 on initial asset fetches and memory/disk-cache
 on repeat visits, no caching of authenticated HTML, and no CSP violations.
+
+
+## Unreleased onboarding/gateway rollout (not deployed)
+
+Do not deploy this branch straight onto the current alpha.3 database:
+the additive catalog migration 004 makes schema readiness fail closed (503)
+until the database is manually upgraded after a verified backup. No
+auto-migration is added. See database/sql/upgrade_202611100001.sql and
+docs/gateway-onboarding.md. Resolve PHPMailer dependencies on the trusted
+Mac first, commit reviewed composer.lock and production-only private vendor.
+No PHP source, private configuration or dependencies are copied into
+Document Root.
+
+New feature flags remain default off. To test SMTP delivery use an
+approved dedicated sender and local disposable DB; verify App URL, exact
+Host, TLS, and connection from shared hosting. The Openprovider fixed
+API host might require adding the **gateway server's outgoing IP** to
+the reseller contact's API whitelist in Openprovider's own control panel.
+Manual cPanel deploy and rollback only; no workflow or runtime Composer.

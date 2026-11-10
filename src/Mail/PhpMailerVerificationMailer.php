@@ -55,7 +55,9 @@ final readonly class PhpMailerVerificationMailer implements VerificationMailer
                 . $link . "\n\nThe link expires in 30 minutes."
                 . "\nIf you did not register, ignore this message.";
             $mailer->isHTML(false);
-            $mailer->send();
+            if (!$mailer->send()) {
+                throw new RuntimeException('SMTP delivery failed.');
+            }
         } catch (Throwable $exception) {
             // PHPMailer exceptions may contain host/user/address details.
             // Never disclose the exception or its message to public clients.

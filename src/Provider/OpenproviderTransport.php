@@ -69,11 +69,19 @@ class OpenproviderTransport
             $ok = curl_exec($handle);
             $status = (int) curl_getinfo($handle, CURLINFO_RESPONSE_CODE);
             $type = (string) curl_getinfo($handle, CURLINFO_CONTENT_TYPE);
-            if ($ok === false || $status < 100 || $status >= 400 && $status >= 500
+            if ($ok === false || $status < 100 || $status >= 500
                 || $status >= 300 && $status < 400
                 || !preg_match('~^(?:application/(?:[\w.+-]*\+)?json)(?:\s*;|$)~i', $type)
                 || !json_validate($buffer)) {
                 throw new RuntimeException('Unexpected upstream response.');
+            }
+            if ($path !== '/auth/login') {
+                $parsed = json_decode($buffer, true, 32, JSON_THROW_ON_ERROR);
+                // Prevent accidental bearer disclosure from unexpected
+                // upstream auth-shaped payloads on non-auth routes.
+                if (isset($parsed['data']['token'])) {
+                    throw new RuntimeException('Unexpected upstream credential response.');
+                }
             }
             return ['status' => $status, 'body' => $buffer];
         } finally {

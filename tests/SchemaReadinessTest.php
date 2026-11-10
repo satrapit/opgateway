@@ -10,13 +10,14 @@ use PHPUnit\Framework\TestCase;
 
 final class SchemaReadinessTest extends TestCase
 {
-    public function testCanonicalMigrationCatalogHasThreeOrderedVersions(): void
+    public function testCanonicalMigrationCatalogHasFourOrderedVersions(): void
     {
         $migrations = MigrationCatalog::all();
         self::assertSame([
             '202611070001_create_identity_tables',
             '202611070002_create_email_verification_tokens',
             '202611070003_create_login_security_tables',
+            '202611100001_create_gateway_integrations',
         ], array_map(static fn ($migration) => $migration->version(), $migrations));
 
         foreach ($migrations as $migration) {

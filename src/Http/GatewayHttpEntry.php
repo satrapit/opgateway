@@ -15,6 +15,8 @@ use OPGateway\Security\ApiCredentialService;
 use OPGateway\Security\PdoApiCredentialStore;
 use OPGateway\Security\PdoGatewayRateLimiter;
 use OPGateway\Security\SealedSecret;
+use OPGateway\Security\PdoSecurityEventRecorder;
+use OPGateway\Observability\DiagnosticLog;
 use PDO;
 use Throwable;
 
@@ -37,7 +39,9 @@ final readonly class GatewayHttpEntry
      * @param array<string,mixed> $server Transport-authenticated PHP metadata.
      * @return array{status:int,content_type:string,body:string}
      */
-    public function handle(string $method, string $path, array $server): array
+    public function handle(
+        string $method, string $path, array $server, string $requestId = '',
+    ): array
     {
         if (($this->config['GATEWAY_PROXY_ENABLED'] ?? '') !== 'true') {
             return self::error(503, 'gateway_not_configured');
@@ -97,6 +101,9 @@ final readonly class GatewayHttpEntry
             if (!(new PdoGatewayRateLimiter($pdo, hex2bin($secret)))->allow($clientId, $sourceIp)) {
                 return self::error(429, 'too_many_requests');
             }
+            if (preg_match('/^[a-f0-9]{32}$/D', $requestId) === 1) {
+                (new PdoSecurityEventRecorder($pdo))->record('gateway_request_admitted', $requestId);
+            }
             $provider = new PdoProviderAccount($pdo, $vault);
             $credentials = $provider->credentialsForClient($clientId);
             if ($credentials === null) {
@@ -151,6 +158,7 @@ final readonly class GatewayHttpEntry
                 'body' => $result['body'],
             ];
         } catch (Throwable $exception) {
+            DiagnosticLog::record('gateway.request_failed', 502, $exception);
             // Error context (including curl errors, SQL and tokens) never
             // enters HTTP output or persisted diagnostic metadata.
             return self::error(502, 'upstream_unavailable');

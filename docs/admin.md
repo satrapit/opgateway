@@ -26,13 +26,14 @@ State-changing approval actions are exposed **only** through `POST /admin/review
 APP_URL=https://opgateway.example.com
 ADMIN_UI_ENABLED=false
 ADMIN_ACTIONS_ENABLED=false
-ADMIN_UI_ALLOWED_IP=
+ADMIN_SMTP_SETTINGS_ENABLED=false
+APP_KEY=
 LOGIN_RATE_LIMIT_KEY=
 ```
 
 Keep `ADMIN_ACTIONS_ENABLED=false` until new tests and real hosting permissions are verified. Enabling the UI alone does **not** enable write actions. The new forms use the same default-off `ADMIN_ACTIONS_ENABLED` switch, and allow only `create_client` and `request_ip` with exact `_csrf`, `action`, `target_id` and `value` fields. The value is a 1–128 byte printable label or one exact IPv4/IPv6 address; arbitrary names, ranges/CIDR and proxy-provided addresses are not accepted. Approved actions use the same CSRF-protected form POST (exact `_csrf`, `action`, `target_id` keys). Form IDs must be positive decimal integers, and extra fields are rejected. Successful Twig admin actions use a fixed Post/Redirect/Get destination based on the allowlisted operation (`/admin/users`, `/admin/owners`, `/admin/clients`, `/admin/ips/pending`, or `/admin/ips/approved`), rather than returning to the Overview. Legacy admin HTML still redirects to `/admin`. The server never accepts a return URL from POST data, Referer, Origin, or query parameters. Denials and throttling retain generic error statuses. SQL state changes and metadata-only security events share a transaction, so an audit write failure rolls back the mutation. The action limiter allows at most 20 per administrator and 40 per source IP within a 15-minute window, using HMAC-isolated counters in existing `login_rate_limits`.
 
-Set `ADMIN_UI_ENABLED=true` only after the administrator is provisioned. `APP_URL` must be an HTTPS origin with no trailing slash. `ADMIN_UI_ALLOWED_IP` must equal PHP's trusted `REMOTE_ADDR`, **not** an unverified `X-Forwarded-For` value. This is one exact IPv4 or IPv6 address, not a CIDR range.
+Under the proposed next release, administrator login does not require ADMIN_UI_ALLOWED_IP. It retains HTTPS, exact Host/APP_URL, secure CSRF session, password throttling and fresh admin role checks. Use ADMIN_SMTP_SETTINGS_ENABLED=true only after the additive migration 004, reviewed PHPMailer vendor setup and verified APP_KEY. The admin Settings → SMTP screen requires current password confirmation; it does not display a stored SMTP password. The admin role is currently the highest role in this schema; there is no separate super-admin role.
 
 Generate `LOGIN_RATE_LIMIT_KEY` once with `openssl rand -hex 32` on a trusted local system; store the resulting 64 lowercase hexadecimal characters only in private `.env`. Never use the main `APP_KEY` as the limiter key.
 
@@ -144,3 +145,12 @@ The fixed `AdminMutationRedirect` mapping applies **only after** an
 authorized action succeeds and only for the Twig UI. It does not
 change rate limits, CSRF, source IP, admin role checks or failure
 response semantics. No arbitrary `return_to` field is accepted.
+
+
+### New admin settings (unreleased)
+
+- GET/POST /admin/settings/smtp — requires both ADMIN_SMTP_SETTINGS_ENABLED
+  and ADMIN_TWIG_UI_ENABLED, live administrator role, session and CSRF.
+- New source-IP approvals for client API usage remain mandatory. Removing
+  browser IP login restrictions does NOT grant API access from new IPs.
+- See docs/gateway-onboarding.md for migration/deploy gates.

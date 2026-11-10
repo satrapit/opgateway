@@ -4,7 +4,19 @@ declare(strict_types=1);
 
 namespace OPGateway\Http;
 
+use OPGateway\Clients\ClientManagementService;
+use OPGateway\Clients\OwnerIntegrationService;
 use OPGateway\Database\Migrations\MigrationCatalog;
+use OPGateway\Identity\EmailVerificationService;
+use OPGateway\Identity\PdoEmailVerificationRepository;
+use OPGateway\Identity\PdoUserRepository;
+use OPGateway\Identity\RegistrationService;
+use OPGateway\Identity\SelfServiceRegistration;
+use OPGateway\Mail\PdoSmtpSettings;
+use OPGateway\Mail\PhpMailerVerificationMailer;
+use OPGateway\Provider\PdoProviderAccount;
+use OPGateway\Security\PdoSignupLimiter;
+use OPGateway\Security\SealedSecret;
 use OPGateway\Database\Migrations\SchemaReadiness;
 use OPGateway\Database\PdoConnectionFactory;
 use OPGateway\Identity\BrowserSession;
@@ -118,8 +130,51 @@ final readonly class AccountWebEntry
             )
             : null;
 
+        $registration = null;
+        $integration = null;
+        if (($this->config['ACCOUNT_REGISTRATION_ENABLED'] ?? '') === 'true'
+            || ($this->config['ACCOUNT_INTEGRATION_ENABLED'] ?? '') === 'true') {
+            try {
+                $vault = new SealedSecret($this->config['APP_KEY'] ?? '');
+            } catch (\InvalidArgumentException) {
+                DiagnosticLog::record('account.encryption_key_invalid', 503);
+                return self::error(503);
+            }
+            if (($this->config['ACCOUNT_INTEGRATION_ENABLED'] ?? '') === 'true') {
+                $integration = new OwnerIntegrationService(
+                    $pdo,
+                    new PdoProviderAccount($pdo, $vault),
+                    new ClientManagementService($pdo),
+                    new PdoCredentialActionLimiter($pdo, hex2bin($secret)),
+                    $events,
+                );
+            }
+            if (($this->config['ACCOUNT_REGISTRATION_ENABLED'] ?? '') === 'true') {
+                // src/autoload.php intentionally loads only OPGateway classes.
+                // The vetted Composer autoloader must be present privately
+                // before PHPMailer can be used for public verification.
+                $composerAutoload = dirname(__DIR__, 2) . '/vendor/autoload.php';
+                if (!is_file($composerAutoload) || is_link($composerAutoload)) {
+                    DiagnosticLog::record('account.mail_autoload_unavailable', 503);
+                    return self::error(503);
+                }
+                require_once $composerAutoload;
+                $smtp = new PdoSmtpSettings($pdo, $vault);
+                if ($smtp->configured() && class_exists(\PHPMailer\PHPMailer\PHPMailer::class)) {
+                    $registration = new SelfServiceRegistration(
+                        $pdo,
+                        new RegistrationService(new PdoUserRepository($pdo), new PasswordHasher()),
+                        new EmailVerificationService(new PdoEmailVerificationRepository($pdo, true)),
+                        new PdoSignupLimiter($pdo, hex2bin($secret)),
+                        new PhpMailerVerificationMailer($smtp),
+                    );
+                }
+            }
+        }
+
         $adapter = new AccountBrowserAdapter(
-            $session, $login, $accounts, new OwnerOverviewRepository($pdo), $credentials,
+            $session, $login, $accounts, new OwnerOverviewRepository($pdo),
+            $credentials, $integration, $registration !== null,
         );
 
         $body = null;
@@ -139,6 +194,24 @@ final readonly class AccountWebEntry
             if ($body === null) {
                 return self::error(413);
             }
+        }
+
+        if (SelfServiceBrowserController::route($path)) {
+            if ($registration === null
+                && ($this->config['ACCOUNT_REGISTRATION_ENABLED'] ?? '') === 'true'
+                && in_array($path, [
+                    '/account/register', '/account/verify', '/account/verify/resend',
+                ], true)) {
+                return self::error(503);
+            }
+            return (new SelfServiceBrowserController(
+                $session, $accounts, $registration, $integration, $origin,
+            ))->dispatch(
+                $method, $path,
+                isset($server['CONTENT_TYPE']) ? (string) $server['CONTENT_TYPE'] : null,
+                $body, (string) ($server['REMOTE_ADDR'] ?? ''),
+                bin2hex(random_bytes(16)), (string) ($server['QUERY_STRING'] ?? ''),
+            );
         }
 
         return $adapter->dispatch(

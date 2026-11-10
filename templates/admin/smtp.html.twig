@@ -1,0 +1,55 @@
+{% extends 'layouts/admin.html.twig' %}
+{% block dashboard_content %}
+<section class="opg-panel p-6 sm:p-8" aria-labelledby="smtp-title">
+  <div class="mb-6">
+    <p class="mb-1 text-sm font-semibold text-brand-600 dark:text-brand-300">System email</p>
+    <h2 id="smtp-title" class="text-2xl font-semibold tracking-tight text-gray-900 dark:text-white">SMTP configuration</h2>
+    <p class="mt-2 text-sm text-gray-500 dark:text-gray-400">Configure transactional verification mail. TLS and SMTP authentication are mandatory. Passwords are encrypted in private storage and never shown.</p>
+  </div>
+  <form method="post" action="/admin/settings/smtp" class="grid gap-5 sm:grid-cols-2" autocomplete="off">
+    <input type="hidden" name="_csrf" value="{{ csrf_token }}">
+    <div>
+      <label for="smtp-host" class="opg-label">SMTP hostname</label>
+      <input id="smtp-host" class="opg-input" name="host" value="{{ smtp.host }}" maxlength="253" placeholder="smtp.example.net" required>
+    </div>
+    <div>
+      <label for="smtp-encryption" class="opg-label">Encryption / port</label>
+      <select id="smtp-encryption" name="encryption" class="opg-input" required>
+        <option value="starttls"{% if smtp.encryption == 'starttls' %} selected{% endif %}>STARTTLS (port 587)</option>
+        <option value="smtps"{% if smtp.encryption == 'smtps' %} selected{% endif %}>SMTPS (port 465)</option>
+      </select>
+      <label class="opg-label mt-2" for="smtp-port">Port</label>
+      <select class="opg-input" id="smtp-port" name="port">
+        <option value="587"{% if smtp.port == 587 %} selected{% endif %}>587</option>
+        <option value="465"{% if smtp.port == 465 %} selected{% endif %}>465</option>
+      </select>
+    </div>
+    <div>
+      <label class="opg-label" for="smtp-username">SMTP username</label>
+      <input class="opg-input" id="smtp-username" name="username" maxlength="254" value="{{ smtp.username }}" required>
+    </div>
+    <div>
+      <label class="opg-label" for="smtp-password">SMTP password</label>
+      <input class="opg-input" id="smtp-password" type="password" name="password" maxlength="4096"
+       placeholder="{{ smtp.password_set ? 'Leave blank to keep existing password' : 'Required on initial setup' }}"
+       autocomplete="new-password"{% if not smtp.password_set %} required{% endif %}>
+    </div>
+    <div>
+      <label class="opg-label" for="smtp-from-email">From email</label>
+      <input class="opg-input" id="smtp-from-email" type="email" name="from_email" maxlength="254" value="{{ smtp.from_email }}" required>
+    </div>
+    <div>
+      <label class="opg-label" for="smtp-from-name">From name</label>
+      <input class="opg-input" id="smtp-from-name" name="from_name" maxlength="128" value="{{ smtp.from_name }}" required>
+    </div>
+    <div class="sm:col-span-2">
+      <label class="opg-label" for="smtp-confirm">Confirm your admin password to save</label>
+      <input class="opg-input" id="smtp-confirm" type="password" name="current_password"
+       autocomplete="current-password" maxlength="1024" required>
+    </div>
+    <div class="sm:col-span-2">
+      <button class="opg-primary-button" type="submit">Save secure SMTP configuration</button>
+    </div>
+  </form>
+</section>
+{% endblock %}

@@ -15,7 +15,10 @@ use InvalidArgumentException;
  */
 final readonly class TwigAdminPageRenderer implements AdminPageRenderer
 {
-    public function __construct(private TwigRenderer $twig)
+    public function __construct(
+        private TwigRenderer $twig,
+        private bool $smtpSettingsEnabled = false,
+    )
     {
     }
 
@@ -84,6 +87,7 @@ final readonly class TwigAdminPageRenderer implements AdminPageRenderer
             'csrf_token' => $csrfToken,
             'administrator_label' => $email,
             'actions_enabled' => $actionsEnabled,
+            'smtp_settings_enabled' => $this->smtpSettingsEnabled,
             'review_available' => $pending !== null,
             'queues' => $groups,
             'visible_counts' => [

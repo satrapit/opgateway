@@ -1,6 +1,6 @@
 # Approved owner account and API credentials
 
-The owner portal is opt-in and independent of the operator-only `/admin` area. It is not a signup, password-recovery or API proxy endpoint. Only accounts marked active, email-verified and administrator-approved can sign in.
+The owner portal is opt-in and separate from administrator management. The proposed next release adds registration and email verification, owner Openprovider credential entry, disabled client creation, and IP approval requests. Only active, verified and approved users can log in; accounts created via new self-service become approved after email verification, while manually created accounts still need administrator approval.
 
 ## Private .env
 
@@ -12,7 +12,7 @@ GATEWAY_PROXY_ENABLED=false
 LOGIN_RATE_LIMIT_KEY=
 ```
 
-Both account flags default to false. `ACCOUNT_UI_ENABLED=true` enables secure account login and read-only ownership views; `ACCOUNT_KEYS_ENABLED=true` separately enables issuing/revoking keys. The admin flags and its exact trusted IP gate are unchanged. Never enable either account flag in Production before successful end-to-end review.
+Both account flags default to false. `ACCOUNT_UI_ENABLED=true` enables secure account login and read-only ownership views; `ACCOUNT_KEYS_ENABLED=true` separately enables issuing/revoking keys. The proposed next release removes the browser admin IP gate while retaining the client API IP whitelist. Never enable either account flag in Production before successful end-to-end review.
 
 ## Routes
 
@@ -55,3 +55,17 @@ Production flags should stay off while testing. No schema migration or cPanel de
 ## Not yet enabled
 
 Public signup, verification email delivery, owner-created clients/IP requests, Openprovider upstream transport, and external API acceptance remain outside this phase.
+
+
+## Next release routes (not yet deployed)
+
+- GET/POST /account/register — user signup with email/password and CSRF
+- GET /account/verify?token=... — show one-time confirmation form only
+- POST /account/verify — CSRF-confirm and consume token
+- POST /account/verify/resend — HMAC-throttled resend
+- POST /account/provider/save — save encrypted Openprovider credentials
+- POST /account/clients/create — create disabled owned client
+- POST /account/ips/request — create pending exact-IP allowlist entry
+
+These actions are separately gated by ACCOUNT_REGISTRATION_ENABLED and
+ACCOUNT_INTEGRATION_ENABLED. See gateway-onboarding.md for complete flow.

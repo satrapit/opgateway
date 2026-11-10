@@ -8,9 +8,9 @@ The current shared host requires `DB_HOST=db`. Local macOS usually uses `DB_HOST
 
 ## New empty database only
 
-Import `database/sql/opgateway_full_schema.sql` **once** using phpMyAdmin, then verify 10 tables and three completed rows in `schema_migrations`. This SQL contains the three immutable migrations and checksums. **Never import into an existing populated database, re-run migrations or reset tables to fix a connection error.** The online app does not execute migrations.
+Import `database/sql/opgateway_full_schema.sql` **once** into a fresh empty database using phpMyAdmin. On the next feature branch, verify 12 tables and four completed rows in `schema_migrations`. This SQL contains the three immutable migrations and checksums. **Never import into an existing populated database, re-run migrations or reset tables to fix a connection error.** The online app does not execute migrations.
 
-For a database that already contains the schema and an administrator, there is **nothing to import or provision**. Backup before any intentional database operation.
+For the currently deployed alpha.3 schema there is nothing to import. The **next unreleased feature branch** introduces migration 004; after local validation, apply ONLY the additive upgrade script to the existing database, never the full schema. Backup before any intentional database operation.
 
 ## First administrator — one-time manual SQL
 
@@ -72,3 +72,16 @@ Migration catalog versions:
 - `202611070003_create_login_security_tables`
 
 Do not edit existing migration SQL or checksums. The internal migration runner uses an advisory lock and durable ledger, and deliberately refuses unexpected or incomplete history. MySQL DDL does not support fully atomic rollback; it must never run automatically on a shared cPanel deployment.
+
+
+## Next migration (unreleased)
+
+- 202611100001_create_gateway_integrations: adds signup_source with DEFAULT
+  manual, smtp_settings and provider_connections. No existing account is
+  automatically promoted or approved.
+- On existing populated instances, execute ONLY the reviewed
+  database/sql/upgrade_202611100001.sql in a verified, backed-up database
+  and only after it passes in a disposable local copy.
+- This must precede deploying the new PHP source because SchemaReadiness
+  requires all catalog migrations and will fail closed with HTTP 503.
+- The original migrations and their checksums are never rewritten.

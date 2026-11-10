@@ -15,14 +15,20 @@ use InvalidArgumentException;
  */
 final class AccountViews
 {
-    public static function login(string $csrfToken, bool $failed = false): string
+    public static function login(string $csrfToken, bool $failed = false, bool $allowRegistration = false): string
     {
         $csrf = self::csrf($csrfToken);
         $notice = $failed ? '<p role="alert">Sign-in was not successful.</p>' : '';
+        $signupLink = $allowRegistration ? '<p><a href="/account/register">Create an account</a></p>' : '';
+        $integrationHtml = $integrationEnabled
+            ? self::integrationForms($csrf, $overview['clients'], $provider)
+            : '';
+
         $body = <<<HTML
 <main>
   <h1>OPGateway account</h1>
-  <p>Sign in with your approved account.</p>
+  <p>Sign in to manage your Openprovider connection, IPs and API clients.</p>
+  {$signupLink}
   {$notice}
   <form method="post" action="/account/login">
     <input type="hidden" name="_csrf" value="{$csrf}">
@@ -37,6 +43,77 @@ HTML;
         return self::page('Account sign in', $body);
     }
 
+    /** Public signup is opt-in. No account-enumerating messages. */
+    public static function register(string $csrfToken): string
+    {
+        $csrf = self::csrf($csrfToken);
+        $body = <<<HTML
+<main>
+  <h1>Create your OPGateway account</h1>
+  <p>Verify your email to activate your account. Passwords must be at least 12 characters.</p>
+  <form method="post" action="/account/register">
+    <input type="hidden" name="_csrf" value="{$csrf}">
+    <label for="registration-email">Email</label>
+    <input type="email" id="registration-email" name="email" maxlength="254" autocomplete="email" required>
+    <label for="registration-password">Password</label>
+    <input type="password" id="registration-password" name="password" minlength="12"
+      maxlength="1024" autocomplete="new-password" required>
+    <button type="submit">Register and send verification email</button>
+  </form>
+  <section><h2>Resend a verification email</h2>
+    <p>If your earlier email expired or delivery failed, request a new one.</p>
+    <form method="post" action="/account/verify/resend">
+      <input type="hidden" name="_csrf" value="{$csrf}">
+      <label for="resend-email">Email</label>
+      <input type="email" id="resend-email" name="email" maxlength="254" required>
+      <button type="submit">Resend verification</button>
+    </form>
+  </section>
+  <p><a href="/account/login">Already registered? Sign in</a></p>
+</main>
+HTML;
+        return self::page('Create account', $body);
+    }
+
+    public static function registrationAccepted(): string
+    {
+        return self::page('Check your email', '<main><h1>Check your email</h1>'
+            . '<p>If that address is eligible, a verification email has been sent. '
+            . 'Check your inbox and spam folder, or request another email from the registration page.</p>'
+            . '<p><a href="/account/register">Back to registration</a></p></main>');
+    }
+
+    /** Link scanners cannot auto-consume a verification token via GET. */
+    public static function verifyForm(string $csrfToken, string $token): string
+    {
+        $csrf = self::csrf($csrfToken);
+        if (!preg_match('/^[0-9a-fA-F]{64}$/D', $token)) {
+            return self::verified(false);
+        }
+        $safe = self::escape(strtolower($token));
+        return self::page('Confirm your email', <<<HTML
+<main>
+  <h1>Confirm email ownership</h1>
+  <p>To complete activation, confirm this one-time verification link.</p>
+  <form method="post" action="/account/verify">
+    <input type="hidden" name="_csrf" value="{$csrf}">
+    <input type="hidden" name="token" value="{$safe}">
+    <button type="submit">Confirm email</button>
+  </form>
+</main>
+HTML);
+    }
+
+    public static function verified(bool $success): string
+    {
+        return self::page('Email verification', $success
+            ? '<main><h1>Email verified</h1><p>You can now sign in.</p>'
+              . '<p><a href="/account/login">Sign in</a></p></main>'
+            : '<main><h1>Verification unavailable</h1><p>The link is invalid or expired.'
+              . ' Request a new email from the registration page.</p>'
+              . '<p><a href="/account/register">Registration</a></p></main>');
+    }
+
     /**
      * @param array{
      *   email:string,
@@ -45,7 +122,10 @@ HTML;
      *   ips:list<array{id:int,client_id:int,address:string,enabled:bool}>
      * } $overview
      */
-    public static function dashboard(string $csrfToken, array $overview, bool $keysEnabled): string
+    public static function dashboard(
+        string $csrfToken, array $overview, bool $keysEnabled,
+        bool $integrationEnabled = false, array $provider = [],
+    ): string
     {
         $csrf = self::csrf($csrfToken);
         $email = self::escape($overview['email']);
@@ -91,6 +171,7 @@ HTML;
   <h1>OPGateway account</h1>
   <p>Signed in as {$email}</p>
   <p>{$state}</p>
+  {$integrationHtml}
   <section><h2>Your API clients</h2>{$clientList}</section>
   <section><h2>API key prefixes (no secrets)</h2>{$keyList}</section>
   <section><h2>IP whitelist status</h2>{$ipList}</section>
@@ -121,6 +202,61 @@ HTML;
 </main>
 HTML;
         return self::page('API key created', $body);
+    }
+
+    /**
+     * @param list<array{id:int,label:string,status:string}> $clients
+     * @param array{configured?:bool,username?:string} $provider
+     */
+    private static function integrationForms(string $csrf, array $clients, array $provider): string
+    {
+        $configured = ($provider['configured'] ?? false) === true;
+        $username = self::escape((string) ($provider['username'] ?? ''));
+        $state = $configured
+            ? 'Configured. Re-enter the password to rotate your Openprovider credentials.'
+            : 'Not configured. Your Openprovider password is encrypted at rest.';
+        $requests = [];
+        foreach ($clients as $client) {
+            $id = (int) $client['id'];
+            $label = self::escape($client['label']);
+            $requests[] = <<<HTML
+<form method="post" action="/account/ips/request">
+  <input type="hidden" name="_csrf" value="{$csrf}">
+  <input type="hidden" name="client_id" value="{$id}">
+  <label for="requested-ip-{$id}">IP for client {$label} (#{$id})</label>
+  <input id="requested-ip-{$id}" name="ip" maxlength="45" placeholder="203.0.113.42" required>
+  <button type="submit">Request IP approval</button>
+</form>
+HTML;
+        }
+        $ipForms = implode("\n", $requests);
+        return <<<HTML
+<section>
+  <h2>Openprovider account</h2>
+  <p>{$state}</p>
+  <form method="post" action="/account/provider/save">
+    <input type="hidden" name="_csrf" value="{$csrf}">
+    <label for="provider-username">Openprovider API username</label>
+    <input id="provider-username" name="username" value="{$username}" maxlength="254" autocomplete="off" required>
+    <label for="provider-password">Openprovider API password</label>
+    <input id="provider-password" name="password" type="password" maxlength="1024" autocomplete="new-password" required>
+    <button type="submit">Save encrypted credentials</button>
+  </form>
+</section>
+<section><h2>Create an API client</h2>
+  <p>The administrator must activate new clients before API keys can be issued.</p>
+  <form method="post" action="/account/clients/create">
+    <input type="hidden" name="_csrf" value="{$csrf}">
+    <label for="client-label">Client name</label>
+    <input id="client-label" name="label" maxlength="128" required>
+    <button type="submit">Request client</button>
+  </form>
+</section>
+<section><h2>Request allowed source IPs</h2>
+  <p>Only exact IPs approved by the administrator may send API requests.</p>
+  {$ipForms}
+</section>
+HTML;
     }
 
     private static function issueForm(string $csrf, int $clientId): string

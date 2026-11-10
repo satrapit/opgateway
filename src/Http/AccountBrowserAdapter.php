@@ -7,6 +7,7 @@ namespace OPGateway\Http;
 use OPGateway\Identity\BrowserSession;
 use OPGateway\Identity\GuardedLoginService;
 use OPGateway\Identity\LoginAccountRepository;
+use OPGateway\Clients\OwnerIntegrationService;
 use OPGateway\Security\OwnerCredentialManager;
 
 /**
@@ -25,6 +26,8 @@ final readonly class AccountBrowserAdapter
         private LoginAccountRepository $accounts,
         private OwnerOverviewProvider $overview,
         private ?OwnerCredentialManager $credentials = null,
+        private ?OwnerIntegrationService $integration = null,
+        private bool $registrationAvailable = false,
     ) {
     }
 
@@ -45,7 +48,7 @@ final readonly class AccountBrowserAdapter
         }
 
         if ($path === '/account/login' && $method === 'GET') {
-            return self::html(AccountViews::login($this->session->csrfToken()));
+            return self::html(AccountViews::login($this->session->csrfToken(), false, $this->registrationAvailable));
         }
 
         if ($path === '/account/login' && $method === 'POST') {
@@ -65,7 +68,7 @@ final readonly class AccountBrowserAdapter
                 $form['email'], $form['password'], $sourceIp, $requestId,
             );
             if ($userId === null) {
-                return self::html(AccountViews::login($this->session->csrfToken(), true), 401);
+                return self::html(AccountViews::login($this->session->csrfToken(), true, $this->registrationAvailable), 401);
             }
             $this->session->authenticate($userId);
             return self::redirect('/account');
@@ -82,6 +85,7 @@ final readonly class AccountBrowserAdapter
             }
             return self::html(AccountViews::dashboard(
                 $this->session->csrfToken(), $data, $this->credentials !== null,
+                $this->integration !== null, $this->integration?->summary($userId) ?? [],
             ));
         }
 

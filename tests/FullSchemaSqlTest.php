@@ -24,7 +24,7 @@ final class FullSchemaSqlTest extends TestCase
                 self::assertStringContainsString($statement . ';', $sql);
             }
         }
-        self::assertSame(10, substr_count($sql, 'CREATE TABLE '));
+        self::assertSame(12, substr_count($sql, 'CREATE TABLE '));
         self::assertDoesNotMatchRegularExpression('/^\s*(?:DROP|TRUNCATE)\s+/mi', $sql);
     }
 }

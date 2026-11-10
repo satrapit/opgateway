@@ -31,3 +31,16 @@ The fixed migration schema contains `users`, `roles`, `user_roles`, `api_clients
 4. Only after end-to-end verification, selectively enable explicitly approved `/v1` operations.
 
 At no stage should an arbitrary provider proxy route or user-controlled upstream target be made public.
+
+
+## Proposed next phase (unreleased)
+
+Additional modules: Mail (administrator SMTP settings and verification
+delivery), Provider (encrypted owner account and strict HTTPS upstream),
+Security (AES-GCM envelopes and isolated gateway throttles), and a
+separately opt-in HTTP gateway edge. Account registration uses existing
+login and token services with public routes and a provenance column.
+Browser IP gate for administrators is removed; role checks remain.
+API source IP admission remains exact for every client. See
+docs/gateway-onboarding.md. A complete version-pinned OpenAPI
+contract, granular scopes and paid-operation safety are still pending.
