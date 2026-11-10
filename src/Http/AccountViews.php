@@ -22,7 +22,7 @@ final class AccountViews
         return self::render('account/login.html.twig', [
             'page_title' => 'Sign in to your account',
             'page_eyebrow' => 'Account workspace',
-            'page_description' => 'Access your Openprovider connection, API clients and approved IP addresses.',
+            'page_description' => 'Sign in with your email and password.',
             'csrf_token' => $csrfToken,
             'show_error' => $failed,
             'allow_registration' => $allowRegistration,
@@ -35,7 +35,7 @@ final class AccountViews
         return self::render('account/register.html.twig', [
             'page_title' => 'Create your account',
             'page_eyebrow' => 'Join OPGateway',
-            'page_description' => 'Verify your email address to activate your account. Use a password with at least 12 characters.',
+            'page_description' => 'Enter your email and choose a password.',
             'csrf_token' => $csrfToken,
         ]);
     }

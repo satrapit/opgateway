@@ -61,7 +61,7 @@ final readonly class SelfServiceBrowserController
                 return self::error(415);
             }
             $fields = match ($path) {
-                '/account/register' => ['_csrf', 'email', 'password'],
+                '/account/register' => ['_csrf', 'email', 'password', 'password_confirmation'],
                 '/account/verify/resend' => ['_csrf', 'email'],
                 default => ['_csrf', 'token'],
             };
@@ -73,6 +73,11 @@ final readonly class SelfServiceBrowserController
                 return self::html(AccountViews::verified(
                     $this->registration->verify($form['token']),
                 ));
+            }
+            if ($path === '/account/register'
+                && (!hash_equals($form['password'], $form['password_confirmation'])
+                    || strlen($form['password_confirmation']) > 1024)) {
+                return self::error(400);
             }
             try {
                 $status = $path === '/account/register'

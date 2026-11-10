@@ -11,6 +11,12 @@ migrated in a separately reviewed change. No duplicate CSS, remote CDN,
 additional UI feature flags or new login endpoints are introduced.
 
 
+Registration POST requires `password_confirmation` and rejects mismatched
+passwords server-side before creating an account. The browser form already
+includes the confirmation field. Account sections `/account`, `/account/provider`,
+`/account/clients`, `/account/keys` and `/account/ips` are separate routes and
+render distinct Twig sections, not a single anchor-based page.
+
 Owner login is available at `/account/login`; registration is at
 `/account/register`. A new user signs up with email/password, confirms
 the 30-minute single-use verification email via a CSRF-protected POST,

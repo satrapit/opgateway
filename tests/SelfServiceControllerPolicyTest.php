@@ -49,6 +49,14 @@ final class SelfServiceControllerPolicyTest extends TestCase
         self::assertStringNotContainsString('password_hash', $html);
     }
 
+    public function testRegistrationConfirmationIsCheckedOnServer(): void
+    {
+        $source = file_get_contents(dirname(__DIR__) . '/src/Http/SelfServiceBrowserController.php');
+        self::assertIsString($source);
+        self::assertStringContainsString("'password_confirmation'", $source);
+        self::assertStringContainsString("hash_equals(\$form['password'], \$form['password_confirmation'])", $source);
+    }
+
     public function testEmailLinkIsNotAutomaticallyConsumedOnGet(): void
     {
         $html = AccountViews::verifyForm(str_repeat('a', 64), str_repeat('b', 64));

@@ -4,7 +4,7 @@
     <div>
       <p class="mb-1 text-sm font-semibold text-brand-600 dark:text-brand-300">Provider integration</p>
       <h2 id="provider-title" class="opg-section-title">Openprovider account</h2>
-      <p class="opg-section-subtitle">Your reseller password is encrypted at rest and never displayed again.</p>
+      <p class="opg-section-subtitle">Connect your Openprovider account.</p>
     </div>
     <span class="opg-badge {{ provider.configured|default(false) ? 'opg-badge-green' : 'opg-badge-amber' }}">{{ provider.configured|default(false) ? 'Configured' : 'Not configured' }}</span>
   </div>
@@ -23,7 +23,7 @@
       <input class="opg-input" id="provider-confirm-password" name="current_password" type="password" maxlength="1024" autocomplete="current-password" required>
     </div>
     <div class="sm:col-span-2">
-      <button class="opg-primary-button w-full sm:w-auto" type="submit">Save encrypted credentials</button>
+      <button class="opg-primary-button w-full sm:w-auto" type="submit">Save changes</button>
     </div>
   </form>
 </section>
