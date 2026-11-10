@@ -9,19 +9,21 @@ use PHPUnit\Framework\TestCase;
 
 final class OpenproviderRoutePolicyTest extends TestCase
 {
-    public function testExplicitSafeRoutesAndWriteGate(): void
+    public function testExplicitSafeRoutesWithoutBypassSwitch(): void
     {
-        self::assertTrue(OpenproviderRoutePolicy::allowed('GET', '/v1/domains', false));
-        self::assertTrue(OpenproviderRoutePolicy::allowed('POST', '/v1/domains/check', false));
-        self::assertFalse(OpenproviderRoutePolicy::allowed('POST', '/v1/domains', false));
-        self::assertTrue(OpenproviderRoutePolicy::allowed('POST', '/v1/domains', true));
-        self::assertFalse(OpenproviderRoutePolicy::allowed('DELETE', '/v1/domains/5', false));
-        self::assertFalse(OpenproviderRoutePolicy::allowed('GET', '/v1/auth/login', true));
-        self::assertFalse(OpenproviderRoutePolicy::allowed('GET', '/v1/../../internal', true));
-        self::assertFalse(OpenproviderRoutePolicy::allowed('GET', '/v1/domains%2Fauth', true));
-        self::assertFalse(OpenproviderRoutePolicy::allowed('GET', 'https://example.com/', true));
-        self::assertFalse(OpenproviderRoutePolicy::allowed('GET', '/v1/server-admin', true));
-        self::assertFalse(OpenproviderRoutePolicy::allowed('TRACE', '/v1/domains', true));
+        self::assertTrue(OpenproviderRoutePolicy::allowed('GET', '/v1/domains'));
+        self::assertTrue(OpenproviderRoutePolicy::allowed('POST', '/v1/domains/check'));
+        self::assertFalse(OpenproviderRoutePolicy::allowed('POST', '/v1/domains'));
+        self::assertFalse(OpenproviderRoutePolicy::allowed('POST', '/v1/domains'));
+        self::assertFalse(OpenproviderRoutePolicy::allowed('PUT', '/v1/domains/5'));
+        self::assertFalse(OpenproviderRoutePolicy::allowed('PATCH', '/v1/domains/5'));
+        self::assertFalse(OpenproviderRoutePolicy::allowed('DELETE', '/v1/domains/5'));
+        self::assertFalse(OpenproviderRoutePolicy::allowed('GET', '/v1/auth/login'));
+        self::assertFalse(OpenproviderRoutePolicy::allowed('GET', '/v1/../../internal'));
+        self::assertFalse(OpenproviderRoutePolicy::allowed('GET', '/v1/domains%2Fauth'));
+        self::assertFalse(OpenproviderRoutePolicy::allowed('GET', 'https://example.com/'));
+        self::assertFalse(OpenproviderRoutePolicy::allowed('GET', '/v1/server-admin'));
+        self::assertFalse(OpenproviderRoutePolicy::allowed('TRACE', '/v1/domains'));
     }
 
     public function testQueriesCannotSmuggleRemoteUrlsOrFragments(): void

@@ -31,5 +31,5 @@ Only a conservative syntax- and root-restricted subset is staged:
 JSON requests with bounded body/query sizes, fixed-host TLS and no
 redirects. The route allowlist is *not* a pinned full official OpenAPI spec
 and may reject supported methods/paths; do not promise full compatibility.
-Write operations with side effects remain unavailable in code and need
+Write operations with side effects remain unavailable in code with no bypass switch and need
 per-operation permissions/idempotency/financial risk review. See gateway-onboarding.md.

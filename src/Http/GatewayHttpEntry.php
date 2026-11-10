@@ -50,9 +50,7 @@ final readonly class GatewayHttpEntry
         if (CanonicalOrigin::fromServer($server) === null) {
             return self::error(404, 'not_found');
         }
-        if (!OpenproviderRoutePolicy::allowed(
-            $method, $path, false,
-        )) {
+        if (!OpenproviderRoutePolicy::allowed($method, $path)) {
             return self::error(404, 'operation_not_available');
         }
         $query = (string) ($server['QUERY_STRING'] ?? '');

@@ -19,7 +19,7 @@ final class OpenproviderRoutePolicy
         'products', 'nameservers',
     ];
 
-    public static function allowed(string $method, string $path, bool $writesEnabled): bool
+    public static function allowed(string $method, string $path): bool
     {
         if (!in_array($method, ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'], true)
             || strlen($path) > 255
@@ -35,7 +35,7 @@ final class OpenproviderRoutePolicy
         if ($method === 'POST' && rtrim($path, '/') === '/v1/domains/check') {
             return true;
         }
-        return $writesEnabled;
+        return false;
     }
 
     /** Query is strictly opaque data, not another URL or a redirect. */
