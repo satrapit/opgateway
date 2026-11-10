@@ -1,0 +1,13 @@
+{% extends 'layouts/workspace.html.twig' %}
+{% block sidebar_navigation %}
+    <nav class="space-y-1 px-4 py-6" aria-label="Account sections">
+      <p class="px-3 pb-2 text-xs font-semibold uppercase tracking-widest text-gray-400">Your workspace</p>
+      <a class="opg-nav-link" href="/account" aria-current="page"><svg viewBox="0 0 24 24" class="opg-icon" aria-hidden="true" focusable="false"><use href="{{ admin_assets.icons }}#opg-icon-layout-dashboard"></use></svg> Overview</a>
+      <a class="opg-nav-link" href="/account#provider"><svg viewBox="0 0 24 24" class="opg-icon" aria-hidden="true" focusable="false"><use href="{{ admin_assets.icons }}#opg-icon-server"></use></svg> Openprovider account</a>
+      <p class="px-3 pb-2 pt-6 text-xs font-semibold uppercase tracking-widest text-gray-400">API access</p>
+      <a class="opg-nav-link" href="/account#clients"><svg viewBox="0 0 24 24" class="opg-icon" aria-hidden="true" focusable="false"><use href="{{ admin_assets.icons }}#opg-icon-users"></use></svg> API clients</a>
+      <a class="opg-nav-link" href="/account#keys"><svg viewBox="0 0 24 24" class="opg-icon" aria-hidden="true" focusable="false"><use href="{{ admin_assets.icons }}#opg-icon-shield-check"></use></svg> API keys</a>
+      <a class="opg-nav-link" href="/account#ips"><svg viewBox="0 0 24 24" class="opg-icon" aria-hidden="true" focusable="false"><use href="{{ admin_assets.icons }}#opg-icon-clock"></use></svg> Allowed IPs</a>
+    </nav>
+{% endblock %}
+{% block sidebar_note %}Your private API workspace · Only approved clients and IPs can connect{% endblock %}

@@ -43,6 +43,17 @@ from the standard suite because it performs database DDL. It is
 suitable only for an explicitly disposable MySQL instance, never a
 working or production database. No automated migration on cPanel.
 
+## Shared Account/Admin UI test gate
+
+The owner portal now uses the same Twig/TailAdmin CSS and CSP-safe Alpine
+assets as the admin portal. First rebuild the local assets with
+`cd frontend && npm ci && npm run lint && npm run build`, then rerun PHP
+lint and PHPUnit, including `AccountDesignSystemTest`. Test account
+login/registration/verification, dark/light/system controls, mobile
+drawer at 320/375/390px, desktop at 1024/1440px, provider/account forms,
+and the one-time API key page. Validate actual browser asset responses
+and strict `script-src 'self'` / `style-src 'self'` CSP with no inline CSS.
+
 ## UI and release review
 
 Use real browsers at 320, 375, 390, 768, 1024 and 1440px. Verify

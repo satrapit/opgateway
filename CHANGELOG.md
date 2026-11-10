@@ -1,5 +1,22 @@
 # Changelog
 
+## Unreleased — Shared Admin/Account visual system (2026-11-10)
+
+- Replace the Account portal's legacy inline-styled PHP HTML with
+  strict autoescaping Twig templates for login, registration, verification,
+  account dashboard and one-time API key display.
+- Extract the shared TailAdmin workspace shell from the Admin layout;
+  both portals now share versioned local CSS/JS/icons, mobile drawer,
+  80px header, dark/light/system theme and accessible forms.
+- Retain existing account routes, action names, CSRF, email verification,
+  password rechecks, exact-IP approval and one-time-only key semantics.
+- Use strict same-origin script/style CSP for Account HTML, with no inline
+  CSS/JS and no runtime external assets.
+- Add Account design and security regression tests; local npm build,
+  PHP tests and real browser checks are **still required**.
+- No migration, feature flag, new role or production rollout.
+
+
 ## Unreleased — Universal key/value settings (2026-11-10)
 
 - Migration 005 creates one global `settings` table (`setting_key`,

@@ -1,0 +1,15 @@
+{% extends 'layouts/account-auth.html.twig' %}
+{% block referrer_policy %}no-referrer{% endblock %}
+{% block account_form %}
+  <div class="opg-alert opg-alert-error mb-6" role="alert">
+    <strong>Copy this key now.</strong> It will never be shown again.
+    Refreshing or leaving this page will not reveal it later.
+    Never paste the key into chat, support tickets, logs or public repositories.
+  </div>
+  <div class="opg-panel p-5 sm:p-7" aria-label="New API key">
+    <p class="opg-label mb-3">Your one-time API key</p>
+    <code class="block min-w-0 select-all break-all rounded-xl bg-gray-100 p-4 text-sm text-gray-900 dark:bg-gray-800 dark:text-gray-100">{{ key }}</code>
+    <p class="opg-muted mt-3">Store it securely now; this page cannot recover it later.</p>
+  </div>
+  <a href="/account" class="opg-secondary-button mt-6 w-full">Return to your account</a>
+{% endblock %}

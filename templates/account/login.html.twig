@@ -1,0 +1,21 @@
+{% extends 'layouts/account-auth.html.twig' %}
+{% block account_form %}
+  {% if show_error %}
+    <div class="opg-alert opg-alert-error mb-6" role="alert" id="account-login-error">Sign-in was not successful. Check your credentials and try again.</div>
+  {% endif %}
+  <form method="post" action="/account/login" autocomplete="on" class="space-y-5">
+    <input type="hidden" name="_csrf" value="{{ csrf_token }}">
+    <div>
+      <label class="opg-label" for="owner-email">Email address</label>
+      <input class="opg-input" id="owner-email" name="email" type="email" maxlength="254" autocomplete="username" required{% if show_error %} aria-describedby="account-login-error"{% endif %}>
+    </div>
+    <div>
+      <label class="opg-label" for="owner-password">Password</label>
+      <input class="opg-input" id="owner-password" name="password" type="password" maxlength="1024" autocomplete="current-password" required{% if show_error %} aria-describedby="account-login-error"{% endif %}>
+    </div>
+    <button type="submit" class="opg-primary-button w-full">Sign in securely</button>
+  </form>
+  {% if allow_registration %}
+    <p class="mt-8 text-center text-sm text-gray-500 dark:text-gray-400">New to OPGateway? <a class="font-semibold text-brand-600 hover:underline dark:text-brand-300" href="/account/register">Create an account</a></p>
+  {% endif %}
+{% endblock %}

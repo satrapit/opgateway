@@ -5,7 +5,7 @@ import { initializeRowMenus } from './row-menus.js';
 
 
 /**
- * CSP-compatible TailAdmin Free operator interactions.
+ * CSP-compatible TailAdmin Free interactions shared by Admin and Account.
  * Icons render directly from the preloaded, cached SVG sprite, without a
  * JavaScript-generated placeholder swap or remote runtime dependency.
  */
@@ -19,12 +19,12 @@ Alpine.data('adminShell', () => ({
     const media = window.matchMedia('(prefers-color-scheme: dark)');
     media.addEventListener?.('change', () => this.applyTheme());
 
-    // A workspace link navigates to a distinct server-rendered page.
-    // The new response supplies its own active navigation state.
+    // Admin links navigate to distinct pages; Account links may target dashboard
+    // sections. Both close the mobile drawer before the navigation occurs.
     const nav = this.$refs.sidebar?.querySelector('nav');
     nav?.addEventListener('click', (event) => {
       const link = event.target instanceof Element
-        ? event.target.closest('a[href^="/admin"]') : null;
+        ? event.target.closest('a[href^="/admin"], a[href^="/account"]') : null;
       if (link && nav.contains(link) && this.sidebarOpen) {
         this.closeSidebar(false);
       }

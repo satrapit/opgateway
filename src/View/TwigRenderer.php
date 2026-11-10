@@ -69,7 +69,7 @@ final class TwigRenderer
         $urls = [];
         foreach ($names as $key => $filename) {
             $path = $root . $filename;
-            // Missing files are checked by the production feature gate;
+            // Missing files are checked by the production asset availability check;
             // the renderer remains constructible for isolated tests.
             $hash = is_file($path) && !is_link($path) ? hash_file('sha256', $path) : false;
             $urls[$key] = '/assets/admin/' . $filename
@@ -82,7 +82,7 @@ final class TwigRenderer
     /** @param array<string,mixed> $data */
     public function render(string $template, array $data): string
     {
-        if (preg_match('~^(?:admin|layouts|components)/[a-z0-9/_-]+\\.html\\.twig$~D', $template) !== 1) {
+        if (preg_match('~^(?:admin|account|layouts|components)/[a-z0-9/_-]+\\.html\\.twig$~D', $template) !== 1) {
             throw new RuntimeException('Template name was not allowlisted.');
         }
 

@@ -21,6 +21,13 @@ confirmation. Newly created clients are disabled and IPs are unapproved;
 access requires explicitly approved exact IPv4/IPv6 plus an active owner,
 active client and valid non-revoked gateway bearer digest.
 
+Account HTML uses the same local, versioned TailAdmin CSS/JS and strict
+no-inline-style/script CSP as Admin. Twig autoescapes owner metadata and
+never reflects stored provider passwords. The one-time issued API key is
+rendered only in a POST response, never placed in query strings,
+localStorage or logs. Owner routes retain existing HTTPS, CSRF, secure
+sessions, owner authorization and password reauthentication.
+
 ## SMTP, provider and application key
 
 All global settings live in MySQL `settings` as key/value rows;

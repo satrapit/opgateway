@@ -1,0 +1,7 @@
+{% extends 'layouts/account-auth.html.twig' %}
+{% block account_form %}
+  <div class="opg-panel p-6 sm:p-7" role="status">
+    <p class="mb-6 text-sm leading-7 text-gray-700 dark:text-gray-300">{{ status_message }}</p>
+    <a href="{{ destination }}" class="opg-primary-button w-full">{{ action_label }}</a>
+  </div>
+{% endblock %}

@@ -178,7 +178,7 @@ final readonly class AccountWebEntry
                 ], true)) {
                 return self::error(503);
             }
-            return (new SelfServiceBrowserController(
+            $response = (new SelfServiceBrowserController(
                 $session, $accounts, $registration, $integration, $origin,
                 $login, $ownerOverview,
             ))->dispatch(
@@ -187,14 +187,23 @@ final readonly class AccountWebEntry
                 $body, (string) ($server['REMOTE_ADDR'] ?? ''),
                 bin2hex(random_bytes(16)), (string) ($server['QUERY_STRING'] ?? ''),
             );
+        } else {
+            $response = $adapter->dispatch(
+                $method, $path, true,
+                isset($server['CONTENT_TYPE']) ? (string) $server['CONTENT_TYPE'] : null,
+                (string) ($server['REMOTE_ADDR'] ?? ''),
+                bin2hex(random_bytes(16)), $body,
+            );
         }
 
-        return $adapter->dispatch(
-            $method, $path, true,
-            isset($server['CONTENT_TYPE']) ? (string) $server['CONTENT_TYPE'] : null,
-            (string) ($server['REMOTE_ADDR'] ?? ''),
-            bin2hex(random_bytes(16)), $body,
-        );
+        // The shared locally bundled TailAdmin/Twig UI uses the same strict
+        // Content Security Policy for account and administrator HTML.
+        if (str_starts_with($response['content_type'], 'text/html')) {
+            $response['csp'] = "default-src 'none'; style-src 'self'; script-src 'self'; "
+                . "img-src 'self' data:; font-src 'self'; form-action 'self'; "
+                . "base-uri 'none'; frame-ancestors 'none'; object-src 'none'";
+        }
+        return $response;
     }
 
     /** @return array{status:int,content_type:string,body:string} */

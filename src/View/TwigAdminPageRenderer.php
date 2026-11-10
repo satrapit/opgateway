@@ -10,8 +10,8 @@ use InvalidArgumentException;
  * TailAdmin Free visual language with Twig HTML autoescaping.
  *
  * Does not fetch data, grant permissions or generate CSRF values. Accepts
- * the same proven view data shape as BrowserViews, keeping HTTP contracts
- * and strict server-side mutation validation intact.
+ * existing authorized administrator view models and their established
+ * strict server-side form and mutation contracts.
  */
 final readonly class TwigAdminPageRenderer implements AdminPageRenderer
 {

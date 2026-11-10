@@ -61,7 +61,7 @@ final class AccountViewsTest extends TestCase
         self::assertStringContainsString($key, $html);
         self::assertStringContainsString('never be shown again', $html);
         self::assertStringContainsString('<meta name="referrer" content="no-referrer">', $html);
-        self::assertStringContainsString('<a href="/account">', $html);
+        self::assertStringContainsString('href="/account"', $html);
         self::assertStringNotContainsString('?key=', $html);
     }
 

@@ -3,9 +3,9 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="referrer" content="same-origin">
+  <meta name="referrer" content="{% block referrer_policy %}same-origin{% endblock %}">
   <meta name="robots" content="noindex, nofollow">
-  <title>{% block title %}OPGateway{% endblock %} | Administration</title>
+  <title>{% block title %}OPGateway{% endblock %} | OPGateway</title>
   {# Icons are browser-rendered SVG; preload the same-origin shared sprite. #}
   <link rel="preload" href="{{ admin_assets.icons }}" as="image" type="image/svg+xml">
   <link rel="preload" href="{{ admin_assets.app_js }}" as="script">

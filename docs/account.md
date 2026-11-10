@@ -1,5 +1,16 @@
 # Owner portal
 
+All owner pages use the **same TailAdmin/Twig design system** as Admin:
+`layouts/auth.html.twig` for fonts/assets and dark/light/system theme,
+`layouts/account-auth.html.twig` for sign-in, registration and verification,
+and `layouts/workspace.html.twig` for the responsive authenticated dashboard.
+The templates live in `templates/account/`; `AccountViews` is a thin Twig
+presentation wrapper, not a second hand-coded HTML renderer. Local assets
+are shared at `/assets/admin/` until a common asset directory can be
+migrated in a separately reviewed change. No duplicate CSS, remote CDN,
+additional UI feature flags or new login endpoints are introduced.
+
+
 Owner login is available at `/account/login`; registration is at
 `/account/register`. A new user signs up with email/password, confirms
 the 30-minute single-use verification email via a CSRF-protected POST,

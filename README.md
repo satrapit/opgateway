@@ -1,7 +1,7 @@
 # OPGateway
 
 PHP 8.3 / MySQL Openprovider gateway for cPanel shared hosting, with a
-TailAdmin/Twig admin panel and a self-service account portal.
+shared TailAdmin/Twig design system for both admin and self-service account portals.
 
 > **Unreleased feature branch:** `main` / production remains at
 > v0.1.0-alpha.3. Do not deploy or merge this branch before live SMTP,
@@ -13,7 +13,8 @@ TailAdmin/Twig admin panel and a self-service account portal.
 
 - `/admin`: TailAdmin/Twig only; existing `admin` role manages user
   approvals, API clients, pending IPs, and `/admin/settings/smtp`.
-- `/account`: login, registration with email verification, owner-specific
+- `/account`: TailAdmin/Twig login, registration, verification, dashboard,
+  one-time key display and owner-specific
   Openprovider credentials, disabled client creation and IP requests,
   one-time API key issuance/revocation.
 - `/v1/*`: gateway-issued bearer authorization, exact approved source IP,
