@@ -81,8 +81,11 @@ final class AccountBrowserAdapterTest extends TestCase
 
         $dashboard = $send('GET', '/account');
         self::assertSame(200, $dashboard['status']);
-        self::assertStringContainsString('Integration', $dashboard['body']);
-        self::assertStringContainsString('action="/account/keys/issue"', $dashboard['body']);
+        self::assertStringContainsString('API clients', $dashboard['body']);
+        $clientPage = $send('GET', '/account/clients');
+        self::assertSame(200, $clientPage['status']);
+        self::assertStringContainsString('Integration', $clientPage['body']);
+        self::assertStringContainsString('action="/account/keys/issue"', $clientPage['body']);
         $loggedCsrf = $session->csrfToken();
 
         $wrongPassword = $post([

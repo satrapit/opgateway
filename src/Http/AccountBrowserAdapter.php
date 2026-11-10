@@ -74,7 +74,14 @@ final readonly class AccountBrowserAdapter
             return self::redirect('/account');
         }
 
-        if ($path === '/account' && $method === 'GET') {
+        $sections = [
+            '/account' => 'overview',
+            '/account/provider' => 'provider',
+            '/account/clients' => 'clients',
+            '/account/keys' => 'keys',
+            '/account/ips' => 'ips',
+        ];
+        if ($method === 'GET' && isset($sections[$path])) {
             $userId = $this->session->currentUserId($this->accounts);
             if ($userId === null) {
                 return self::redirect('/account/login');
@@ -86,6 +93,7 @@ final readonly class AccountBrowserAdapter
             return self::html(AccountViews::dashboard(
                 $this->session->csrfToken(), $data, $this->credentials !== null,
                 $this->integration !== null, $this->integration?->summary($userId) ?? [],
+                $sections[$path],
             ));
         }
 

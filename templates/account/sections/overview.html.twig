@@ -1,0 +1,13 @@
+<section id="overview" class="mb-7" aria-labelledby="owner-overview-title">
+  <div class="opg-panel p-6 sm:p-8">
+    <p class="mb-2 text-sm font-semibold text-brand-600 dark:text-brand-300">Account overview</p>
+    <h2 id="owner-overview-title" class="text-2xl font-semibold tracking-tight text-gray-900 dark:text-white sm:text-3xl">Welcome to OPGateway</h2>
+    <p class="mt-3 min-w-0 break-all text-sm text-gray-500 dark:text-gray-400">Signed in as {{ overview.email }}</p>
+    <p class="mt-3 text-sm leading-6 text-gray-600 dark:text-gray-300">Manage your Openprovider account, request access for API clients and review your approved IP addresses.</p>
+    <div class="mt-7 grid min-w-0 grid-cols-1 gap-4 sm:grid-cols-3">
+      <a class="opg-stat-card" href="/account/clients"><span class="opg-muted block">API clients</span><span class="mt-3 block text-3xl font-semibold tabular-nums">{{ overview.clients|length }}</span></a>
+      <a class="opg-stat-card" href="/account/keys"><span class="opg-muted block">API keys</span><span class="mt-3 block text-3xl font-semibold tabular-nums">{{ overview.credentials|length }}</span></a>
+      <a class="opg-stat-card" href="/account/ips"><span class="opg-muted block">IP entries</span><span class="mt-3 block text-3xl font-semibold tabular-nums">{{ overview.ips|length }}</span></a>
+    </div>
+  </div>
+</section>

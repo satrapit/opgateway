@@ -22,11 +22,16 @@ final class AccountIntegrationMarkupTest extends TestCase
         $html = AccountViews::dashboard(str_repeat('a', 64), $data, true, true, [
             'configured' => true, 'username' => 'api@example.test',
         ]);
-        self::assertStringContainsString('action="/account/provider/save"', $html);
-        self::assertStringContainsString('action="/account/clients/create"', $html);
-        self::assertStringContainsString('action="/account/ips/request"', $html);
-        self::assertStringContainsString('name="current_password"', $html);
-        self::assertStringContainsString('value="api@example.test"', $html);
+        $provider = AccountViews::dashboard(str_repeat('a', 64), $data, true, true, [
+            'configured' => true, 'username' => 'api@example.test',
+        ], 'provider');
+        $clients = AccountViews::dashboard(str_repeat('a', 64), $data, true, true, [], 'clients');
+        $ips = AccountViews::dashboard(str_repeat('a', 64), $data, true, true, [], 'ips');
+        self::assertStringContainsString('action="/account/provider/save"', $provider);
+        self::assertStringContainsString('action="/account/clients/create"', $clients);
+        self::assertStringContainsString('action="/account/ips/request"', $ips);
+        self::assertStringContainsString('name="current_password"', $provider);
+        self::assertStringContainsString('value="api@example.test"', $provider);
         self::assertStringNotContainsString('upstream_token', $html);
         self::assertStringNotContainsString('password_cipher', $html);
         self::assertStringNotContainsString('name="password" value=', $html);

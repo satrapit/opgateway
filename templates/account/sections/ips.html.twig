@@ -1,0 +1,40 @@
+<section id="ips" class="mb-7 opg-panel" aria-labelledby="ips-title">
+  <div class="opg-panel-header">
+    <div>
+      <h2 id="ips-title" class="opg-section-title">Allowed source IPs</h2>
+      <p class="opg-section-subtitle">Only exact IPs approved for an active client may access the API.</p>
+    </div>
+    <span class="opg-count">{{ overview.ips|length }} IP entries</span>
+  </div>
+  {% if overview.ips is empty %}
+    <p class="opg-empty">No IP requests yet.</p>
+  {% else %}
+    <div class="grid min-w-0 gap-3 p-4 sm:grid-cols-2 sm:p-6">
+      {% for ip in overview.ips %}
+      <div class="opg-record-card flex min-w-0 flex-wrap items-center justify-between gap-3">
+        <div class="min-w-0">
+          <p class="opg-record-title break-all">{{ ip.address }}</p>
+          <p class="opg-muted mt-1">Client #{{ ip.client_id }}</p>
+        </div>
+        <span class="opg-badge {{ ip.enabled ? 'opg-badge-green' : 'opg-badge-amber' }}">{{ ip.enabled ? 'Approved' : 'Pending' }}</span>
+      </div>
+      {% endfor %}
+    </div>
+  {% endif %}
+  {% if integration_enabled and overview.clients is not empty %}
+    <div class="border-t border-gray-200 p-5 sm:p-6 dark:border-gray-800">
+      <h3 class="mb-3 text-sm font-semibold text-gray-900 dark:text-white">Request IP approval</h3>
+      <div class="grid min-w-0 gap-5 md:grid-cols-2">
+      {% for client in overview.clients %}
+        <form method="post" action="/account/ips/request" class="min-w-0 space-y-3">
+          <input type="hidden" name="_csrf" value="{{ csrf_token }}">
+          <input type="hidden" name="client_id" value="{{ client.id }}">
+          <label class="opg-label" for="requested-ip-{{ client.id }}">IP for client {{ client.label }} (#{{ client.id }})</label>
+          <input class="opg-input" id="requested-ip-{{ client.id }}" name="ip" maxlength="45" placeholder="203.0.113.42" required>
+          <button type="submit" class="opg-secondary-button w-full sm:w-auto">Request IP approval</button>
+        </form>
+      {% endfor %}
+      </div>
+    </div>
+  {% endif %}
+</section>

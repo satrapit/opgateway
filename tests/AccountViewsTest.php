@@ -33,25 +33,26 @@ final class AccountViewsTest extends TestCase
 
     public function testOnlyOwnerMetadataIsRenderedWhenKeysAreDisabled(): void
     {
-        $html = AccountViews::dashboard(self::TOKEN, $this->overview(), false);
+        $html = AccountViews::dashboard(self::TOKEN, $this->overview(), false, false, [], 'clients');
         self::assertStringContainsString('&lt;owner@example.com&gt;', $html);
         self::assertStringContainsString('&lt;img src=x onerror=alert(1)&gt;', $html);
         self::assertStringNotContainsString('<img src=x onerror=alert(1)>', $html);
-        self::assertStringContainsString('opg_0123456789abcdef', $html);
-        self::assertStringContainsString('2001:db8::25', $html);
+        self::assertStringContainsString('href="/account/keys"', $html);
+        self::assertStringContainsString('href="/account/ips"', $html);
         self::assertStringNotContainsString('action="/account/keys/issue"', $html);
         self::assertStringNotContainsString('action="/account/keys/revoke"', $html);
     }
 
     public function testOnlyActiveClientsCanIssueAndOnlyNonRevokedKeysCanBeRevoked(): void
     {
-        $html = AccountViews::dashboard(self::TOKEN, $this->overview(), true);
+        $html = AccountViews::dashboard(self::TOKEN, $this->overview(), true, false, [], 'clients');
         self::assertSame(1, substr_count($html, 'action="/account/keys/issue"'));
-        self::assertSame(1, substr_count($html, 'action="/account/keys/revoke"'));
+        $keys = AccountViews::dashboard(self::TOKEN, $this->overview(), true, false, [], 'keys');
+        self::assertSame(1, substr_count($keys, 'action="/account/keys/revoke"'));
         self::assertStringContainsString('name="password"', $html);
         self::assertStringContainsString('name="client_id" value="13"', $html);
-        self::assertStringContainsString('name="credential_id" value="9"', $html);
-        self::assertStringNotContainsString('name="credential_id" value="10"', $html);
+        self::assertStringContainsString('name="credential_id" value="9"', $keys);
+        self::assertStringNotContainsString('name="credential_id" value="10"', $keys);
     }
 
     public function testIssuedBearerAppearsOnlyInOneTimePageNotUrl(): void

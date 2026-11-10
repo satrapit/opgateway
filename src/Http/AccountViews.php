@@ -92,16 +92,26 @@ final class AccountViews
      */
     public static function dashboard(
         string $csrfToken, array $overview, bool $keysEnabled,
-        bool $integrationEnabled = false, array $provider = [],
+        bool $integrationEnabled = false, array $provider = [], string $section = 'overview',
     ): string {
         self::validateCsrf($csrfToken);
+        $sections = [
+            'overview' => 'Overview',
+            'provider' => 'Openprovider account',
+            'clients' => 'API clients',
+            'keys' => 'API keys',
+            'ips' => 'Allowed IPs',
+        ];
+        if (!isset($sections[$section])) {
+            throw new InvalidArgumentException('Unknown account section.');
+        }
         return self::render('account/dashboard.html.twig', [
-            'section_title' => 'Account overview',
-            'active_section' => 'overview',
+            'section_title' => $sections[$section],
+            'active_section' => $section,
             'csrf_token' => $csrfToken,
             'workspace_home' => '/account',
             'workspace_name' => 'Account',
-            'workspace_footer' => 'OPGateway · Your secure API workspace',
+            'workspace_footer' => 'OPGateway · Account',
             'logout_path' => '/account/logout',
             'user_label' => $overview['email'],
             'overview' => $overview,

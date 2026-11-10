@@ -1,0 +1,30 @@
+{% if integration_enabled %}
+<section id="provider" class="mb-7 opg-panel p-6 sm:p-8" aria-labelledby="provider-title">
+  <div class="mb-6 flex min-w-0 flex-wrap items-start justify-between gap-3">
+    <div>
+      <p class="mb-1 text-sm font-semibold text-brand-600 dark:text-brand-300">Provider integration</p>
+      <h2 id="provider-title" class="opg-section-title">Openprovider account</h2>
+      <p class="opg-section-subtitle">Your reseller password is encrypted at rest and never displayed again.</p>
+    </div>
+    <span class="opg-badge {{ provider.configured|default(false) ? 'opg-badge-green' : 'opg-badge-amber' }}">{{ provider.configured|default(false) ? 'Configured' : 'Not configured' }}</span>
+  </div>
+  <form method="post" action="/account/provider/save" class="grid min-w-0 gap-5 sm:grid-cols-2" autocomplete="off">
+    <input type="hidden" name="_csrf" value="{{ csrf_token }}">
+    <div>
+      <label class="opg-label" for="provider-username">Openprovider API username</label>
+      <input class="opg-input" id="provider-username" name="username" value="{{ provider.username|default('') }}" maxlength="254" autocomplete="off" required>
+    </div>
+    <div>
+      <label class="opg-label" for="provider-password">Openprovider API password</label>
+      <input class="opg-input" id="provider-password" name="password" type="password" maxlength="1024" autocomplete="new-password" required>
+    </div>
+    <div class="sm:col-span-2">
+      <label class="opg-label" for="provider-confirm-password">Confirm your gateway account password</label>
+      <input class="opg-input" id="provider-confirm-password" name="current_password" type="password" maxlength="1024" autocomplete="current-password" required>
+    </div>
+    <div class="sm:col-span-2">
+      <button class="opg-primary-button w-full sm:w-auto" type="submit">Save encrypted credentials</button>
+    </div>
+  </form>
+</section>
+{% endif %}

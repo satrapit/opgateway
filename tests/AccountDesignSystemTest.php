@@ -45,12 +45,16 @@ final class AccountDesignSystemTest extends TestCase
         self::assertStringContainsString('opg-sidebar-header flex h-20', $html);
         self::assertStringContainsString('opg-main-header sticky top-0 z-20 flex h-20', $html);
         self::assertStringContainsString('aria-label="Account sections"', $html);
-        self::assertStringContainsString('href="/account#clients"', $html);
-        self::assertStringContainsString('href="/account#provider"', $html);
+        self::assertStringContainsString('href="/account/clients"', $html);
+        self::assertStringContainsString('href="/account/provider"', $html);
         self::assertStringContainsString('action="/account/logout"', $html);
-        self::assertStringContainsString('action="/account/keys/issue"', $html);
-        self::assertStringContainsString('action="/account/provider/save"', $html);
-        self::assertStringContainsString('&lt;img src=x onerror=alert(1)&gt;', $html);
+        $clientsPage = AccountViews::dashboard(self::CSRF, $overview, true, true, [], 'clients');
+        self::assertStringContainsString('action="/account/keys/issue"', $clientsPage);
+        $providerPage = AccountViews::dashboard(self::CSRF, $overview, true, true, [
+            'configured' => true, 'username' => '"><script>alert(1)</script>',
+        ], 'provider');
+        self::assertStringContainsString('action="/account/provider/save"', $providerPage);
+        self::assertStringContainsString('&lt;img src=x onerror=alert(1)&gt;', $clientsPage);
         self::assertStringContainsString('&lt;script&gt;alert(1)&lt;/script&gt;', $html);
         self::assertStringNotContainsString('<script>alert(1)</script>', $html);
         self::assertStringNotContainsString('password_cipher', $html);

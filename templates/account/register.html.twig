@@ -11,7 +11,11 @@
       <input class="opg-input" id="registration-password" name="password" type="password" minlength="12" maxlength="1024" autocomplete="new-password" required>
       <p class="opg-muted mt-2">Use a password with at least 12 characters.</p>
     </div>
-    <button type="submit" class="opg-primary-button w-full">Register and send verification email</button>
+    <div>
+      <label class="opg-label" for="registration-password-confirm">Confirm password</label>
+      <input class="opg-input" id="registration-password-confirm" name="password_confirmation" type="password" minlength="12" maxlength="1024" autocomplete="new-password" required>
+    </div>
+    <button type="submit" class="opg-primary-button w-full">Create account</button>
   </form>
   <section class="mt-8 border-t border-gray-200 pt-7 dark:border-gray-800" aria-labelledby="resend-title">
     <h2 id="resend-title" class="opg-section-title mb-2">Resend verification email</h2>
