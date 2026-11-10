@@ -47,7 +47,7 @@ final class AdminResponsiveMarkupTest extends TestCase
             self::assertSame(1, substr_count($html, 'role="listitem"'), $section);
             self::assertSame(2, substr_count($html, 'data-opg-record-details'), $section);
             self::assertSame(2, substr_count($html, 'data-opg-row-menu'), $section);
-            self::assertSame(2, substr_count($html, 'data-lucide="ellipsis-vertical"'), $section);
+            self::assertSame(2, substr_count($html, '#opg-icon-ellipsis-vertical'), $section);
             self::assertSame(2, substr_count($html, 'data-tooltip="More options"'), $section);
             self::assertStringContainsString('title="More options for ', $html);
             self::assertStringContainsString('id="opg-record-dialog"', $html);
@@ -141,11 +141,11 @@ final class AdminResponsiveMarkupTest extends TestCase
     {
         $view = new TwigAdminPageRenderer(new TwigRenderer(dirname(__DIR__) . '/templates'));
         $html = $view->login(self::CSRF);
-        self::assertStringContainsString('data-lucide="sun"', $html);
-        self::assertStringContainsString('data-lucide="moon"', $html);
-        self::assertStringContainsString('data-lucide="monitor"', $html);
-        self::assertStringContainsString('src="/assets/admin/app.js"', $html);
-        self::assertStringContainsString('href="/assets/admin/app.css"', $html);
+        self::assertStringContainsString('#opg-icon-sun', $html);
+        self::assertStringContainsString('#opg-icon-moon', $html);
+        self::assertStringContainsString('#opg-icon-monitor', $html);
+        self::assertMatchesRegularExpression('~src="/assets/admin/app\\.js\\?v=[0-9a-f]{16}"~', $html);
+        self::assertMatchesRegularExpression('~href="/assets/admin/app\\.css\\?v=[0-9a-f]{16}"~', $html);
         self::assertStringNotContainsString('https://cdn.', $html);
     }
 }

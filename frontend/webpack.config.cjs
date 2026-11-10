@@ -24,7 +24,11 @@ module.exports = {
   plugins: [
     new MiniCssExtractPlugin({ filename: 'app.css' }),
     new CopyWebpackPlugin({
-      patterns: [{ from: path.resolve(__dirname, 'src/js/theme-init.js'), to: 'theme-init.js' }],
+      patterns: [
+        { from: path.resolve(__dirname, 'src/js/theme-init.js'), to: 'theme-init.js' },
+        { from: path.resolve(__dirname, 'src/icons.svg'), to: 'icons.svg' },
+        { from: path.resolve(__dirname, 'src/cache.htaccess'), to: '.htaccess' },
+      ],
     }),
   ],
   optimization: {

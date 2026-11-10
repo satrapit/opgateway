@@ -6,7 +6,7 @@
  * to form action, method, field names, CSRF or existing server redirects.
  * Record content is cloned from Twig-escaped DOM; never use innerHTML.
  */
-export function initializeAdminDialogs(renderLocalIcons = () => {}) {
+export function initializeAdminDialogs() {
   const recordDialog = document.getElementById('opg-record-dialog');
   const provisionDialog = document.getElementById('opg-provision-dialog');
   const confirmDialog = document.getElementById('opg-confirm-dialog');
@@ -95,11 +95,11 @@ export function initializeAdminDialogs(renderLocalIcons = () => {}) {
     const trigger = document.createElement('button');
     trigger.type = 'button';
     trigger.className = 'opg-secondary-button opg-modal-launcher';
-    const icon = document.createElement('i');
-    icon.dataset.lucide = 'plus';
-    icon.className = 'opg-icon';
-    icon.setAttribute('aria-hidden', 'true');
-    trigger.append(icon, document.createTextNode(submitButton.textContent.trim()));
+    // Reuse a real SVG glyph already present in the server-rendered form.
+    // This never requires runtime icon conversion after the dialog opens.
+    const icon = submitButton.querySelector('svg');
+    if (icon) trigger.append(icon.cloneNode(true));
+    trigger.append(document.createTextNode(submitButton.textContent.trim()));
     trigger.setAttribute('aria-label', form.dataset.opgDialogTitle || 'Open request form');
     trigger.addEventListener('click', () => {
       provisionActivator = trigger;
@@ -118,9 +118,6 @@ export function initializeAdminDialogs(renderLocalIcons = () => {}) {
       form.querySelector('label')?.classList.remove('opg-sr-only');
       document.getElementById('opg-provision-dialog-body').replaceChildren(form);
       provisionDialog.showModal();
-      // The original form was detached during the initial icon pass. Render
-      // its local Lucide markup only after reattaching it to the dialog.
-      renderLocalIcons();
       input.focus();
     });
     form.replaceWith(trigger);

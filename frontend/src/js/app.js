@@ -2,15 +2,12 @@ import '../css/app.css';
 import Alpine from '@alpinejs/csp';
 import { initializeAdminDialogs } from './admin-dialogs.js';
 import { initializeRowMenus } from './row-menus.js';
-import {
-  createIcons, Menu, X, Sun, Moon, Monitor, LayoutDashboard, UserCheck,
-  Users, Server, Clock, ShieldCheck, ShieldX, ArrowUpRight, LogOut,
-  Plus, Check, Ban, Eye, ShieldAlert, EllipsisVertical,
-} from 'lucide';
+
 
 /**
  * CSP-compatible TailAdmin Free operator interactions.
- * Lucide icons are bundled into app.js; no runtime CDN, font or fetch.
+ * Icons render directly from the preloaded, cached SVG sprite, without a
+ * JavaScript-generated placeholder swap or remote runtime dependency.
  */
 Alpine.data('adminShell', () => ({
   sidebarOpen: false,
@@ -99,16 +96,7 @@ Alpine.data('adminShell', () => ({
   },
 }));
 
-const renderLocalIcons = () => createIcons({
-  icons: {
-    Menu, X, Sun, Moon, Monitor, LayoutDashboard, UserCheck, Users, Server,
-    Clock, ShieldCheck, ShieldX, ArrowUpRight, LogOut, Plus, Check, Ban,
-    Eye, ShieldAlert, EllipsisVertical,
-  },
-  attrs: { 'stroke-width': 1.85 },
-});
-
+// Server-rendered SVG <use> icons are visible before this script runs.
 Alpine.start();
 initializeRowMenus();
-initializeAdminDialogs(renderLocalIcons);
-renderLocalIcons();
+initializeAdminDialogs();

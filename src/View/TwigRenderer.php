@@ -44,6 +44,39 @@ final class TwigRenderer
                 'debug' => false,
             ],
         );
+
+        // Content hashes are derived only from fixed, checked-in public
+        // artifacts in the private checkout, never from request input.
+        // HTML remains no-store; URLs uniquely identify the current build.
+        $this->engine->addGlobal('admin_assets', self::adminAssetUrls());
+    }
+
+    /**
+     * Static URLs are cacheable; authenticated HTML and API responses are not.
+     * Keep URL versions deterministic across requests and deployments.
+     *
+     * @return array{app_css:string,app_js:string,theme_init:string,icons:string}
+     */
+    private static function adminAssetUrls(): array
+    {
+        $root = dirname(__DIR__, 2) . '/public/assets/admin/';
+        $names = [
+            'app_css' => 'app.css',
+            'app_js' => 'app.js',
+            'theme_init' => 'theme-init.js',
+            'icons' => 'icons.svg',
+        ];
+        $urls = [];
+        foreach ($names as $key => $filename) {
+            $path = $root . $filename;
+            // Missing files are checked by the production feature gate;
+            // the renderer remains constructible for isolated tests.
+            $hash = is_file($path) && !is_link($path) ? hash_file('sha256', $path) : false;
+            $urls[$key] = '/assets/admin/' . $filename
+                . (is_string($hash) ? '?v=' . substr($hash, 0, 16) : '');
+        }
+
+        return $urls;
     }
 
     /** @param array<string,mixed> $data */

@@ -14,9 +14,13 @@ deployment:
     - /bin/test -s public/assets/admin/app.css
     - /bin/test -s public/assets/admin/app.js
     - /bin/test -s public/assets/admin/theme-init.js
+    - /bin/test -s public/assets/admin/icons.svg
+    - /bin/test -s public/assets/admin/.htaccess
     - /bin/test ! -L public/assets/admin/app.css
     - /bin/test ! -L public/assets/admin/app.js
     - /bin/test ! -L public/assets/admin/theme-init.js
+    - /bin/test ! -L public/assets/admin/icons.svg
+    - /bin/test ! -L public/assets/admin/.htaccess
     - /bin/test ! -L "$DEPLOYPATH/assets"
     - /bin/mkdir -p "$DEPLOYPATH/assets"
     - /bin/test ! -L "$DEPLOYPATH/assets/admin"
@@ -24,7 +28,11 @@ deployment:
     - /bin/test ! -L "$DEPLOYPATH/assets/admin/app.css"
     - /bin/test ! -L "$DEPLOYPATH/assets/admin/app.js"
     - /bin/test ! -L "$DEPLOYPATH/assets/admin/theme-init.js"
+    - /bin/test ! -L "$DEPLOYPATH/assets/admin/icons.svg"
+    - /bin/test ! -L "$DEPLOYPATH/assets/admin/.htaccess"
     - /bin/cp -f public/assets/admin/app.css "$DEPLOYPATH/assets/admin/app.css"
     - /bin/cp -f public/assets/admin/app.js "$DEPLOYPATH/assets/admin/app.js"
     - /bin/cp -f public/assets/admin/theme-init.js "$DEPLOYPATH/assets/admin/theme-init.js"
+    - /bin/cp -f public/assets/admin/icons.svg "$DEPLOYPATH/assets/admin/icons.svg"
+    - /bin/cp -f public/assets/admin/.htaccess "$DEPLOYPATH/assets/admin/.htaccess"
     - /bin/cp -f public/index.php "$DEPLOYPATH/index.php"

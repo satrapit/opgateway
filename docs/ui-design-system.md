@@ -89,3 +89,19 @@ within the dialog never dismisses it. Escape/Cancel restore focus.
 An authorized successful action uses a fixed server-owned PRG route
 belonging to that action rather than always showing Overview. Existing
 form semantics, security gates and error statuses remain unchanged.
+
+## Scrollable navigation and first-paint icons (November 2026)
+
+The 80px Sidebar logo header stays fixed. A separate `flex: 1; min-height:
+0; overflow-y: auto` region contains every navigation link **and** the
+Sidebar footer. It supports keyboard navigation, trackpad, touch scrolling,
+short viewport heights and independent scrolling from the main content.
+
+All Lucide glyphs are now rendered in Twig as SVG references to a small,
+locally hosted versioned `icons.svg` symbol sprite. This avoids JS-based
+placeholder conversion on every server-side page transition. CSS supplies
+`stroke: currentColor` and the icon sprite is preloaded in the document
+head. No webfont file is bundled: the immediate system font stack is used,
+so preloading a fictional Outfit font would be incorrect. The sprite,
+application script, stylesheet and theme initialization are cacheable, with
+versions based on their content SHA-256; protected HTML stays no-store.
