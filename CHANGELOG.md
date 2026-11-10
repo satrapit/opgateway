@@ -1,5 +1,16 @@
 # Changelog
 
+## Unreleased — Public landing and browser route normalization (2026-11-11)
+
+- Redirect GET `/` to `/account` (HTTP 303), retaining account login and
+  approval checks. Root remains unavailable for mutating methods.
+- Normalize trailing slashes on explicitly supported GET Admin and Account
+  pages without changing POST routes, unknown URLs or query parameters.
+- Add regression coverage for every Account sidebar page after owner sign-in,
+  both root redirect and route normalization; browser testing is still required.
+- No schema migrations or frontend asset changes.
+
+
 ## Unreleased — Shared submit progress indicators (2026-11-11)
 
 - Show an inline CSS spinner on the submitted button across Account and Admin,

@@ -123,6 +123,50 @@ final class AccountBrowserAdapterTest extends TestCase
 
     #[RunInSeparateProcess]
     #[PreserveGlobalState(false)]
+    public function testEveryAccountSidebarPageRendersForAnEligibleSignedInOwner(): void
+    {
+        $session = new BrowserSession();
+        $session->start(true);
+        $session->authenticate(17);
+
+        $accounts = $this->createStub(LoginAccountRepository::class);
+        $accounts->method('isEligible')->willReturn(true);
+        $login = new GuardedLoginService(
+            new LoginAuthenticator($accounts, new PasswordHasher()),
+            $this->createStub(LoginAttemptLimiter::class),
+            $this->createStub(SecurityEventRecorder::class),
+        );
+        $overview = $this->createStub(OwnerOverviewProvider::class);
+        $overview->method('forUser')->willReturn([
+            'email' => 'owner@example.test',
+            'clients' => [],
+            'credentials' => [],
+            'ips' => [],
+        ]);
+        $adapter = new AccountBrowserAdapter($session, $login, $accounts, $overview);
+
+        $pages = [
+            '/account' => 'Overview',
+            '/account/provider' => 'Openprovider account',
+            '/account/clients' => 'API clients',
+            '/account/keys' => 'API keys',
+            '/account/ips' => 'Allowed IPs',
+        ];
+        foreach ($pages as $path => $title) {
+            $response = $adapter->dispatch(
+                'GET', $path, true, null,
+                '192.0.2.7', str_repeat('b', 32), null,
+            );
+            self::assertSame(200, $response['status'], $path);
+            self::assertSame('text/html; charset=utf-8', $response['content_type']);
+            self::assertStringContainsString('<title>' . $title . ' | OPGateway</title>', $response['body']);
+            self::assertStringContainsString('aria-label="Account sections"', $response['body']);
+        }
+        self::assertTrue(session_destroy());
+    }
+
+    #[RunInSeparateProcess]
+    #[PreserveGlobalState(false)]
     public function testCredentialRoutesAreDisabledUnlessExplicitlyConfigured(): void
     {
         $session = new BrowserSession();

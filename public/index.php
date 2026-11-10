@@ -7,6 +7,7 @@ use OPGateway\Http\AdministrativeWebEntry;
 use OPGateway\Http\AccountWebEntry;
 use OPGateway\Http\FoundationApplication;
 use OPGateway\Http\GatewayHttpEntry;
+use OPGateway\Http\BrowserGetPath;
 use OPGateway\Observability\DiagnosticLog;
 
 /**
@@ -30,6 +31,9 @@ try {
     $config = Environment::load($applicationRoot . '/.env');
     $method = $_SERVER['REQUEST_METHOD'] ?? 'GET';
     $path = parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH) ?: '/';
+    // Accept a terminal slash on supported GET browser pages without
+    // changing POST endpoints or losing the query string for reset links.
+    $path = BrowserGetPath::normalize($method, $path);
 
     if ($path === '/admin' || str_starts_with($path, '/admin/')) {
         $response = (new AdministrativeWebEntry($config))->handle($method, $path, $_SERVER);
@@ -44,6 +48,9 @@ try {
             'content_type' => 'application/json; charset=utf-8',
             'body' => json_encode($result['body'], JSON_THROW_ON_ERROR | JSON_UNESCAPED_SLASHES),
         ];
+        if (isset($result['location'])) {
+            $response['location'] = $result['location'];
+        }
     }
 } catch (Throwable $exception) {
     if (class_exists(DiagnosticLog::class)) {

@@ -15,6 +15,16 @@ final class FoundationApplicationTest extends TestCase
             (new FoundationApplication())->handle('GET', '/health'));
     }
 
+    public function testSiteRootRedirectsToTheAccountAreaOnlyForGet(): void
+    {
+        self::assertSame(
+            ['status' => 303, 'body' => [], 'location' => '/account'],
+            (new FoundationApplication())->handle('GET', '/'),
+        );
+        // Do not silently redirect or alter HTTP methods or POST payloads.
+        self::assertSame(404, (new FoundationApplication())->handle('POST', '/')['status']);
+    }
+
     public function testGatewayRoutesAreNotShadowedByASecondFoundationRouter(): void
     {
         self::assertSame(404, (new FoundationApplication())->handle('GET', '/v1/domains')['status']);
