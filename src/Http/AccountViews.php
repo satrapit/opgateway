@@ -39,7 +39,7 @@ HTML;
         return self::page('Account sign in', $body);
     }
 
-    /** Public signup is opt-in. No account-enumerating messages. */
+    /** Public signup requires configured SMTP. No account-enumerating messages. */
     public static function register(string $csrfToken): string
     {
         $csrf = self::csrf($csrfToken);

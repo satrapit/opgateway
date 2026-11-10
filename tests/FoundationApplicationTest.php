@@ -11,22 +11,22 @@ final class FoundationApplicationTest extends TestCase
 {
     public function testHealthHasNoSensitiveDetails(): void
     {
-        self::assertSame(['status' => 200, 'body' => ['status' => 'ok']], (new FoundationApplication([]))->handle('GET', '/health', '127.0.0.1'));
+        self::assertSame(['status' => 200, 'body' => ['status' => 'ok']],
+            (new FoundationApplication())->handle('GET', '/health'));
     }
 
-    public function testProxyIsUnavailableByDefault(): void
+    public function testGatewayRoutesAreNotShadowedByASecondFoundationRouter(): void
     {
-        self::assertSame(503, (new FoundationApplication(['GATEWAY_PROXY_ENABLED' => 'true']))->handle('POST', '/v1/domains', '127.0.0.1')['status']);
+        self::assertSame(404, (new FoundationApplication())->handle('GET', '/v1/domains')['status']);
     }
 
     public function testOldDatabaseDiagnosticRouteIsNotExposed(): void
     {
-        $result = (new FoundationApplication([]))->handle('GET', '/db-connection-test.php', '127.0.0.1');
-        self::assertSame(404, $result['status']);
+        self::assertSame(404, (new FoundationApplication())->handle('GET', '/db-connection-test.php')['status']);
     }
 
     public function testUnknownRoutesAreNotExposed(): void
     {
-        self::assertSame(404, (new FoundationApplication([]))->handle('GET', '/admin', '127.0.0.1')['status']);
+        self::assertSame(404, (new FoundationApplication())->handle('GET', '/other')['status']);
     }
 }

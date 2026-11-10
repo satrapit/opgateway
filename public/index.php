@@ -38,9 +38,7 @@ try {
     } elseif ($path === '/v1' || str_starts_with($path, '/v1/')) {
         $response = (new GatewayHttpEntry($config))->handle($method, $path, $_SERVER, $requestId);
     } else {
-        $result = (new FoundationApplication($config))->handle(
-            $method, $path, $_SERVER['REMOTE_ADDR'] ?? '',
-        );
+        $result = (new FoundationApplication())->handle($method, $path);
         $response = [
             'status' => $result['status'],
             'content_type' => 'application/json; charset=utf-8',

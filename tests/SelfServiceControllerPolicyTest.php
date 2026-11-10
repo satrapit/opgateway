@@ -16,7 +16,7 @@ final class SelfServiceControllerPolicyTest extends TestCase
 {
     #[RunInSeparateProcess]
     #[PreserveGlobalState(false)]
-    public function testNewRoutesFailClosedWhenTheirFeatureIsOff(): void
+    public function testOptionalDependenciesFailClosedWhenNotConfigured(): void
     {
         $session = new BrowserSession();
         $session->start(true);

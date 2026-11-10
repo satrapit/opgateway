@@ -5,24 +5,16 @@ declare(strict_types=1);
 namespace OPGateway\Http;
 
 /**
- * Fail-closed HTTP foundation; no upstream calls are permitted in this phase.
- * The health endpoint discloses no deployment, database or upstream details.
+ * Only the public health probe and unknown-route response.
+ * Admin, owner and gateway requests have their own actual handlers.
  */
-final readonly class FoundationApplication
+final class FoundationApplication
 {
-    /** @param array<string, string> $config */
-    public function __construct(private array $config)
-    {
-    }
-
     /** @return array{status:int,body:array<string,string>} */
-    public function handle(string $method, string $path, string $remoteAddress): array
+    public function handle(string $method, string $path): array
     {
         if ($method === 'GET' && $path === '/health') {
             return ['status' => 200, 'body' => ['status' => 'ok']];
-        }
-        if (str_starts_with($path, '/v1/') || $path === '/v1') {
-            return ['status' => 503, 'body' => ['error' => 'gateway_not_configured']];
         }
         return ['status' => 404, 'body' => ['error' => 'not_found']];
     }

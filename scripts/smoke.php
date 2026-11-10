@@ -4,16 +4,22 @@ declare(strict_types=1);
 
 require dirname(__DIR__) . '/src/autoload.php';
 
-use OPGateway\Config\Environment;
 use OPGateway\Http\FoundationApplication;
+use OPGateway\Http\GatewayHttpEntry;
 use OPGateway\Security\IpAddress;
 use OPGateway\Logging\SafeRequestMetadata;
 
+$gateway = new GatewayHttpEntry([]);
+$trusted = [
+    'HTTPS' => 'on',
+    'SERVER_NAME' => 'gateway.example.test',
+    'HTTP_HOST' => 'gateway.example.test',
+];
 $cases = [
-    'health response' => (new FoundationApplication([]))->handle('GET', '/health', '127.0.0.1') === ['status' => 200, 'body' => ['status' => 'ok']],
-    'upstream blocked by default' => (new FoundationApplication([]))->handle('GET', '/v1/domains', '127.0.0.1')['status'] === 503,
-    'upstream blocked even with flag enabled' => (new FoundationApplication(['GATEWAY_PROXY_ENABLED'=>'true']))->handle('POST', '/v1/domains', '127.0.0.1')['status'] === 503,
-    'unknown routes rejected' => (new FoundationApplication([]))->handle('GET', '/admin', '127.0.0.1')['status'] === 404,
+    'health response' => (new FoundationApplication())->handle('GET', '/health') === ['status' => 200, 'body' => ['status' => 'ok']],
+    'gateway requires bearer' => $gateway->handle('GET', '/v1/domains', $trusted)['status'] === 401,
+    'unreviewed paid writes unavailable' => $gateway->handle('POST', '/v1/domains', $trusted)['status'] === 404,
+    'unknown routes rejected' => (new FoundationApplication())->handle('GET', '/unknown')['status'] === 404,
     'IPv4 allow' => IpAddress::allowed('192.0.2.7', ['192.0.2.7']),
     'IPv4 deny' => !IpAddress::allowed('192.0.2.8', ['192.0.2.7']),
     'IPv6 allow' => IpAddress::allowed('2001:db8::1', ['2001:0db8::1']),
