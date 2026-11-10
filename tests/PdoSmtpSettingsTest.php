@@ -39,7 +39,7 @@ final class PdoSmtpSettingsTest extends TestCase
                 );
                 return true;
             }))->willReturn(true);
-        $pdo = $this->createMock(PDO::class);
+        $pdo = $this->createStub(PDO::class);
         $pdo->method('prepare')->willReturnCallback(
             static function (string $sql) use ($read, $write): PDOStatement {
                 if (str_starts_with($sql, 'SELECT setting_key')) {
