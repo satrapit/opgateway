@@ -854,6 +854,13 @@
   button:not(:disabled) {
     cursor: pointer;
   }
+  form[data-opg-submitting="true"] :is(
+    button[type="submit"], button:not([type]), input[type="submit"], input[type="image"]
+  ) {
+    cursor: progress;
+    opacity: .65;
+    pointer-events: none;
+  }
   :focus-visible {
     outline: 3px solid var(--color-brand-500);
     outline-offset: 2px;
