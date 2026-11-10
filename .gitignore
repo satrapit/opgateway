@@ -1,7 +1,6 @@
 /.env
 /.env.*
 !/.env.example
-/vendor/
 /.phpunit.cache/
 /.phpunit.result.cache
 /coverage/
