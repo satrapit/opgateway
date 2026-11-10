@@ -10,28 +10,30 @@
         <span class="text-xl tracking-tight">OPGateway</span>
       </a>
       <button type="button" class="opg-icon-button lg:hidden" x-on:click="closeSidebar" aria-label="Close navigation">
-        <i data-lucide="x" class="opg-icon" aria-hidden="true"></i>
+        <svg viewBox="0 0 24 24" class="opg-icon" aria-hidden="true" focusable="false"><use href="{{ admin_assets.icons }}#opg-icon-x"></use></svg>
       </button>
     </div>
+    <div class="opg-sidebar-scroll min-h-0 flex-1 overflow-y-auto" role="region" aria-label="Sidebar navigation and information" tabindex="0">
     <nav class="space-y-1 px-4 py-6" aria-label="Administrator sections">
       <p class="px-3 pb-2 text-xs font-semibold uppercase tracking-widest text-gray-400">Workspace</p>
-      <a class="opg-nav-link" href="/admin"{% if active_section == 'overview' %} aria-current="page"{% endif %}><i data-lucide="layout-dashboard" class="opg-icon" aria-hidden="true"></i> Overview</a>
+      <a class="opg-nav-link" href="/admin"{% if active_section == 'overview' %} aria-current="page"{% endif %}><svg viewBox="0 0 24 24" class="opg-icon" aria-hidden="true" focusable="false"><use href="{{ admin_assets.icons }}#opg-icon-layout-dashboard"></use></svg> Overview</a>
       <p class="px-3 pb-2 pt-6 text-xs font-semibold uppercase tracking-widest text-gray-400">Account management</p>
-      <a class="opg-nav-link" href="/admin/users"{% if active_section == 'users' %} aria-current="page"{% endif %}><i data-lucide="user-check" class="opg-icon" aria-hidden="true"></i> User approvals</a>
-      <a class="opg-nav-link" href="/admin/owners"{% if active_section == 'owners' %} aria-current="page"{% endif %}><i data-lucide="users" class="opg-icon" aria-hidden="true"></i> Account owners</a>
+      <a class="opg-nav-link" href="/admin/users"{% if active_section == 'users' %} aria-current="page"{% endif %}><svg viewBox="0 0 24 24" class="opg-icon" aria-hidden="true" focusable="false"><use href="{{ admin_assets.icons }}#opg-icon-user-check"></use></svg> User approvals</a>
+      <a class="opg-nav-link" href="/admin/owners"{% if active_section == 'owners' %} aria-current="page"{% endif %}><svg viewBox="0 0 24 24" class="opg-icon" aria-hidden="true" focusable="false"><use href="{{ admin_assets.icons }}#opg-icon-users"></use></svg> Account owners</a>
       <p class="px-3 pb-2 pt-6 text-xs font-semibold uppercase tracking-widest text-gray-400">API access</p>
-      <a class="opg-nav-link" href="/admin/clients"{% if active_section == 'clients' %} aria-current="page"{% endif %}><i data-lucide="server" class="opg-icon" aria-hidden="true"></i> API clients</a>
-      <a class="opg-nav-link" href="/admin/ips/pending"{% if active_section == 'pending_ips' %} aria-current="page"{% endif %}><i data-lucide="clock" class="opg-icon" aria-hidden="true"></i> Pending IPs</a>
-      <a class="opg-nav-link" href="/admin/ips/approved"{% if active_section == 'approved_ips' %} aria-current="page"{% endif %}><i data-lucide="shield-check" class="opg-icon" aria-hidden="true"></i> Approved IPs</a>
+      <a class="opg-nav-link" href="/admin/clients"{% if active_section == 'clients' %} aria-current="page"{% endif %}><svg viewBox="0 0 24 24" class="opg-icon" aria-hidden="true" focusable="false"><use href="{{ admin_assets.icons }}#opg-icon-server"></use></svg> API clients</a>
+      <a class="opg-nav-link" href="/admin/ips/pending"{% if active_section == 'pending_ips' %} aria-current="page"{% endif %}><svg viewBox="0 0 24 24" class="opg-icon" aria-hidden="true" focusable="false"><use href="{{ admin_assets.icons }}#opg-icon-clock"></use></svg> Pending IPs</a>
+      <a class="opg-nav-link" href="/admin/ips/approved"{% if active_section == 'approved_ips' %} aria-current="page"{% endif %}><svg viewBox="0 0 24 24" class="opg-icon" aria-hidden="true" focusable="false"><use href="{{ admin_assets.icons }}#opg-icon-shield-check"></use></svg> Approved IPs</a>
     </nav>
-    <div class="mt-auto border-t border-gray-200 px-6 py-4 text-xs leading-5 text-gray-500 dark:border-gray-800 dark:text-gray-400">
+    <div class="border-t border-gray-200 px-6 py-4 text-xs leading-5 text-gray-500 dark:border-gray-800 dark:text-gray-400">
       Managed API access · Private operator area
     </div>
+  </div>
   </aside>
   <div class="min-w-0 flex-1 lg:ms-[18rem]">
     <header class="opg-main-header sticky top-0 z-20 flex h-20 shrink-0 items-center justify-between gap-4 border-b border-gray-200 bg-white/95 px-4 shadow-sm backdrop-blur sm:px-6 lg:px-8 dark:border-gray-800 dark:bg-gray-900/95">
       <div class="flex min-w-0 items-center gap-3">
-        <button type="button" class="opg-icon-button lg:hidden" x-on:click="openSidebar" x-bind:aria-expanded="sidebarOpen" aria-controls="admin-sidebar" aria-label="Open navigation"><i data-lucide="menu" class="opg-icon" aria-hidden="true"></i></button>
+        <button type="button" class="opg-icon-button lg:hidden" x-on:click="openSidebar" x-bind:aria-expanded="sidebarOpen" aria-controls="admin-sidebar" aria-label="Open navigation"><svg viewBox="0 0 24 24" class="opg-icon" aria-hidden="true" focusable="false"><use href="{{ admin_assets.icons }}#opg-icon-menu"></use></svg></button>
         <div class="min-w-0">
           <p class="hidden text-xs font-medium tracking-wide text-gray-500 sm:block dark:text-gray-400">OPGateway / Administration</p>
           <h1 class="truncate text-sm font-semibold text-gray-900 sm:text-lg dark:text-white">{{ section_title }}</h1>
@@ -39,15 +41,15 @@
       </div>
       <div class="flex items-center gap-2 sm:gap-3">
         <button type="button" class="opg-icon-button opg-theme-toggle" x-on:click="cycleTheme" x-bind:aria-label="themeControlLabel" x-bind:title="themeControlLabel" aria-label="Change color theme" title="Change color theme">
-          <i data-lucide="monitor" class="opg-icon opg-theme-icon" data-theme-icon="system" aria-hidden="true"></i>
-          <i data-lucide="sun" class="opg-icon opg-theme-icon" data-theme-icon="light" aria-hidden="true"></i>
-          <i data-lucide="moon" class="opg-icon opg-theme-icon" data-theme-icon="dark" aria-hidden="true"></i>
+          <svg viewBox="0 0 24 24" class="opg-icon opg-theme-icon" data-theme-icon="system" aria-hidden="true" focusable="false"><use href="{{ admin_assets.icons }}#opg-icon-monitor"></use></svg>
+          <svg viewBox="0 0 24 24" class="opg-icon opg-theme-icon" data-theme-icon="light" aria-hidden="true" focusable="false"><use href="{{ admin_assets.icons }}#opg-icon-sun"></use></svg>
+          <svg viewBox="0 0 24 24" class="opg-icon opg-theme-icon" data-theme-icon="dark" aria-hidden="true" focusable="false"><use href="{{ admin_assets.icons }}#opg-icon-moon"></use></svg>
           <span class="opg-sr-only" x-text="themeLabel">System</span>
         </button>
         <div class="hidden max-w-48 truncate text-sm font-medium text-gray-700 sm:block dark:text-gray-300">{{ administrator_label }}</div>
         <form method="post" action="/admin/logout">
           <input type="hidden" name="_csrf" value="{{ csrf_token }}">
-          <button type="submit" class="opg-icon-button" aria-label="Sign out" title="Sign out"><i data-lucide="log-out" class="opg-icon" aria-hidden="true"></i></button>
+          <button type="submit" class="opg-icon-button" aria-label="Sign out" title="Sign out"><svg viewBox="0 0 24 24" class="opg-icon" aria-hidden="true" focusable="false"><use href="{{ admin_assets.icons }}#opg-icon-log-out"></use></svg></button>
         </form>
       </div>
     </header>

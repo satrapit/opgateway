@@ -2,6 +2,12 @@
 
 ## [Unreleased]
 
+## [0.1.0-alpha.3] - 2026-11-10
+
+- Keep the Sidebar logo header fixed while making the navigation links and footer independently scrollable on short desktop and mobile viewports.
+- Replace JavaScript-inserted Lucide icons with first-paint SVG sprite references, preload the local sprite/script, and version all public admin assets by content hash. Use immediate system fonts without external font requests.
+- Add a subdirectory-only static asset cache policy (long-term immutable URLs) without changing the cPanel-managed root .htaccess or allowing authenticated pages to be cached. Add release/asset regression tests.
+
 - Align sidebar and content headers to 80px with matching border baselines; consolidate full-size row actions into accessible vertical-ellipsis menus on both mobile and desktop, preserving original strict form submissions.
 - Allow outside/backdrop dismissal of native dialogs without posting or discarding original server-side validation, and add subtle reduced-motion-aware 130–160ms animations.
 - Route successfully authorized Twig management POSTs back to their owning section through an explicit static action-to-path map (legacy POST redirect remains unchanged); add compact layout and routing tests.

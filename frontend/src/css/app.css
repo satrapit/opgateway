@@ -7,7 +7,7 @@
 @custom-variant dark (&:where(.dark, .dark *));
 
 @theme {
-  --font-outfit: Outfit, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --font-outfit: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   --color-brand-50: #ecf3ff;
   --color-brand-100: #dde9ff;
   --color-brand-200: #c2d6ff;
@@ -48,6 +48,15 @@
   .dark .opg-sidebar { border-inline-end-color: var(--color-gray-800); }
   [dir="rtl"] .opg-sidebar { transform: translateX(100%); }
   .opg-sidebar.is-open { transform: translateX(0); }
+  .opg-sidebar-scroll {
+    min-height: 0;
+    flex: 1 1 auto;
+    overflow-y: auto;
+    overflow-x: hidden;
+    overscroll-behavior-y: contain;
+    scrollbar-width: thin;
+    -webkit-overflow-scrolling: touch;
+  }
   .opg-backdrop { @apply fixed inset-0 z-40 bg-gray-950/55 lg:hidden; }
   .opg-backdrop[hidden] { display: none; }
   .opg-nav-link { @apply flex min-h-11 items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 hover:text-brand-600 dark:text-gray-300 dark:hover:bg-white/5 dark:hover:text-brand-300; }
@@ -81,7 +90,7 @@
   .opg-alert { @apply rounded-xl border border-gray-200 bg-white px-5 py-4 text-sm text-gray-700 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200; }
   .opg-alert-error { @apply border-red-200 bg-red-50 text-red-800 dark:border-red-900 dark:bg-red-950 dark:text-red-200; }
   .opg-provision-form { @apply flex min-w-0 flex-wrap items-center gap-2; }
-  .opg-icon { @apply inline-block size-5 shrink-0; vertical-align: middle; }
+  .opg-icon { @apply inline-block size-5 shrink-0; vertical-align: middle; fill: none; stroke: currentColor; stroke-width: 1.85; stroke-linecap: round; stroke-linejoin: round; }
   .opg-icon-button, .opg-primary-button, .opg-secondary-button, .opg-small-button, .opg-danger-button { gap: .5rem; }
   .opg-theme-toggle { @apply min-h-11 min-w-11 p-2; }
   .opg-record-grid { @apply grid min-w-0 grid-cols-1 gap-3 p-3 sm:p-4 md:grid-cols-2 xl:hidden; }

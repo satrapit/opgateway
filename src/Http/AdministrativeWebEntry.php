@@ -137,6 +137,8 @@ final readonly class AdministrativeWebEntry
                 'public/assets/admin/app.css',
                 'public/assets/admin/app.js',
                 'public/assets/admin/theme-init.js',
+                'public/assets/admin/icons.svg',
+                'public/assets/admin/.htaccess',
             ] as $relative) {
                 $file = $root . '/' . $relative;
                 if (!is_file($file) || is_link($file)) {

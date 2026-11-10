@@ -7,7 +7,7 @@
 - Secrets: private checkout `.env`, outside Document Root.
 - Diagnostics: private `storage/logs/opgateway.jsonl`, writable by PHP, never public.
 
-The staged `.cpanel.yml` **copies `public/index.php` and only three reviewed locally built assets** (`public/assets/admin/app.css`, `app.js`, `theme-init.js`). Missing/symlinked files cause deployment to fail. It checks the destination exists, `.htaccess` exists and the target index is not a symlink. It **does not delete or clean up any deployed files**. The cPanel-managed `.htaccess`, `php.ini` and `.user.ini` are not overwritten. Old standalone files, if any, must be audited and removed deliberately via File Manager, not by future deployment scripts.
+The staged `.cpanel.yml` **copies `public/index.php` and four reviewed locally built assets and one scoped cache policy** (`public/assets/admin/app.css`, `app.js`, `theme-init.js`, `icons.svg`) plus the owned `public/assets/admin/.htaccess`. Missing/symlinked files cause deployment to fail. It checks the destination exists, `.htaccess` exists and the target index is not a symlink. It **does not delete or clean up any deployed files**. The cPanel-managed `.htaccess`, `php.ini` and `.user.ini` are not overwritten. Old standalone files, if any, must be audited and removed deliberately via File Manager, not by future deployment scripts.
 
 ## Manual deployment
 
@@ -49,3 +49,31 @@ Canonical integration uses `AdminPageRenderer` / `TwigAdminPageRenderer`, `front
 From the consolidated branch, run Composer Twig resolution on a trusted Mac, commit the new `composer.lock`, then in `frontend/` run `npm install && npm run lint && npm run build`. Review and commit `frontend/package-lock.json` and exactly `public/assets/admin/{app.css,app.js,theme-init.js}`. The cPanel allowlist is fail-closed until these files exist. Transfer the compatible Composer `vendor/` separately into the **private** Git checkout; never put PHP vendor, source, templates, .env, or logs in Document Root. Do not run build, Composer, migrations, cron, or Node on cPanel.
 
 Keep `ADMIN_TWIG_UI_ENABLED=false` until compiled assets and Twig are deployed privately and all regression/security/mobile/theme/CSP checks pass. Only that independent flag activates the new view layer, without changing existing account or API flags. For rollback, set it false and use an approved manual deploy.
+
+## Static asset preloading, versioning and cache (admin UI)
+
+A local Lucide SVG symbol sprite is built from `frontend/src/icons.svg`
+to `public/assets/admin/icons.svg`, and every icon in Twig is an ordinary
+`<svg><use href="/assets/admin/icons.svg?v=...#opg-icon-*"></use></svg>`.
+The HTML renders icons without waiting for JavaScript, and the head preloads
+the same-origin sprite and the deferred application script. There is no
+external icon font, web font, runtime CDN, or additional font download.
+The system font stack paints immediately; do not invent an Outfit font URL.
+
+The private `TwigRenderer` provides content SHA-256 URL versions for four
+fixed, local files. The HTML keeps `Cache-Control: no-store` because it
+contains session-bound CSRF and user/account data. **Only** static assets in
+the `/assets/admin/` subdirectory receive
+`Cache-Control: public, max-age=31536000, immutable` via that directory's
+owned `.htaccess`. The deployment script copies it explicitly; it never
+overwrites the document-root cPanel-managed `.htaccess`, `php.ini`, or
+`.user.ini`. If LiteSpeed/Apache/header modules or a proxy override the
+headers, inspect the actual response; do not assume browser caching works.
+The `?v=<hash>` URL changes whenever the matching artifact content changes.
+
+After building assets on a trusted Mac, commit generated
+`public/assets/admin/{app.css,app.js,icons.svg,theme-init.js,.htaccess}`
+as appropriate; use the normal cPanel manual Deploy HEAD Commit flow.
+Verify through browser DevTools: icon sprite loads from same-origin, no blank
+icons during navigation, 200 on initial asset fetches and memory/disk-cache
+on repeat visits, no caching of authenticated HTML, and no CSP violations.

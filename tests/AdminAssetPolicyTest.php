@@ -13,10 +13,13 @@ final class AdminAssetPolicyTest extends TestCase
         $deployment = file_get_contents(dirname(__DIR__) . '/.cpanel.yml');
         self::assertIsString($deployment);
         foreach (['public/assets/admin/app.css', 'public/assets/admin/app.js',
-            'public/assets/admin/theme-init.js'] as $path) {
+            'public/assets/admin/theme-init.js', 'public/assets/admin/icons.svg',
+            'public/assets/admin/.htaccess'] as $path) {
             self::assertStringContainsString($path, $deployment);
         }
         self::assertStringContainsString('/bin/cp -f public/index.php', $deployment);
+        self::assertStringNotContainsString('/bin/cp -f public/.htaccess', $deployment);
+        self::assertStringContainsString('/bin/cp -f public/assets/admin/.htaccess', $deployment);
         self::assertStringNotContainsString('/bin/cp -f src/', $deployment);
         self::assertStringNotContainsString('/bin/cp -f vendor/', $deployment);
         self::assertStringNotContainsString('/bin/cp -f templates/', $deployment);

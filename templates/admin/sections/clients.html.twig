@@ -21,7 +21,7 @@
       <div class="mt-3 min-w-0"><span class="opg-record-label">Owner</span><p class="opg-record-value">{{ client.owner_email }}</p></div>
       <div class="opg-record-actions">
 <details class="opg-row-menu" data-opg-row-menu>
-  <summary class="opg-row-menu-trigger" aria-label="More options for {{ client.label }}" title="More options for {{ client.label }}" data-tooltip="More options"><i data-lucide="ellipsis-vertical" class="opg-icon" aria-hidden="true"></i></summary>
+  <summary class="opg-row-menu-trigger" aria-label="More options for {{ client.label }}" title="More options for {{ client.label }}" data-tooltip="More options"><svg viewBox="0 0 24 24" class="opg-icon" aria-hidden="true" focusable="false"><use href="{{ admin_assets.icons }}#opg-icon-ellipsis-vertical"></use></svg></summary>
   <div class="opg-action-popover" aria-label="Options for {{ client.label }}">
 
         {{ record.details('Client', client.label, [
@@ -52,7 +52,7 @@
         <td><span class="opg-badge {{ client.status == 'active' ? 'opg-badge-green' : 'opg-badge-neutral' }}">{{ client.status == 'active' ? 'Active' : 'Disabled' }}</span></td>
         <td>
           <details class="opg-row-menu" data-opg-row-menu>
-  <summary class="opg-row-menu-trigger" aria-label="More options for {{ client.label }}" title="More options for {{ client.label }}" data-tooltip="More options"><i data-lucide="ellipsis-vertical" class="opg-icon" aria-hidden="true"></i></summary>
+  <summary class="opg-row-menu-trigger" aria-label="More options for {{ client.label }}" title="More options for {{ client.label }}" data-tooltip="More options"><svg viewBox="0 0 24 24" class="opg-icon" aria-hidden="true" focusable="false"><use href="{{ admin_assets.icons }}#opg-icon-ellipsis-vertical"></use></svg></summary>
   <div class="opg-action-popover" aria-label="Options for {{ client.label }}">
 {{ record.details('Client', client.label, [
   {label:'Client ID', value:client.id},

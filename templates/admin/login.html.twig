@@ -4,9 +4,9 @@
 <div class="grid min-h-screen lg:grid-cols-2" x-data="adminShell">
   <main id="main-content" class="relative flex items-center justify-center px-4 py-16 sm:px-8 lg:px-12">
     <button type="button" class="opg-icon-button opg-theme-toggle absolute end-4 top-4 sm:end-6 sm:top-6" x-on:click="cycleTheme" x-bind:aria-label="themeControlLabel" x-bind:title="themeControlLabel" aria-label="Change color theme" title="Change color theme">
-          <i data-lucide="monitor" class="opg-icon opg-theme-icon" data-theme-icon="system" aria-hidden="true"></i>
-          <i data-lucide="sun" class="opg-icon opg-theme-icon" data-theme-icon="light" aria-hidden="true"></i>
-          <i data-lucide="moon" class="opg-icon opg-theme-icon" data-theme-icon="dark" aria-hidden="true"></i>
+          <svg viewBox="0 0 24 24" class="opg-icon opg-theme-icon" data-theme-icon="system" aria-hidden="true" focusable="false"><use href="{{ admin_assets.icons }}#opg-icon-monitor"></use></svg>
+          <svg viewBox="0 0 24 24" class="opg-icon opg-theme-icon" data-theme-icon="light" aria-hidden="true" focusable="false"><use href="{{ admin_assets.icons }}#opg-icon-sun"></use></svg>
+          <svg viewBox="0 0 24 24" class="opg-icon opg-theme-icon" data-theme-icon="dark" aria-hidden="true" focusable="false"><use href="{{ admin_assets.icons }}#opg-icon-moon"></use></svg>
           <span class="opg-sr-only" x-text="themeLabel">System</span>
         </button>
     <div class="w-full max-w-md">

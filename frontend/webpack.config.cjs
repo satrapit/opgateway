@@ -24,7 +24,14 @@ module.exports = {
   plugins: [
     new MiniCssExtractPlugin({ filename: 'app.css' }),
     new CopyWebpackPlugin({
-      patterns: [{ from: path.resolve(__dirname, 'src/js/theme-init.js'), to: 'theme-init.js' }],
+      patterns: [
+        { from: path.resolve(__dirname, 'src/js/theme-init.js'), to: 'theme-init.js' },
+        { from: path.resolve(__dirname, 'src/icons.svg'), to: 'icons.svg' },
+        // A dotfile target has no extension; CopyWebpackPlugin otherwise
+        // interprets '.htaccess' as a directory and emits
+        // '.htaccess/cache.htaccess' instead of the required file.
+        { from: path.resolve(__dirname, 'src/cache.htaccess'), to: '.htaccess', toType: 'file' },
+      ],
     }),
   ],
   optimization: {
