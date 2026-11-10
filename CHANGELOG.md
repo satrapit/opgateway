@@ -1,5 +1,17 @@
 # Changelog
 
+## Unreleased — Shared submit progress indicators (2026-11-11)
+
+- Show an inline CSS spinner on the submitted button across Account and Admin,
+  while preventing duplicate form submissions; other submit actions stay disabled.
+- Preserve named submitter form semantics and accessible labels. For native
+  input submit buttons, show "Please wait…" until the page changes.
+- Canceled confirmations and invalid forms show no progress; browser Back
+  navigation restores the original button state and text.
+- Respect reduced-motion preferences and existing same-origin CSP. Build and
+  browser verification remain pending.
+
+
 ## Unreleased — Account recovery rate-limit messaging (2026-11-11)
 
 - Keep hourly per-email and per-IP password reset throttling unchanged.

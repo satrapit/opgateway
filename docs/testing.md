@@ -55,9 +55,11 @@ drawer at 320/375/390px, desktop at 1024/1440px, provider/account forms,
 and the one-time API key page. Test forgot-password email, expired and reused
 links (including reopening a used URL), confirmation mismatch, and sign-in
 with the new password. Confirm submit buttons disable immediately on native
-submission in both portals, repeated clicks are ignored, canceled review
-dialogs/invalid HTML form input do not lock buttons, and Back navigation
-restores forms. Run `npm test` for the submission-lock unit tests. Validate actual browser asset responses
+submission in both portals, the initiating button shows a spinner (or
+"Please wait…" for input submits), repeated clicks are ignored, canceled
+review dialogs/invalid HTML form input do not show progress or lock buttons,
+and Back navigation restores the original label and state. Check icon-only
+logout buttons and reduced-motion mode. Run `npm test` for submission tests. Validate actual browser asset responses
 and strict `script-src 'self'` / `style-src 'self'` CSP with no inline CSS.
 
 ## UI and release review

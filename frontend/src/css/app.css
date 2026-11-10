@@ -38,6 +38,27 @@
     *, *::before, *::after { animation-duration: .01ms !important; scroll-behavior: auto !important; transition-duration: .01ms !important; }
   }
 }
+/* Shared form progress indicator. Uses CSS (no external icons or inline JS).
+   The initiating button gets a spinner; other submit buttons remain disabled.
+   Native input[type=submit] uses a temporary "Please wait…" value instead. */
+button[data-opg-loading="true"]::after {
+  content: "";
+  display: inline-block;
+  inline-size: 1em;
+  block-size: 1em;
+  flex: 0 0 auto;
+  margin-inline-start: .15rem;
+  border: .125em solid currentColor;
+  border-inline-end-color: transparent;
+  border-radius: 50%;
+  animation: opg-submit-spinner .7s linear infinite;
+}
+@keyframes opg-submit-spinner {
+  to { transform: rotate(360deg); }
+}
+@media (prefers-reduced-motion: reduce) {
+  button[data-opg-loading="true"]::after { animation: none; }
+}
 [x-cloak] { display: none !important; }
 .opg-sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
 .opg-skip-link { position: fixed; left: 1rem; top: -4rem; z-index: 100; border-radius: .5rem; padding: .75rem 1rem; background: var(--color-brand-600); color: #fff; }

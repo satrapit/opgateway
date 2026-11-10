@@ -11,7 +11,13 @@ function setup() {
       this.value = value;
       this.disabled = false;
       this.type = 'submit';
+      this.dataset = {};
+      this.attributes = new Map();
+      this.textContent = name ? 'Submit ' + name : 'Submit';
     }
+    getAttribute(name) { return this.attributes.get(name) ?? null; }
+    setAttribute(name, value) { this.attributes.set(name, value); }
+    removeAttribute(name) { this.attributes.delete(name); }
   }
   class Input extends Control {
     remove() { this.removed = true; }
@@ -59,6 +65,10 @@ test('submit locks buttons instantly but preserves named submitter values', () =
   assert.equal(event.defaultPrevented, false);
   assert.equal(save.disabled, true);
   assert.equal(revoke.disabled, true);
+  assert.equal(save.dataset.opgLoading, 'true');
+  assert.equal(save.getAttribute('aria-busy'), 'true');
+  assert.equal(save.getAttribute('aria-label'), 'Submit action — Processing');
+  assert.equal(revoke.dataset.opgLoading, undefined);
   assert.equal(form.dataset.opgSubmitting, 'true');
   assert.equal(form.attributes.get('aria-busy'), 'true');
   assert.equal(form.appended.length, 1);
@@ -75,6 +85,7 @@ test('canceled confirmation cannot lock the form', () => {
   submit(form, button, true);
   assert.equal(button.disabled, false);
   assert.equal(form.dataset.opgSubmitting, undefined);
+  assert.equal(button.dataset.opgLoading, undefined);
   submit(form, button);
   assert.equal(button.disabled, true);
 });
@@ -92,6 +103,9 @@ test('pageshow restores only modified buttons and removes temporary fields', () 
   assert.equal(form.dataset.opgSubmitting, undefined);
   assert.equal(form.attributes.has('aria-busy'), false);
   assert.equal(form.appended[0].removed, true);
+  assert.equal(chosen.dataset.opgLoading, undefined);
+  assert.equal(chosen.getAttribute('aria-busy'), null);
+  assert.equal(chosen.getAttribute('aria-label'), null);
   assert.equal(submit(form, chosen).defaultPrevented, false);
 });
 
@@ -105,4 +119,42 @@ test('external submitter is disabled and dialog-only forms are not locked', () =
   dialog.method = 'dialog';
   submit(dialog, dialog.controls[0]);
   assert.equal(dialog.controls[0].disabled, false);
+});
+
+test('input submit shows waiting text and restores its label on Back navigation', () => {
+  const { Form, Input, submit, restore } = setup();
+  const input = new Input('decision', 'approve');
+  const form = new Form([input]);
+  submit(form, input);
+  assert.equal(input.value, 'Please wait…');
+  assert.equal(input.dataset.opgLoading, 'true');
+  assert.equal(input.disabled, true);
+  assert.equal(form.appended[0].value, 'approve');
+  restore();
+  assert.equal(input.value, 'approve');
+  assert.equal(input.dataset.opgLoading, undefined);
+  assert.equal(input.disabled, false);
+});
+
+test('icon-only submit restores its original accessible name', () => {
+  const { Form, Control, submit, restore } = setup();
+  const button = new Control();
+  button.textContent = '';
+  button.setAttribute('aria-label', 'Sign out');
+  const form = new Form([button]);
+  submit(form, button);
+  assert.equal(button.getAttribute('aria-label'), 'Sign out — Processing');
+  assert.equal(button.getAttribute('aria-busy'), 'true');
+  restore();
+  assert.equal(button.getAttribute('aria-label'), 'Sign out');
+  assert.equal(button.getAttribute('aria-busy'), null);
+  assert.equal(button.dataset.opgLoading, undefined);
+});
+
+test('spinner is sourced from CSS and reduced motion is respected', async () => {
+  const { readFileSync } = await import('node:fs');
+  const css = readFileSync(new URL('../src/css/app.css', import.meta.url), 'utf8');
+  assert.match(css, /button\[data-opg-loading="true"\]::after/);
+  assert.match(css, /@keyframes opg-submit-spinner/);
+  assert.match(css, /prefers-reduced-motion: reduce/);
 });
