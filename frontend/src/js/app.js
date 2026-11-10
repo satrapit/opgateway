@@ -2,6 +2,7 @@ import '../css/app.css';
 import Alpine from '@alpinejs/csp';
 import { initializeAdminDialogs } from './admin-dialogs.js';
 import { initializeRowMenus } from './row-menus.js';
+import { initializeFormSubmissionLock } from './form-submissions.js';
 
 
 /**
@@ -100,3 +101,5 @@ Alpine.data('adminShell', () => ({
 Alpine.start();
 initializeRowMenus();
 initializeAdminDialogs();
+// Install after dialog handlers so canceled confirmations never lock a form.
+initializeFormSubmissionLock();

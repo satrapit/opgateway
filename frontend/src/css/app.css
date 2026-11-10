@@ -28,6 +28,10 @@
 @layer base {
   body { @apply relative bg-gray-50 font-outfit text-gray-900 dark:bg-gray-950 dark:text-gray-100; }
   button:not(:disabled) { cursor: pointer; }
+  /* A native valid submit disables its submit buttons during navigation. */
+  form[data-opg-submitting="true"] :is(
+    button[type="submit"], button:not([type]), input[type="submit"], input[type="image"]
+  ) { cursor: progress; opacity: .65; pointer-events: none; }
   :focus-visible { outline: 3px solid var(--color-brand-500); outline-offset: 2px; }
   section[id] { scroll-margin-top: 6rem; }
   @media (prefers-reduced-motion: reduce) {

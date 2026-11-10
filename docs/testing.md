@@ -13,6 +13,7 @@ php scripts/smoke.php
 cd frontend
 npm ci
 npm run lint
+npm test
 npm run build
 cd ..
 composer install --no-dev --prefer-dist --optimize-autoloader
@@ -47,12 +48,16 @@ working or production database. No automated migration on cPanel.
 
 The owner portal now uses the same Twig/TailAdmin CSS and CSP-safe Alpine
 assets as the admin portal. First rebuild the local assets with
-`cd frontend && npm ci && npm run lint && npm run build`, then rerun PHP
+`cd frontend && npm ci && npm run lint && npm test && npm run build`, then rerun PHP
 lint and PHPUnit, including `AccountDesignSystemTest`. Test account
 login/registration/verification, dark/light/system controls, mobile
 drawer at 320/375/390px, desktop at 1024/1440px, provider/account forms,
 and the one-time API key page. Test forgot-password email, expired and reused
-links, confirmation mismatch, and sign-in with the new password. Validate actual browser asset responses
+links (including reopening a used URL), confirmation mismatch, and sign-in
+with the new password. Confirm submit buttons disable immediately on native
+submission in both portals, repeated clicks are ignored, canceled review
+dialogs/invalid HTML form input do not lock buttons, and Back navigation
+restores forms. Run `npm test` for the submission-lock unit tests. Validate actual browser asset responses
 and strict `script-src 'self'` / `style-src 'self'` CSP with no inline CSS.
 
 ## UI and release review
