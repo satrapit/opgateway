@@ -876,6 +876,28 @@
     }
   }
 }
+button[data-opg-loading="true"]::after {
+  content: "";
+  display: inline-block;
+  inline-size: 1em;
+  block-size: 1em;
+  flex: 0 0 auto;
+  margin-inline-start: .15rem;
+  border: .125em solid currentColor;
+  border-inline-end-color: transparent;
+  border-radius: 50%;
+  animation: opg-submit-spinner .7s linear infinite;
+}
+@keyframes opg-submit-spinner {
+  to {
+    transform: rotate(360deg);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  button[data-opg-loading="true"]::after {
+    animation: none;
+  }
+}
 [x-cloak] {
   display: none !important;
 }
