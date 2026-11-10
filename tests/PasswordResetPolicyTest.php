@@ -121,6 +121,79 @@ final class PasswordResetPolicyTest extends TestCase
         self::assertTrue(session_destroy());
     }
 
+    #[RunInSeparateProcess]
+    #[PreserveGlobalState(false)]
+    public function testRateLimitedRecoveryReturnsReadableHtmlWithHttp429(): void
+    {
+        // Only the rate counter queries are reached when the request is limited.
+        // The double represents an exhausted hourly rate-limit bucket.
+        $database = new class extends PDO {
+            public array $queries = [];
+
+            public function __construct()
+            {
+            }
+
+            public function prepare(string $query, array $options = []): PDOStatement|false
+            {
+                $this->queries[] = $query;
+                return new class extends PDOStatement {
+                    public function __construct()
+                    {
+                    }
+
+                    public function bindValue(string|int $param, mixed $value, int $type = PDO::PARAM_STR): bool
+                    {
+                        return true;
+                    }
+
+                    public function execute(?array $params = null): bool
+                    {
+                        return true;
+                    }
+
+                    public function fetchColumn(int $column = 0): mixed
+                    {
+                        return 11;
+                    }
+                };
+            }
+        };
+        $mailer = new class implements PasswordResetMailer {
+            public function sendPasswordReset(string $email, string $token, string $origin): void
+            {
+                throw new \LogicException('Rate-limited requests must not send email.');
+            }
+        };
+        $recovery = new PasswordResetService(
+            $database, new PasswordHasher(),
+            new PdoPasswordResetLimiter($database, str_repeat('k', 32)), $mailer,
+        );
+        $session = new BrowserSession();
+        $session->start(true);
+        $controller = new SelfServiceBrowserController(
+            $session, $this->createStub(LoginAccountRepository::class),
+            null, null, 'https://opgateway.test', null, null, $recovery,
+        );
+        $response = $controller->dispatch(
+            'POST', '/account/forgot-password',
+            'application/x-www-form-urlencoded',
+            http_build_query([
+                '_csrf' => $session->csrfToken(),
+                'email' => 'user@example.test',
+            ]),
+            '192.0.2.10', str_repeat('f', 32), '',
+        );
+        self::assertSame(429, $response['status']);
+        self::assertSame('text/html; charset=utf-8', $response['content_type']);
+        self::assertStringContainsString('Too many requests', $response['body']);
+        self::assertStringContainsString('Please try again later', $response['body']);
+        self::assertStringContainsString('/account/login', $response['body']);
+        self::assertStringNotContainsString('"error":"too_many_requests"', $response['body']);
+        self::assertCount(4, $database->queries);
+        self::assertTrue(session_destroy());
+    }
+
     public function testManualUpgradeMatchesHashedTokenMigration(): void
     {
         $migration = new CreatePasswordResetTokens();

@@ -1,5 +1,13 @@
 # Changelog
 
+## Unreleased — Account recovery rate-limit messaging (2026-11-11)
+
+- Keep hourly per-email and per-IP password reset throttling unchanged.
+- When recovery is throttled, return an accessible TailAdmin/Twig status page
+  with HTTP 429 instead of raw JSON. No new schema or .env settings.
+- Add a controller regression test for rate-limited recovery behavior.
+- Local PHP/browser verification is required before deployment.
+
 ## Unreleased — Form submission and reset-link validation (2026-11-11)
 
 - On opening a password reset URL, check the hashed token against the database

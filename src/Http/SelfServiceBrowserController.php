@@ -77,7 +77,8 @@ final readonly class SelfServiceBrowserController
             }
             if ($path === '/account/forgot-password') {
                 $result = $this->passwordReset->request($form['email'], $sourceIp, $this->origin);
-                return $result === 'limited' ? self::error(429)
+                return $result === 'limited'
+                    ? self::html(AccountViews::resetRequestLimited(), 429)
                     : self::html(AccountViews::resetRequestAccepted());
             }
             if (!hash_equals($form['password'], $form['password_confirmation'])) {
@@ -225,10 +226,10 @@ final readonly class SelfServiceBrowserController
     }
 
     /** @return array{status:int,content_type:string,body:string} */
-    private static function html(string $html): array
+    private static function html(string $html, int $status = 200): array
     {
         return [
-            'status' => 200,
+            'status' => $status,
             'content_type' => 'text/html; charset=utf-8',
             'body' => $html,
         ];

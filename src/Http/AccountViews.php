@@ -75,6 +75,15 @@ final class AccountViews
         );
     }
 
+    public static function resetRequestLimited(): string
+    {
+        return self::status(
+            'Too many requests', 'Account recovery',
+            'You have requested too many reset links. Please try again later. Request limits reset each hour.',
+            '/account/login', 'Back to sign in',
+        );
+    }
+
     public static function resetResult(bool $success): string
     {
         return $success
