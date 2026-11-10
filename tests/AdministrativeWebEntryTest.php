@@ -9,53 +9,26 @@ use PHPUnit\Framework\TestCase;
 
 final class AdministrativeWebEntryTest extends TestCase
 {
-    public function testUiIsDisabledByDefault(): void
+    public function testAdminRequiresHttpsAndCanonicalServerName(): void
     {
         $entry = new AdministrativeWebEntry([]);
         self::assertSame(404, $entry->handle('GET', '/admin/login', [])['status']);
-        self::assertSame(404, $entry->handle('GET', '/admin', [])['status']);
-    }
-
-    public function testRejectsUntrustedHttpsAndWrongHostButNotIp(): void
-    {
-        $entry = new AdministrativeWebEntry([
-            'ADMIN_UI_ENABLED' => 'true',
-            'APP_URL' => 'https://opgateway.example.org',
-            'LOGIN_RATE_LIMIT_KEY' => str_repeat('a', 64),
-        ]);
-        self::assertSame(404, $entry->handle('GET', '/admin/login', [
-            'HTTPS' => 'off',
-            'HTTP_HOST' => 'opgateway.example.org',
-            'REMOTE_ADDR' => '192.0.2.4',
-            'HTTP_X_FORWARDED_PROTO' => 'https',
+        self::assertSame(404, $entry->handle('GET', '/admin', [
+            'HTTPS' => 'off', 'SERVER_NAME' => 'opgateway.test',
+            'HTTP_HOST' => 'opgateway.test',
         ])['status']);
         self::assertSame(404, $entry->handle('GET', '/admin/login', [
-            'HTTPS' => 'on',
-            'HTTP_HOST' => 'other.example.org',
-            'REMOTE_ADDR' => '192.0.2.5',
+            'HTTPS' => 'on', 'SERVER_NAME' => 'opgateway.test',
+            'HTTP_HOST' => 'evil.example.test',
         ])['status']);
     }
 
-    public function testMissingHostIsRejectedBeforeDatabaseAccess(): void
+    public function testMissingDatabaseConfigurationFailsClosed(): void
     {
-        $entry = new AdministrativeWebEntry([
-            'ADMIN_UI_ENABLED' => 'true',
-            'APP_URL' => 'https://opgateway.example.org',
-            'LOGIN_RATE_LIMIT_KEY' => str_repeat('a', 64),
-        ]);
-        self::assertSame(404, $entry->handle('GET', '/admin/login', [
-            'HTTPS' => 'on', 'REMOTE_ADDR' => '203.0.113.45',
+        $entry = new AdministrativeWebEntry([]);
+        self::assertSame(503, $entry->handle('GET', '/admin/login', [
+            'HTTPS' => 'on', 'SERVER_NAME' => 'opgateway.test',
+            'HTTP_HOST' => 'opgateway.test', 'REMOTE_ADDR' => '127.0.0.1',
         ])['status']);
-    }
-
-    public function testFailsClosedForMissingKeyBeforeDatabaseAccess(): void
-    {
-        $entry = new AdministrativeWebEntry([
-            'ADMIN_UI_ENABLED' => 'true',
-            'ADMIN_UI_ALLOWED_IP' => '192.0.2.4',
-            'APP_URL' => 'https://opgateway.example.org',
-        ]);
-        self::assertSame(503, $entry->handle('GET', '/admin/login',
-            ['HTTPS' => 'on', 'REMOTE_ADDR' => '192.0.2.4'])['status']);
     }
 }

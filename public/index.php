@@ -11,7 +11,7 @@ use OPGateway\Observability\DiagnosticLog;
 
 /**
  * cPanel split-root entrypoint; private source and secrets remain outside
- * Document Root. Admin UI is default-disabled; initial admin is provisioned manually in DB.
+ * Document Root. The initial admin is provisioned once in the database.
  */
 $localRoot = dirname(__DIR__);
 $applicationRoot = is_file($localRoot . '/src/autoload.php')
@@ -35,8 +35,7 @@ try {
         $response = (new AdministrativeWebEntry($config))->handle($method, $path, $_SERVER);
     } elseif ($path === '/account' || str_starts_with($path, '/account/')) {
         $response = (new AccountWebEntry($config))->handle($method, $path, $_SERVER);
-    } elseif (($path === '/v1' || str_starts_with($path, '/v1/'))
-        && ($config['GATEWAY_PROXY_ENABLED'] ?? '') === 'true') {
+    } elseif ($path === '/v1' || str_starts_with($path, '/v1/')) {
         $response = (new GatewayHttpEntry($config))->handle($method, $path, $_SERVER, $requestId);
     } else {
         $result = (new FoundationApplication($config))->handle(

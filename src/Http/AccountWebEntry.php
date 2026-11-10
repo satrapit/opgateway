@@ -17,6 +17,7 @@ use OPGateway\Mail\PhpMailerVerificationMailer;
 use OPGateway\Provider\PdoProviderAccount;
 use OPGateway\Security\PdoSignupLimiter;
 use OPGateway\Security\SealedSecret;
+use OPGateway\Security\RuntimeSecrets;
 use OPGateway\Database\Migrations\SchemaReadiness;
 use OPGateway\Database\PdoConnectionFactory;
 use OPGateway\Identity\BrowserSession;
@@ -34,11 +35,7 @@ use PDO;
 use Throwable;
 
 /**
- * Opt-in account browser entrypoint, separately gated from /admin.
- *
- * Approved owners may sign in over trusted HTTPS without the administrator's
- * operator-IP restriction. Password login remains IP/identity throttled.
- * Bearer issuance and revocation have another independent default-off flag.
+ * Account browser entrypoint. All owners use the same secure login flow.
  *
  * Never rely on client-provided forwarding headers for HTTPS or source IP.
  */
@@ -55,26 +52,12 @@ final readonly class AccountWebEntry
      */
     public function handle(string $method, string $path, array $server): array
     {
-        if (($this->config['ACCOUNT_UI_ENABLED'] ?? '') !== 'true') {
-            return self::error(404);
-        }
-
         if (($server['HTTPS'] ?? '') !== 'on') {
             return self::error(404);
         }
 
-        $origin = $this->config['APP_URL'] ?? '';
-        $secret = $this->config['LOGIN_RATE_LIMIT_KEY'] ?? '';
-        if (preg_match('~^https://[a-z0-9.-]+(?::[0-9]{1,5})?$~iD', $origin) !== 1
-            || preg_match('/^[0-9a-f]{64}$/D', $secret) !== 1) {
-            DiagnosticLog::record('account.configuration_invalid', 503);
-            return self::error(503);
-        }
-
-        // The requested authority must match the configured HTTPS origin.
-        // Reject Host-header aliases before entering an authenticated flow.
-        $authority = (string) ($server['HTTP_HOST'] ?? '');
-        if (!hash_equals(strtolower(substr($origin, strlen('https://'))), strtolower($authority))) {
+        $origin = CanonicalOrigin::fromServer($server);
+        if ($origin === null) {
             return self::error(404);
         }
 
@@ -113,63 +96,54 @@ final readonly class AccountWebEntry
             return self::error(503);
         }
 
+        try {
+            $root = dirname(__DIR__, 2);
+            $secret = RuntimeSecrets::limiterKey($root);
+            $vault = new SealedSecret(RuntimeSecrets::key($root));
+        } catch (Throwable $exception) {
+            DiagnosticLog::record('account.secret_unavailable', 503, $exception);
+            return self::error(503);
+        }
+
         $accounts = new PdoLoginAccountRepository($pdo);
         $events = new PdoSecurityEventRecorder($pdo);
         $login = new GuardedLoginService(
             new LoginAuthenticator($accounts, new PasswordHasher()),
-            new PdoLoginAttemptLimiter($pdo, hex2bin($secret)),
+            new PdoLoginAttemptLimiter($pdo, $secret),
             $events,
         );
 
-        $credentials = ($this->config['ACCOUNT_KEYS_ENABLED'] ?? '') === 'true'
-            ? new OwnerCredentialService(
-                $pdo,
-                new PdoApiCredentialStore($pdo),
-                new PdoCredentialActionLimiter($pdo, hex2bin($secret)),
-                $events,
-            )
-            : null;
+        $credentials = new OwnerCredentialService(
+            $pdo,
+            new PdoApiCredentialStore($pdo),
+            new PdoCredentialActionLimiter($pdo, $secret),
+            $events,
+        );
 
         $registration = null;
-        $integration = null;
-        if (($this->config['ACCOUNT_REGISTRATION_ENABLED'] ?? '') === 'true'
-            || ($this->config['ACCOUNT_INTEGRATION_ENABLED'] ?? '') === 'true') {
-            try {
-                $vault = new SealedSecret($this->config['APP_KEY'] ?? '');
-            } catch (\InvalidArgumentException) {
-                DiagnosticLog::record('account.encryption_key_invalid', 503);
-                return self::error(503);
-            }
-            if (($this->config['ACCOUNT_INTEGRATION_ENABLED'] ?? '') === 'true') {
-                $integration = new OwnerIntegrationService(
-                    $pdo,
-                    new PdoProviderAccount($pdo, $vault),
-                    new ClientManagementService($pdo),
-                    new PdoCredentialActionLimiter($pdo, hex2bin($secret)),
-                    $events,
-                );
-            }
-            if (($this->config['ACCOUNT_REGISTRATION_ENABLED'] ?? '') === 'true') {
-                // src/autoload.php intentionally loads only OPGateway classes.
-                // The vetted Composer autoloader must be present privately
-                // before PHPMailer can be used for public verification.
-                $composerAutoload = dirname(__DIR__, 2) . '/vendor/autoload.php';
-                if (!is_file($composerAutoload) || is_link($composerAutoload)) {
-                    DiagnosticLog::record('account.mail_autoload_unavailable', 503);
-                    return self::error(503);
-                }
-                require_once $composerAutoload;
-                $smtp = new PdoSmtpSettings($pdo, $vault);
-                if ($smtp->configured() && class_exists(\PHPMailer\PHPMailer\PHPMailer::class)) {
-                    $registration = new SelfServiceRegistration(
-                        $pdo,
-                        new RegistrationService(new PdoUserRepository($pdo), new PasswordHasher()),
-                        new EmailVerificationService(new PdoEmailVerificationRepository($pdo, true)),
-                        new PdoSignupLimiter($pdo, hex2bin($secret)),
-                        new PhpMailerVerificationMailer($smtp),
-                    );
-                }
-            }
+        $integration = new OwnerIntegrationService(
+            $pdo,
+            new PdoProviderAccount($pdo, $vault),
+            new ClientManagementService($pdo),
+            new PdoCredentialActionLimiter($pdo, $secret),
+            $events,
+        );
+        // PHPMailer is a required production dependency, not an optional feature.
+        $composerAutoload = dirname(__DIR__, 2) . '/vendor/autoload.php';
+        if (!is_file($composerAutoload) || is_link($composerAutoload)) {
+            DiagnosticLog::record('account.mail_autoload_unavailable', 503);
+            return self::error(503);
+        }
+        require_once $composerAutoload;
+        $smtp = new PdoSmtpSettings($pdo, $vault);
+        if ($smtp->configured() && class_exists(\PHPMailer\PHPMailer\PHPMailer::class)) {
+            $registration = new SelfServiceRegistration(
+                $pdo,
+                new RegistrationService(new PdoUserRepository($pdo), new PasswordHasher()),
+                new EmailVerificationService(new PdoEmailVerificationRepository($pdo, true)),
+                new PdoSignupLimiter($pdo, $secret),
+                new PhpMailerVerificationMailer($smtp),
+            );
         }
 
         $ownerOverview = new OwnerOverviewRepository($pdo);
@@ -199,7 +173,6 @@ final readonly class AccountWebEntry
 
         if (SelfServiceBrowserController::route($path)) {
             if ($registration === null
-                && ($this->config['ACCOUNT_REGISTRATION_ENABLED'] ?? '') === 'true'
                 && in_array($path, [
                     '/account/register', '/account/verify', '/account/verify/resend',
                 ], true)) {

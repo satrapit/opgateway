@@ -19,7 +19,7 @@ use PHPUnit\Framework\Attributes\PreserveGlobalState;
 use PHPUnit\Framework\Attributes\RunInSeparateProcess;
 use PHPUnit\Framework\TestCase;
 
-/** Independent workspace pages must not weaken any legacy auth boundary. */
+/** Independent Twig sections preserve fresh authorization. */
 final class AdminSectionRouteTest extends TestCase
 {
     /**
@@ -52,7 +52,7 @@ final class AdminSectionRouteTest extends TestCase
 
     #[RunInSeparateProcess]
     #[PreserveGlobalState(false)]
-    public function testLoggedOutSessionsRedirectAndLegacyPagesRemainHidden(): void
+    public function testLoggedOutSessionsRedirectAndMissingRendererIsNotUsed(): void
     {
         $session = new BrowserSession();
         $session->start(true);
@@ -69,8 +69,8 @@ final class AdminSectionRouteTest extends TestCase
             self::assertSame('/admin/login', $response['location']);
         }
 
-        $legacy = $this->adapter($session, $accounts, $admins, null);
-        self::assertSame(404, self::dispatch($legacy, '/admin/clients')['status']);
+        $missingRenderer = $this->adapter($session, $accounts, $admins, null);
+        self::assertSame(404, self::dispatch($missingRenderer, '/admin/clients')['status']);
         self::assertSame(404, self::dispatch($enabled, '/admin/unknown')['status']);
         self::assertSame(403, $enabled->dispatch('GET', '/admin/clients', false,
             null, '192.0.2.4', str_repeat('c', 32), null)['status']);

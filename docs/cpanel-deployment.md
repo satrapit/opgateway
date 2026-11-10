@@ -1,54 +1,58 @@
-# Deployment and operations
+# Deployment and diagnostics
 
-## cPanel paths
+OPGateway runs on cPanel shared hosting. Private checkout:
+`/home/arsamnet/repositories/opgateway`; public Document Root:
+`/home/arsamnet/opgateway.arsamnet.com`.
 
-- Private Git checkout: `/home/arsamnet/repositories/opgateway`.
-- Document Root: `/home/arsamnet/opgateway.arsamnet.com`.
-- Secrets: private checkout `.env`, outside Document Root.
-- Diagnostics: private `storage/logs/opgateway.jsonl`, writable by PHP, never public.
+`.env` (private) contains **only** `DB_HOST`, `DB_PORT`, `DB_NAME`,
+`DB_USER`, and `DB_PASSWORD`. The protected
+`storage/app-secret.key` must be created only once, with permissions
+0600, outside public Document Root. Back it up separately; losing it
+breaks decryption of existing SMTP and owner provider credentials.
+Actual PHP HTTPS `SERVER_NAME` must be the canonical gateway hostname,
+matching `HTTP_HOST`.
 
-The staged `.cpanel.yml` **copies `public/index.php` and four reviewed locally built assets and one scoped cache policy** (`public/assets/admin/app.css`, `app.js`, `theme-init.js`, `icons.svg`) plus the owned `public/assets/admin/.htaccess`. Missing/symlinked files cause deployment to fail. It checks the destination exists, `.htaccess` exists and the target index is not a symlink. It **does not delete or clean up any deployed files**. The cPanel-managed `.htaccess`, `php.ini` and `.user.ini` are not overwritten. Old standalone files, if any, must be audited and removed deliberately via File Manager, not by future deployment scripts.
+The `.cpanel.yml` allowlist copies only the public entrypoint and the
+reviewed precompiled admin assets. Never place private source, Composer
+vendor, key, `.env`, templates or logs in Document Root. No server-side
+Composer, npm, database migration, cron or GitHub workflow runs.
 
-## Manual deployment
+## Controlled rollout
 
-1. Locally run `php scripts/lint.php`, `composer test`, `php scripts/smoke.php` and `composer validate --strict --no-check-publish`.
-2. Commit and push reviewed changes to `main`; never commit real `.env`.
-3. cPanel → Git Version Control → **Update from Remote**, verify commit → **Deploy HEAD Commit**.
-4. Confirm `https://opgateway.arsamnet.com/health` returns HTTP 200 and `{"status":"ok"}`.
-5. Confirm `/v1/domains` remains HTTP 503 with `gateway_not_configured`.
-6. Check private URLs (`/.env`, `/src/autoload.php`, `/composer.json`, `/.git/config`, `/storage/`) do not return HTTP 200.
-7. Confirm deployed rewrite rules and existing cPanel PHP handler remain intact.
-8. Test admin browser login/dashboard/logout from the allowed IP only when `ADMIN_UI_ENABLED=true`.
+1. **Do not deploy the draft PR yet.** On a disposable database, validate
+   migration 004, admin login, SMTP, email verification, client/IP approval,
+   API issuance and safe read-only Openprovider requests.
+2. Take and verify a production database backup, then review the existing
+   three migration records.
+3. Coordinate a maintenance window to apply the additive
+   `database/sql/upgrade_202611100001.sql` migration 004.
+   Deploying new PHP code before it is completed returns 503 on admin/account.
+4. Verify all four migration records and 12 base tables before enabling
+   real traffic. Do not re-import the full initial schema.
+5. On trusted local Mac run PHP lint, PHPUnit, smoke, Composer validation,
+   frontend lint/build and browser tests. Commit reviewed vendor and static
+   assets; do not include development dependencies in the server checkout.
+6. Deploy reviewed `main` via cPanel Git Version Control manually.
+   Validate `/health`, admin/owner HTTPS, login security and public
+   resource denial. Reverse with a reviewed revert commit, not destructive
+   database/working-tree reset.
 
-No server-side shell, automated migration, Docker, cron, GitHub Actions or CI workflow is required. Roll back by a reviewed revert commit and the same manual deployment, not by resetting the deployed Git checkout.
+The application emits no-store, frame-denial, nosniff, CSP and
+same-origin referrer headers. Preserve the cPanel-managed .htaccess,
+php.ini and .user.ini. The authenticated browser pages have only a
+single TailAdmin/Twig renderer; no environment toggle or fallback.
 
-## PHP and .htaccess
+## Diagnostics
 
-Set production `display_errors=Off`, `log_errors=On` and `APP_DEBUG=false`. Keep cPanel-generated PHP sections untouched. The application emits no-store, frame-denial, nosniff, CSP and same-origin referrer headers. Admin authentication relies on session CSRF, not on the browser `Origin` header.
+Private diagnostics: `storage/logs/opgateway.jsonl`; use
+`X-Request-ID` to correlate server events. Do not log secrets.
+`admin.database_connection_failed` indicates MySQL connection issues;
+`admin.schema_incomplete` / `admin.schema_inspection_failed` indicates
+migration problems; `admin.secret_unavailable` means a missing or
+incorrectly permissioned private application key.
 
-For site routing, retain `DirectoryIndex index.php`, `Options -Indexes` and the existing rewrite of virtual paths to `index.php` when the request does not map to a file. Source `public/.htaccess` is only a reference, not deployed automatically.
-
-## Private diagnostic log
-
-The structured JSONL log records UTC time, 128-bit request ID, event code, status and restricted failure categories. Numeric MySQL codes may be present without SQL or credential details. `X-Request-ID` on HTTP responses helps correlate requests with logs.
-
-- `admin.configuration_invalid`: missing/malformed APP_URL or `LOGIN_RATE_LIMIT_KEY`.
-- `admin.database_connection_failed`: review DB host, port, credentials and grants.
-- `admin.schema_inspection_failed`, `admin.schema_incomplete`: inspect migration ledger in phpMyAdmin.
-- `admin.session_start_failed`: check private PHP session storage and cookie configuration.
-- `http.unhandled_exception`: inspect category metadata; do not expose underlying exceptions publicly.
-
-Typical MySQL categories: 1045 authentication failure, 1049 unknown database, 2002/2003 connection failure, 1146 missing table, 1044/1142 privilege issues, 1524 authentication plugin issue. On the current production host use `DB_HOST=db`; locally `localhost` may choose Unix socket instead of TCP `127.0.0.1`.
-
-Do not deploy public `phpinfo`, database-probe or setup scripts. See [database.md](database.md) for schema/administrator procedures.
-
-## TailAdmin/Twig migration (not activated)
-
-Canonical integration uses `AdminPageRenderer` / `TwigAdminPageRenderer`, `frontend/src/js/app.js` and `/assets/admin/`. The old parallel `TwigBrowserViews` and root-level CSS/JS bundles from `e5fcb72` are superseded, not deployable.
-
-From the consolidated branch, run Composer Twig resolution on a trusted Mac, commit the new `composer.lock`, then in `frontend/` run `npm install && npm run lint && npm run build`. Review and commit `frontend/package-lock.json` and exactly `public/assets/admin/{app.css,app.js,theme-init.js}`. The cPanel allowlist is fail-closed until these files exist. Transfer the compatible Composer `vendor/` separately into the **private** Git checkout; never put PHP vendor, source, templates, .env, or logs in Document Root. Do not run build, Composer, migrations, cron, or Node on cPanel.
-
-Keep `ADMIN_TWIG_UI_ENABLED=false` until compiled assets and Twig are deployed privately and all regression/security/mobile/theme/CSP checks pass. Only that independent flag activates the new view layer, without changing existing account or API flags. For rollback, set it false and use an approved manual deploy.
+For hosted MySQL `DB_HOST=db`; for local MySQL use the actual endpoint,
+often `127.0.0.1` instead of the Unix socket selected by `localhost`.
 
 ## Static asset preloading, versioning and cache (admin UI)
 
@@ -79,20 +83,10 @@ icons during navigation, 200 on initial asset fetches and memory/disk-cache
 on repeat visits, no caching of authenticated HTML, and no CSP violations.
 
 
-## Unreleased onboarding/gateway rollout (not deployed)
 
-Do not deploy this branch straight onto the current alpha.3 database:
-the additive catalog migration 004 makes schema readiness fail closed (503)
-until the database is manually upgraded after a verified backup. No
-auto-migration is added. See database/sql/upgrade_202611100001.sql and
-docs/gateway-onboarding.md. Resolve PHPMailer dependencies on the trusted
-Mac first, commit reviewed composer.lock and production-only private vendor.
-No PHP source, private configuration or dependencies are copied into
-Document Root.
+## Unreleased account and provider integration
 
-New feature flags remain default off. To test SMTP delivery use an
-approved dedicated sender and local disposable DB; verify App URL, exact
-Host, TLS, and connection from shared hosting. The Openprovider fixed
-API host might require adding the **gateway server's outgoing IP** to
-the reseller contact's API whitelist in Openprovider's own control panel.
-Manual cPanel deploy and rollback only; no workflow or runtime Composer.
+SMTP Settings are stored in MySQL and managed by the existing admin role.
+No `*_ENABLED` switches or extra administration roles are required.
+Never deploy the new source against an un-migrated production database.
+See [onboarding](gateway-onboarding.md).

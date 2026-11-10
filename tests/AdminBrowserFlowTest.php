@@ -14,13 +14,15 @@ use OPGateway\Identity\LoginAuthenticator;
 use OPGateway\Identity\PasswordHasher;
 use OPGateway\Security\LoginAttemptLimiter;
 use OPGateway\Security\SecurityEventRecorder;
+use OPGateway\View\TwigAdminPageRenderer;
+use OPGateway\View\TwigRenderer;
 use PHPUnit\Framework\Attributes\PreserveGlobalState;
 use PHPUnit\Framework\Attributes\RunInSeparateProcess;
 use PHPUnit\Framework\TestCase;
 
 /**
  * Browser flow tests without production MySQL or network calls.
- * The real endpoint separately enforces the HTTPS/operator-IP gate.
+ * The real endpoint enforces canonical HTTPS, sessions and role checks.
  */
 final class AdminBrowserFlowTest extends TestCase
 {
@@ -56,7 +58,9 @@ final class AdminBrowserFlowTest extends TestCase
             $accounts,
             $admins,
         );
-        $adapter = new PrivateBrowserAdapter($session, $controller, $accounts, $admins);
+        $adapter = new PrivateBrowserAdapter($session, $controller, $accounts, $admins,
+            null, null, new TwigAdminPageRenderer(new TwigRenderer(dirname(__DIR__) . '/templates')),
+        );
 
         $get = $adapter->dispatch('GET', '/admin/login', true, null, '192.0.2.3', str_repeat('b', 32), null);
         self::assertSame(200, $get['status']);
@@ -129,7 +133,9 @@ final class AdminBrowserFlowTest extends TestCase
             $accounts,
             $admins,
         );
-        $adapter = new PrivateBrowserAdapter($session, $controller, $accounts, $admins);
+        $adapter = new PrivateBrowserAdapter($session, $controller, $accounts, $admins,
+            null, null, new TwigAdminPageRenderer(new TwigRenderer(dirname(__DIR__) . '/templates')),
+        );
 
         $wrongPassword = $adapter->dispatch(
             'POST', '/admin/login', true, 'application/x-www-form-urlencoded',

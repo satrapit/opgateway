@@ -7,12 +7,12 @@ namespace OPGateway\Tests;
 use OPGateway\Http\AdminMutationRedirect;
 use PHPUnit\Framework\TestCase;
 
-/** PRG targets must be constant, allowlisted, and independent of request headers. */
+/** Redirects are fixed server-side paths, never caller-supplied URLs. */
 final class AdminMutationRedirectTest extends TestCase
 {
-    public function testEveryAllowedMutationReturnsToItsOwningTwigPage(): void
+    public function testEveryMutationReturnsToItsPage(): void
     {
-        $expected = [
+        foreach ([
             'approve_user' => '/admin/users',
             'create_client' => '/admin/owners',
             'activate_client' => '/admin/clients',
@@ -20,28 +20,22 @@ final class AdminMutationRedirectTest extends TestCase
             'request_ip' => '/admin/clients',
             'approve_ip' => '/admin/ips/pending',
             'revoke_ip' => '/admin/ips/approved',
-        ];
-        foreach ($expected as $action => $destination) {
-            self::assertSame($destination, AdminMutationRedirect::forAction($action, true), $action);
-            self::assertSame('/admin', AdminMutationRedirect::forAction($action, false), $action);
+        ] as $action => $destination) {
+            self::assertSame($destination, AdminMutationRedirect::forAction($action));
         }
     }
 
-    public function testUnknownOrUntrustedActionCanNeverSupplyRedirectUrl(): void
+    public function testUntrustedActionCannotSupplyRedirectUrl(): void
     {
-        foreach ([
-            '', '/evil', '../account', 'https://example.com',
-            '//example.com', "disable_client\nLocation: /other",
-        ] as $value) {
-            self::assertSame('/admin', AdminMutationRedirect::forAction($value, true));
+        foreach (['', '../account', '//example.com', 'https://example.com'] as $value) {
+            self::assertSame('/admin', AdminMutationRedirect::forAction($value));
         }
     }
 
-    public function testBothWriteRoutesUseOnlyFixedRedirectMapper(): void
+    public function testBothActionRoutesUseOnlyFixedRedirectMapper(): void
     {
         $source = file_get_contents(dirname(__DIR__) . '/src/Http/PrivateBrowserAdapter.php');
         self::assertIsString($source);
-        self::assertSame(2, substr_count($source,
-            "AdminMutationRedirect::forAction(\$form['action'], \$this->pages !== null)"));
+        self::assertSame(2, substr_count($source, "AdminMutationRedirect::forAction(\$form['action'])"));
     }
 }

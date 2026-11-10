@@ -24,10 +24,8 @@
       <a class="opg-nav-link" href="/admin/clients"{% if active_section == 'clients' %} aria-current="page"{% endif %}><svg viewBox="0 0 24 24" class="opg-icon" aria-hidden="true" focusable="false"><use href="{{ admin_assets.icons }}#opg-icon-server"></use></svg> API clients</a>
       <a class="opg-nav-link" href="/admin/ips/pending"{% if active_section == 'pending_ips' %} aria-current="page"{% endif %}><svg viewBox="0 0 24 24" class="opg-icon" aria-hidden="true" focusable="false"><use href="{{ admin_assets.icons }}#opg-icon-clock"></use></svg> Pending IPs</a>
       <a class="opg-nav-link" href="/admin/ips/approved"{% if active_section == 'approved_ips' %} aria-current="page"{% endif %}><svg viewBox="0 0 24 24" class="opg-icon" aria-hidden="true" focusable="false"><use href="{{ admin_assets.icons }}#opg-icon-shield-check"></use></svg> Approved IPs</a>
-      {% if smtp_settings_enabled %}
       <p class="px-3 pb-2 pt-6 text-xs font-semibold uppercase tracking-widest text-gray-400">System administration</p>
       <a class="opg-nav-link" href="/admin/settings/smtp"{% if active_section == 'smtp' %} aria-current="page"{% endif %}>SMTP settings</a>
-      {% endif %}
     </nav>
     <div class="border-t border-gray-200 px-6 py-4 text-xs leading-5 text-gray-500 dark:border-gray-800 dark:text-gray-400">
       Managed API access · Private operator area

@@ -22,37 +22,38 @@ Support light, dark and system preferences. The default must follow `prefers-col
 Use semantic headings, navigation, labels, legends, accessible status text, keyboard focus rings, ARIA state where necessary, reduced-motion preference and safe dialogs. Do not rely on color alone. Validate disabled, loading, error, empty and success states; do not claim accessibility conformance without testing.
 
 ## 8. Real admin information architecture
-Only show capabilities actually implemented: approved/verified users, approved owners, active/disabled API clients, IP whitelist requests and approvals, and authenticated/logout actions. Derive counters from real authorized queries and label bounded listings accurately. Keep future Usage, Security Events, API Docs and Settings out of live navigation until real authorized routes exist. No fake counters, endpoints, charts, filters or pagination.
+Only show capabilities actually implemented: approved/verified users, approved owners, active/disabled API clients, IP whitelist requests and approvals, and authenticated/logout actions. Derive counters from real authorized queries and label bounded listings accurately. Keep future Usage, Security Events and API Docs out of live navigation until real authorized routes exist. The SMTP Settings screen is implemented and uses the existing admin role. No fake counters, endpoints, charts, filters or pagination.
 
-## 9. HTTP security boundaries (must never be weakened)
-- `ADMIN_UI_ENABLED`: HTTPS and exact trusted APP_URL Host (no operator browser IP gate in next release); never trust forwarded headers. API client source IP policy remains mandatory and exact.
-- `ADMIN_ACTIONS_ENABLED`: independent default-off mutation gate.
-- `ACCOUNT_UI_ENABLED` and `ACCOUNT_KEYS_ENABLED`: separate default-off owner portal gates.
-- `GATEWAY_PROXY_ENABLED`: new default-off bearer/IP admission; do not enable until full local integration tests. `GATEWAY_PROXY_WRITE_ENABLED` separately gates costly or state-changing operations and remains disabled until route-level risk review.
-- Use fresh database account/role checks; secure short-lived server sessions, SameSite=Strict/HttpOnly/Secure cookies, strict CSRF and exact field parsing, source IP checks, HMAC-isolated MySQL rate limits, metadata-only audit and fail-closed denials.
-- Do not modify admin review POST payloads, routes, response status meanings or redirects without explicit review.
-- Do not log SQL, raw bodies, IPs, emails, tokens or passwords. A bearer key is displayed only once on its original successful POST; never in GET, logs, localStorage, headers, analytics or session state.
+## 9. Security and configuration boundaries
+
+- **Only five DB connection values belong in private .env**; reject unknown keys. Never add flags or SMTP, provider, host or crypto settings there.
+- The server virtual host supplies canonical HTTPS `SERVER_NAME`, which must match `HTTP_HOST`. Do not use forwarded headers for security decisions.
+- Use the existing `admin` role for all admin operations. Do not add super-admin, dual renderers or feature toggles. SMTP lives in MySQL `smtp_settings`, edited from the admin Settings page.
+- The application encryption secret is a single backed-up private file `storage/app-secret.key` with mode 0600, outside the web root; do not store its key in MySQL, .env or Git. Use separated HKDF key for HMAC rate limiting.
+- Keep fresh database eligibility/roles, secure short-lived sessions, CSRF, strict form parsing, exact API-client source IP approval, HMAC rate limits, metadata-only audit and fail-closed denials. These are security checks, not optional feature flags.
+- Upstream writes are not supported until narrowly scoped, reviewed operation policies exist. Never add a bypass toggle.
+- Do not log SQL, raw request bodies, IPs, emails, tokens or passwords. Display new API keys only once on successful POST.
 
 ## 10. CSP and frontend interactions
-Prefer a strict Content Security Policy: no `unsafe-eval`, no inline script, no external runtime origins. Audit Alpine CSP compatibility and avoid unsafe dynamic expressions. Load local JS/CSS through `public/assets/` only; changing CSP must not weaken protections for the owner portal or legacy admin views. Escape untrusted text with Twig HTML escaping, untrusted attributes in the right context, and no `raw` filters without explicit safe review.
+Prefer a strict Content Security Policy: no `unsafe-eval`, no inline script, no external runtime origins. Audit Alpine CSP compatibility and avoid unsafe dynamic expressions. Load local JS/CSS through `public/assets/` only; changing CSP must not weaken protections for the owner portal or authenticated browser views. Escape untrusted text with Twig HTML escaping, untrusted attributes in the right context, and no `raw` filters without explicit safe review.
 
 ## 11. Build and hosting
 Production is cPanel shared hosting with Git Version Control, no shell, Redis, workers, Node, composer install or asset build. Private repository checkout: `/home/arsamnet/repositories/opgateway`; public document root: `/home/arsamnet/opgateway.arsamnet.com`. Only precompiled, reviewed and committed static assets can be copied by a restricted `.cpanel.yml` allowlist. Never copy private templates, `.env`, `vendor/`, Git metadata, application logs or source into the document root. Never overwrite cPanel-managed `.htaccess`, `php.ini` or `.user.ini`. Do not introduce a GitHub Action, CI workflow, background deploy, migration on deploy or server-side NPM/Composer install.
 
 ## 12. Testing and release gates
-Before implementation, inspect actual code and existing tests. Run PHP lint, PHPUnit with notices, smoke checks and strict Composer validation; verify Twig escaping, login/CSRF/IP/role/feature-flag regressions and no fake data. Run `npm ci`, production build, bundle inspection, JS lint, automated/browser responsive tests at 320–1440px, keyboard checks, dark/system theme tests and CSP checks before declaring UI ready. Keep user-verified test baselines separate from expected outcomes and accurately report what could not run.
+Before implementation, inspect actual code and existing tests. Run PHP lint, PHPUnit with notices, smoke checks and strict Composer validation; verify Twig escaping, login/CSRF/IP/role/route and authorization regressions and no fake data. Run `npm ci`, production build, bundle inspection, JS lint, automated/browser responsive tests at 320–1440px, keyboard checks, dark/system theme tests and CSP checks before declaring UI ready. Keep user-verified test baselines separate from expected outcomes and accurately report what could not run.
 
 ## 13. Documentation and change management
 Keep architecture, UI tokens, template conventions, security/CSP, build, manual deploy and test procedures in `docs/`; update `CHANGELOG.md` and `README.md` for meaningful changes. Use small reviewable commits, preserve the existing fixed migration checksums and avoid unrelated changes. Do not blindly copy TailAdmin's own `AGENTS.md`; this document governs OPGateway.
 
 ## 14. Definition of done
-A feature is done only when it uses the actual TailAdmin Free design language, Twig presentation, accessible mobile and desktop layouts, responsive light/dark/system behavior, real authorized backend data, tested server mutations, secure local assets, compatible manual cPanel deployment, unchanged default-off flags and updated documentation. **Never describe unrun tests/builds/browser audits as passing.**
+A feature is done only when it uses the actual TailAdmin Free design language, Twig presentation, accessible mobile and desktop layouts, responsive light/dark/system behavior, real authorized backend data, tested server mutations, secure local assets, compatible manual cPanel deployment, single-path routing and updated documentation. **Never describe unrun tests/builds/browser audits as passing.**
 
 
 ## 13. Unreleased self-service work
 New registration, SMTP admin settings, Openprovider account encryption and
 proxy edge are in a feature branch. Follow docs/gateway-onboarding.md,
-keep everything default off, never edit earlier migration checksums, and
+keep unreleased operations unavailable, never edit earlier migration checksums, and
 never deploy before migration 004 and Composer lock/vendor tests. The existing
 admin role is sufficient for all privileged administrative operations.
 Do not add a super-admin role or new role migration.

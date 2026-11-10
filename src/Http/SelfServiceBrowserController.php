@@ -12,7 +12,7 @@ use OPGateway\Identity\SelfServiceRegistration;
 use InvalidArgumentException;
 
 /**
- * Opt-in public onboarding and authenticated owner connection management.
+ * Public onboarding and authenticated owner connection management.
  * Every POST is strictly decoded and CSRF-checked; token confirmation
  * requires an intentional POST, not a crawler's link-prefetch GET.
  */
@@ -24,6 +24,8 @@ final readonly class SelfServiceBrowserController
         private ?SelfServiceRegistration $registration,
         private ?OwnerIntegrationService $integration,
         private string $origin,
+        private ?GuardedLoginService $reauth = null,
+        private ?OwnerOverviewProvider $overview = null,
     ) {
     }
 
@@ -88,8 +90,7 @@ final readonly class SelfServiceBrowserController
                 : self::html(AccountViews::registrationAccepted());
         }
 
-        // These routes remain inaccessible until independent owner feature
-        // flag is enabled, even for an otherwise authenticated administrator.
+        // Authenticated owner operations always require a valid session.
         if ($this->integration === null || $method !== 'POST') {
             return self::error(404);
         }

@@ -15,6 +15,7 @@ use OPGateway\Security\ApiCredentialService;
 use OPGateway\Security\PdoApiCredentialStore;
 use OPGateway\Security\PdoGatewayRateLimiter;
 use OPGateway\Security\SealedSecret;
+use OPGateway\Security\RuntimeSecrets;
 use OPGateway\Security\PdoSecurityEventRecorder;
 use OPGateway\Observability\DiagnosticLog;
 use PDO;
@@ -43,21 +44,14 @@ final readonly class GatewayHttpEntry
         string $method, string $path, array $server, string $requestId = '',
     ): array
     {
-        if (($this->config['GATEWAY_PROXY_ENABLED'] ?? '') !== 'true') {
-            return self::error(503, 'gateway_not_configured');
-        }
-        if (($server['HTTPS'] ?? '') !== 'on'
-            || ($this->config['ACCOUNT_KEYS_ENABLED'] ?? '') !== 'true') {
+        if (($server['HTTPS'] ?? '') !== 'on') {
             return self::error(403, 'forbidden');
         }
-        $origin = $this->config['APP_URL'] ?? '';
-        if (preg_match('~^https://[a-z0-9.-]+(?::[0-9]{1,5})?$~iD', $origin) !== 1
-            || !hash_equals(strtolower(substr($origin, 8)),
-                strtolower((string) ($server['HTTP_HOST'] ?? '')))) {
+        if (CanonicalOrigin::fromServer($server) === null) {
             return self::error(404, 'not_found');
         }
         if (!OpenproviderRoutePolicy::allowed(
-            $method, $path, ($this->config['GATEWAY_PROXY_WRITE_ENABLED'] ?? '') === 'true',
+            $method, $path, false,
         )) {
             return self::error(404, 'operation_not_available');
         }
@@ -77,13 +71,10 @@ final readonly class GatewayHttpEntry
         if ($packed === false || !in_array(strlen($packed), [4, 16], true)) {
             return self::error(403, 'forbidden');
         }
-        $secret = $this->config['LOGIN_RATE_LIMIT_KEY'] ?? '';
-        if (preg_match('/^[0-9a-f]{64}$/iD', $secret) !== 1
-            || !isset($this->config['APP_KEY'])) {
-            return self::error(503, 'service_unavailable');
-        }
         try {
-            $vault = new SealedSecret($this->config['APP_KEY']);
+            $root = dirname(__DIR__, 2);
+            $secret = RuntimeSecrets::limiterKey($root);
+            $vault = new SealedSecret(RuntimeSecrets::key($root));
             if (!in_array('mysql', PDO::getAvailableDrivers(), true)) {
                 return self::error(503, 'service_unavailable');
             }
@@ -98,7 +89,7 @@ final readonly class GatewayHttpEntry
             if ($clientId === null) {
                 return self::error(403, 'forbidden');
             }
-            if (!(new PdoGatewayRateLimiter($pdo, hex2bin($secret)))->allow($clientId, $sourceIp)) {
+            if (!(new PdoGatewayRateLimiter($pdo, $secret))->allow($clientId, $sourceIp)) {
                 return self::error(429, 'too_many_requests');
             }
             if (preg_match('/^[a-f0-9]{32}$/D', $requestId) === 1) {

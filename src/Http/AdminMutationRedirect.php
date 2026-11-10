@@ -5,20 +5,13 @@ declare(strict_types=1);
 namespace OPGateway\Http;
 
 /**
- * Fixed server-owned Post/Redirect/Get destinations after successful actions.
- *
- * Client-provided Origin/Referer and arbitrary 'return_to' form fields are
- * intentionally ignored. The historical legacy dashboard stays unchanged.
- * Only called AFTER the original mutation authorization succeeds.
+ * Fixed server-owned destinations after successful administrator mutations.
+ * Ignore client Origin, Referer and arbitrary return URLs.
  */
 final class AdminMutationRedirect
 {
-    public static function forAction(string $action, bool $twigEnabled): string
+    public static function forAction(string $action): string
     {
-        if (!$twigEnabled) {
-            return '/admin';
-        }
-
         return match ($action) {
             'approve_user' => '/admin/users',
             'create_client' => '/admin/owners',

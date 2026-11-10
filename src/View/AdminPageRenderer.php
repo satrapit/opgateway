@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace OPGateway\View;
 
-/** Presentation-only contract; the legacy HTML renderer remains the default. */
+/** Presentation-only contract for the single administrator Twig UI. */
 interface AdminPageRenderer
 {
     public function login(string $csrfToken, bool $showError = false): string;

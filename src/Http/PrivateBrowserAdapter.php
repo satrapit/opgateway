@@ -10,7 +10,7 @@ use OPGateway\Identity\AdministratorAuthorization;
 use OPGateway\View\AdminPageRenderer;
 
 /**
- * Private browser route dispatcher with IP/HTTPS-gated entrypoint.
+ * HTTPS-only administrator request dispatcher.
  *
  * Caller must derive HTTPS from trusted server configuration, start the
  * session and supply bounded request bytes (never POST superglobals).
@@ -47,8 +47,8 @@ final readonly class PrivateBrowserAdapter
         }
 
         if ($path === '/admin/login' && $method === 'GET') {
-            return self::html($this->pages?->login($this->session->csrfToken())
-                ?? BrowserViews::login($this->session->csrfToken()));
+            return $this->pages === null ? self::error(404)
+                : self::html($this->pages->login($this->session->csrfToken()));
         }
 
         if ($path === '/admin/login' && $method === 'POST') {
@@ -63,13 +63,11 @@ final readonly class PrivateBrowserAdapter
             if ($result['status'] === 200) {
                 return self::redirect('/admin');
             }
-            return self::html($this->pages?->login($this->session->csrfToken(), true)
-                ?? BrowserViews::login($this->session->csrfToken(), true), $result['status']);
+            return $this->pages === null ? self::error(404)
+                : self::html($this->pages->login($this->session->csrfToken(), true), $result['status']);
         }
 
-        // Separate, explicitly allowlisted GET pages for the Twig admin UI.
-        // Legacy mode retains only the historical /admin dashboard. Every
-        // new page uses the same fresh administrator authorization boundary.
+        // One Twig renderer for every admin page; the role check is fresh.
         $sections = [
             '/admin/users' => 'users',
             '/admin/owners' => 'owners',
@@ -78,7 +76,7 @@ final readonly class PrivateBrowserAdapter
             '/admin/ips/approved' => 'approved_ips',
         ];
         if ($method === 'GET' && ($path === '/admin' || isset($sections[$path]))) {
-            if ($path !== '/admin' && $this->pages === null) {
+            if ($this->pages === null) {
                 return self::error(404);
             }
             $userId = $this->session->currentUserId($this->accounts);
@@ -96,17 +94,13 @@ final readonly class PrivateBrowserAdapter
                     'Administrator', $pending, $this->review !== null,
                 ));
             }
-            return self::html($this->pages?->dashboard(
-                $this->session->csrfToken(), 'Administrator', $pending,
-                $this->review !== null,
-            ) ?? BrowserViews::dashboard(
+            return self::html($this->pages->dashboard(
                 $this->session->csrfToken(), 'Administrator', $pending,
                 $this->review !== null,
             ));
         }
 
         if ($path === '/admin/review' && $method === 'POST') {
-            // Mutation capability is disabled by default, independently of login.
             if ($this->review === null) {
                 return self::error(404);
             }
@@ -140,12 +134,11 @@ final readonly class PrivateBrowserAdapter
                 $form['action'], (int) $form['target_id'],
             );
             return $result['status'] === 200
-                ? self::redirect(AdminMutationRedirect::forAction($form['action'], $this->pages !== null))
+                ? self::redirect(AdminMutationRedirect::forAction($form['action']))
                 : self::json($result['status'], ['error' => $result['code']]);
         }
 
         if ($path === '/admin/provision' && $method === 'POST') {
-            // Reuse the separate, default-off administrator mutation gate.
             if ($this->review === null) {
                 return self::error(404);
             }
@@ -177,7 +170,7 @@ final readonly class PrivateBrowserAdapter
                 $form['action'], (int) $form['target_id'], $form['value'],
             );
             return $result['status'] === 200
-                ? self::redirect(AdminMutationRedirect::forAction($form['action'], $this->pages !== null))
+                ? self::redirect(AdminMutationRedirect::forAction($form['action']))
                 : self::json($result['status'], ['error' => $result['code']]);
         }
 

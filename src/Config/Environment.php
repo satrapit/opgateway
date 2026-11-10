@@ -29,6 +29,9 @@ final class Environment
                 throw new RuntimeException('Invalid configuration syntax.');
             }
             $name = $matches[1];
+            if (!in_array($name, ['DB_HOST', 'DB_PORT', 'DB_NAME', 'DB_USER', 'DB_PASSWORD'], true)) {
+                throw new RuntimeException('Only database connection keys are allowed.');
+            }
             if (array_key_exists($name, $result)) {
                 throw new RuntimeException('Duplicate configuration key.');
             }

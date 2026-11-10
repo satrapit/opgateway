@@ -1,47 +1,48 @@
 # Security model
 
-## Trust boundaries
+The gateway trusts only web-server-provided HTTPS and transport source IP,
+never client-provided `X-Forwarded-For` or `X-Forwarded-Proto`. The
+canonical host must match configured `SERVER_NAME`. All authenticated
+pages require fresh account eligibility and role checks. Admin login can
+originate from any IP; **API clients cannot**, because the exact source
+address must have prior approval for the active client.
 
-Browser/operator → gateway; API client → gateway; gateway → database; gateway → Openprovider. Only server-controlled TLS and source-IP metadata are trusted. Do not infer access from unverified `X-Forwarded-For` or `X-Forwarded-Proto`.
+Passwords used for browser authentication remain one-way hashed.
+Self-service email tokens are random, one-use and SHA-256 hashed in MySQL.
+Only self-service accounts are activated through email verification; old
+manual accounts retain administrative approval. Sessions are Secure,
+HttpOnly, SameSite=Strict, regenerated on authentication, and protected
+by CSRF and SQL-backed HMAC-isolated throttling.
 
-- In the proposed next release, Admin browser login requires HTTPS, exact configured Host, explicit enablement, secure session, live account and administrator role checks, CSRF and database-backed throttling; the old one-operator-IP browser gate is retired.
-- Users require active status, verified email and administrator approval before login or client access.
-- Browser password hashes use PHP `password_hash`/`password_verify`; session IDs rotate on login. Session cookies are Secure, HttpOnly and SameSite=Strict.
-- High-entropy, single-use email verification tokens are SHA-256 hashed in storage. The new public signup marks an account with signup_source=self_service; only these accounts become active/approved after email verification. Existing manual accounts still require admin approval.
-- Only explicitly allowlisted administrator lifecycle mutations can be routed, behind the additional default-off `ADMIN_ACTIONS_ENABLED` flag. They enforce live role and owner checks, strict session CSRF, administrator- and IP-scoped limits, bounded form input and audit in the same transaction as the SQL state change.
+Admin review/provision requires the existing `admin` role, current
+authorization, CSRF, strict bounded forms, rate limits and transactional
+metadata-only audit. Owner API key issue requires fresh password
+confirmation. Newly created clients are disabled and IPs are unapproved;
+access requires explicitly approved exact IPv4/IPv6 plus an active owner,
+active client and valid non-revoked gateway bearer digest.
 
-## Client credential and IP policy
+## SMTP, provider and application key
 
-- The internal credential format is `opg_<16 hex prefix>.<64 hex secret>`. The random 256-bit secret is shown once by trusted code and never stored raw; the database stores a prefix and SHA-256 hash. Human passwords use a password KDF instead.
-- Credentials are checked against active, verified, approved owner, active client, expiry/revocation and an explicitly enabled **exact IPv4 or IPv6** allowlist entry. No default IPs, CIDR shortcuts or implicit trust.
-- Internal creation starts clients as `disabled`; administrator approval is required to activate clients and pending IP entries. Disabled clients cannot use credentials.
-- These checks are **not yet part of a public `/v1` HTTP admission pipeline**; no external API call is authorized by these helpers alone.
+SMTP configuration resides in MySQL `smtp_settings`, edited in the
+administrator Settings screen after current-password recheck.
+Openprovider reseller credentials and cached upstream bearer reside in
+`provider_connections`. These values are AES-256-GCM encrypted with
+separate authenticated contexts. Decryption requires a 256-bit key
+stored at private `storage/app-secret.key` and **not in the database**.
+A distinct rate-limiter pepper is derived using HKDF. Keep the key
+outside the public Document Root with mode 0600 and back it up privately;
+do not regenerate after ciphertext has been saved.
 
-## Provider and audit security
+`.env` is exclusively database connection configuration. There are
+no feature flags: admission is a property of authenticated identity,
+ownership and approved routes, not an environment toggle.
 
-No arbitrary proxy. Before enabling any provider operation, require a verified versioned path/method allowlist, authenticated client, per-client IP authorization, scopes, tenant/resource ownership, server-held upstream token, TLS/host validation, bounded payloads, safe retry rules and no secrets in responses or logs.
+No arbitrary URLs, redirects, unbounded bodies, weak TLS or exposed
+upstream passwords/tokens are allowed. Provider operations with monetary
+or destructive side effects remain unavailable until operation-level
+authorization, ownership, idempotency and upstream-spec review.
 
-Only allowlisted metadata enters security and diagnostic logs: timestamps, random request IDs, restricted event names, status, and safe numeric database categories. **Never log** passwords, bearer tokens, raw request bodies, email addresses, source IPs, session cookies, CSRF tokens, SQL or stack traces.
-
-Future hardening includes administrator MFA, data-retention/pruning policy, external API audit and verified concurrency behavior. A rejected HTTP request is not a packet-level firewall drop.
-
-## Owner credential portal
-
-Owner login and key actions are behind two independent default-off flags. Password sign-in has separate IP/identity limits; issuance requires password reconfirmation, a fresh eligible owner session and active owned client, and both issue/revoke use CSRF rotation, separate HMAC limits, SQL ownership checks, and metadata-only transactional audit. Secret bearer values never appear in GET views, session data, URLs, application logs or database columns. All public `/v1` provider routes remain disabled.
-
-
-## Next release encryption, SMTP and proxy (unreleased)
-
-See gateway-onboarding.md. User passwords stay one-way hashed; Openprovider
-and SMTP passwords and Openprovider access tokens use AES-256-GCM with random
-nonces, authenticated per-user record context and a separately generated
-64-hex-character APP_KEY stored in private .env. Never commit APP_KEY or any
-credential. Do not expose decrypted values in dashboard/API/logs.
-
-The new API edge never trusts client-supplied forwarding headers; a gateway
-API key is looked up by digest, and the client/source IP, owner and enablement
-are revalidated in MySQL. Upstream HTTP is fixed to the Openprovider HTTPS
-authority, disallows redirects, and enforces JSON/size/time bounds.
-GATEWAY_PROXY_WRITE_ENABLED stays false until paid-operation ownership, scopes
-and idempotency are independently reviewed. This patch does not attest full
-OpenAPI conformance or production readiness.
+Security logs contain only allowlisted metadata: request ID, event code,
+timestamp, status and safe categories. Never log passwords, bearer tokens,
+full request bodies, email addresses, raw source IPs, CSRF, SQL or traces.
+Rejected requests return HTTP status codes; the app is not a packet firewall.

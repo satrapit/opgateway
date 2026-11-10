@@ -1,11 +1,16 @@
 # Security policy
 
-This repository is in foundation stage and is not production ready. Please report vulnerabilities privately to the repository maintainers through GitHub private vulnerability reporting if enabled; do not open public issues containing exploit details or secrets.
+This repository contains a security-sensitive API gateway and an unreleased
+self-service/SMTP/provider integration branch. Please use GitHub private
+vulnerability reporting (if enabled) rather than publishing exploit details
+or credentials in issues.
 
-Never share real upstream credentials, access tokens, customer data or request bodies with bug reports. Redact before submitting diagnostic records.
+Gateway passwords are one-way hashed. SMTP and Openprovider credentials
+are encrypted using an independently protected, private file key at
+`storage/app-secret.key`; it is **not** saved in MySQL or Git and must
+be backed up. The private `.env` contains only MySQL connection values.
 
-The unreleased self-service branch stores only password hashes for gateway
-login; decryptable vendor credentials and SMTP passwords use private
-AES-256-GCM envelopes with independently protected APP_KEY. Do not publish
-credentials or diagnostic details in issues. Do not enable the upstream
-write gateway without transaction, scope and idempotency review.
+Do not enable new mutating or paid upstream operations without reviewed
+authorization, ownership, idempotency and versioned API compatibility.
+Never put request bodies, passwords, access tokens or customer data in
+issue reports or logs.

@@ -1,5 +1,20 @@
 # Changelog
 
+## Unreleased — Remove runtime feature switches and unify paths (2026-11-10)
+
+- Restrict .env to five MySQL connection values. Keep the application crypto
+  secret in an owner-only file outside Document Root, with a separate HKDF
+  rate-limiter key, never in MySQL.
+- Use one canonical web-server HTTPS origin, one Twig admin UI, the existing
+  admin role, and always-routed owner onboarding, API key, SMTP and gateway
+  admission. Store SMTP only in MySQL; require its configuration for signup.
+- Retain mandatory auth, CSRF, admin/client/IP approval, audit and rate limits.
+  Paid and mutating upstream operations remain unavailable.
+- Fix missing password-reauthentication dependencies in provider-account save.
+- Update docs and add origin/private-secret regression tests. No schema
+  migration beyond previously introduced 004.
+
+
 ## [Unreleased]
 
 - Begin default-off self-service account signup, email verification and SMTP administration with encrypted credentials and an additive manually-reviewed schema migration (004).

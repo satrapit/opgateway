@@ -1,60 +1,66 @@
 # OPGateway
 
-> **Release boundary:** v0.1.0-alpha.3 remains the last deployed release.
-> The self-service signup/SMTP/Openprovider relay is under development on
-> an opt-in feature branch and must **not** be deployed before local integration,
-> locked PHPMailer vendor, manual schema upgrade and security acceptance.
+PHP 8.3 / MySQL Openprovider gateway for cPanel shared hosting, with a
+TailAdmin/Twig admin panel and a self-service account portal.
 
+> **Unreleased feature branch:** `main` / production remains at
+> v0.1.0-alpha.3. Do not deploy or merge this branch before live SMTP,
+> registration, IP, provider, security and browser integration testing.
+> The local database was manually upgraded to migration 004; production
+> must never be upgraded without a verified backup and deployment plan.
 
-A security-first PHP 8.3 / MySQL gateway foundation for the Openprovider API on shared cPanel hosting.
+## One application, no feature-flag maze
 
-**Status:** Administrator login/logout, bounded review queues and an independently gated approved-owner portal with one-time API key issuance/revocation are available when explicitly enabled. Seven administrator lifecycle operations (approve user/client/IP, create client, request IP, disable client, revoke IP) are implemented but independently disabled by default; the client and credential management modules enforce ownership checks, but **all public `/v1` provider routes remain disabled (HTTP 503)**. This is not a production-ready upstream proxy.
+- `/admin`: TailAdmin/Twig only; existing `admin` role manages user
+  approvals, API clients, pending IPs, and `/admin/settings/smtp`.
+- `/account`: login, registration with email verification, owner-specific
+  Openprovider credentials, disabled client creation and IP requests,
+  one-time API key issuance/revocation.
+- `/v1/*`: gateway-issued bearer authorization, exact approved source IP,
+  active client and owner validation, bounded fixed-host HTTPS relay.
+- Mutating/paid Openprovider operations remain **unavailable in code** until
+  a verified per-operation authorization design is released. Domain
+  availability checks may use a non-mutating POST.
 
-**Admin UI migration (in progress):** When enabled locally, TailAdmin/Twig now separates management into `/admin`, `/admin/users`, `/admin/owners`, `/admin/clients`, `/admin/ips/pending` and `/admin/ips/approved`; all routes require the existing administrator HTTPS/exact IP/session/role gates. The old single-page anchor navigation is retired in this feature branch. **Do not merge/deploy before local tests and security/browser review.**
+Configuration is deliberately small. **Only MySQL connection values belong in
+`.env`** (`DB_HOST`, `DB_PORT`, `DB_NAME`, `DB_USER`,
+`DB_PASSWORD`). SMTP settings are encrypted and managed in the database,
+through the `admin` role. The application has no `*_ENABLED` switches.
+Security policy is enforced by authentication/authorization, not runtime flags.
 
-**Admin dialog enhancement (in progress):** User/owner/client/IP details use native `<details>` when JavaScript is off and local `<dialog>` when enabled. Existing create-client and request-IP forms are progressively upgraded to dialogs; destructive access changes ask for an explicit target-aware confirmation. The row actions are now accessible, icon-only vertical-ellipsis menus on both mobile and desktop; both headers share an 80px baseline, modal backdrops dismiss on outside interaction, and successful Twig action POSTs redirect to their owning section using server-owned fixed paths. The same server-reviewed CSRF, role, IP, and default-off mutation gates remain in charge. Browser and integrated write-action testing of this new slice are still pending.
+The canonical HTTPS host comes from the configured web-server
+`SERVER_NAME`, which must match `HTTP_HOST`. A unique AES-256-GCM
+application secret is stored in private `storage/app-secret.key` (mode
+0600), outside the public document root. It is created once and **must be
+backed up**; never save this key in MySQL, Git or the public directory.
 
-**Admin UI migration details:** A TailAdmin Free/Twig 3 first vertical slice is in the repository behind an additional **default-off** `ADMIN_TWIG_UI_ENABLED` switch. Until the integrated Composer lock resolution, local webpack build, static asset deployment and browser/security verification are complete, keep this switch **false** in all environments. Legacy admin HTML remains the runtime default.
+## Development
 
-## Next release: self-service integration (not live)
+1. Run `composer install` on PHP 8.3 with MySQL extensions.
+2. Copy `.env.example` to private `.env` and provide **local** DB credentials.
+   If upgrading a local checkout, remove retired non-DB entries from .env.
+3. For an empty DB import `database/sql/opgateway_full_schema.sql` once.
+   For an existing alpha.3 DB, back up and run only reviewed incremental
+   migration `database/sql/upgrade_202611100001.sql` once.
+4. On first run create an admin using the existing reviewed SQL in
+   [database documentation](docs/database.md), if none exists.
+5. Use HTTPS at a correctly configured canonical virtual host.
+6. Run `php scripts/lint.php`, `./vendor/bin/phpunit` and
+   `php scripts/smoke.php`, then build frontend assets locally.
 
-See [Gateway onboarding and security rollout](docs/gateway-onboarding.md) for
-registration, one-time email verification, admin-configurable SMTP, encrypted
-per-owner Openprovider credentials, approved IP/client authorization, and the
-default-off upstream relay. Browser login IP restriction is retired in the
-feature implementation only; API source IP policy remains exact and mandatory.
-
-## Hosting model
-
-- Private source and `.env`: `/home/arsamnet/repositories/opgateway`
-- Public Document Root: `/home/arsamnet/opgateway.arsamnet.com`
-- Deployment: cPanel → Git Version Control → **Update from Remote** → **Deploy HEAD Commit**.
-- The staged `.cpanel.yml` copies `public/index.php` and three reviewed `/assets/admin/` files only; it never overwrites cPanel-managed `.htaccess`, `php.ini`, `.user.ini` or private configuration.
-- Hosted MySQL uses `DB_HOST=db`; on local macOS, use the actual MySQL endpoint (often `127.0.0.1`, port `3306`). A local database containing the same data still needs independent connection settings.
-- `/health` returns `{"status":"ok"}`, without checking database connectivity.
-
-## Quick start (local)
-
-1. Run `composer install` on PHP 8.3 with PDO MySQL.
-2. Create a private `.env` from `.env.example` and supply real local DB settings. Never commit it.
-3. For an **empty new database only**, import `database/sql/opgateway_full_schema.sql`. Existing databases must **not** be re-imported.
-4. Create the first administrator using the reviewed one-time SQL in [Database](docs/database.md), if none exists.
-5. Enable the admin browser only after configuring its exact local IP, HTTPS URL and random login limiter key. See [Administration](docs/admin.md).
-6. Run `php scripts/lint.php`, `composer test` and `php scripts/smoke.php`.
-
-There is no public setup endpoint or automated schema migration on deploy.
+Deployment is manual through cPanel Git Version Control and
+`.cpanel.yml`; only reviewed static assets/index.php are copied into
+Document Root. No GitHub Actions, auto migrations or server-side Composer.
 
 ## Documentation
 
-- [Architecture and current feature boundaries](docs/architecture.md)
-- [Administration and login](docs/admin.md)
-- [Frontend migration and build plan](docs/frontend-architecture.md)
-- [TailAdmin Free design tokens](docs/ui-design-system.md)
-- [Approved account portal and API keys](docs/account.md)
-- [Database and first-administrator SQL](docs/database.md)
-- [Security and API credential rules](docs/security.md)
-- [Deployment and diagnostics](docs/cpanel-deployment.md)
+- [Architecture](docs/architecture.md)
+- [Administrator guide](docs/admin.md)
+- [Account and API keys](docs/account.md)
+- [Onboarding and release checklist](docs/gateway-onboarding.md)
+- [Database](docs/database.md)
+- [Security](docs/security.md)
+- [Hosting and diagnostics](docs/cpanel-deployment.md)
+- [API compatibility](docs/api-compatibility.md)
+- [Frontend and design](docs/frontend-architecture.md)
 - [Testing](docs/testing.md)
-- [Provider API compatibility](docs/api-compatibility.md)
-
-Project policy: [SECURITY.md](SECURITY.md), [CONTRIBUTING.md](CONTRIBUTING.md), [CHANGELOG.md](CHANGELOG.md). No GitHub Actions, automatic hosting workflows, credentials, or runtime logs are committed.

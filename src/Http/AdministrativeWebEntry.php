@@ -8,6 +8,7 @@ use OPGateway\Database\Migrations\MigrationCatalog;
 use OPGateway\Identity\AdministratorAuthorization;
 use OPGateway\Mail\PdoSmtpSettings;
 use OPGateway\Security\SealedSecret;
+use OPGateway\Security\RuntimeSecrets;
 use OPGateway\Database\Migrations\SchemaReadiness;
 use OPGateway\Database\PdoConnectionFactory;
 use OPGateway\Clients\ClientManagementService;
@@ -31,8 +32,7 @@ use OPGateway\View\TwigAdminPageRenderer;
 /**
  * Opt-in admin browser HTTP entry; fail-closed until explicitly enabled.
  *
- * Sign-in and read-only review are gated by ADMIN_UI_ENABLED. Three
- * administrator mutations are gated independently by ADMIN_ACTIONS_ENABLED.
+ * All administrator functions use the existing admin role and CSRF checks.
  * No provider proxy is routed through this entrypoint.
  *
  * Trust: HTTPS and REMOTE_ADDR must be supplied by the actual web server,
@@ -51,10 +51,6 @@ final readonly class AdministrativeWebEntry
      */
     public function handle(string $method, string $path, array $server): array
     {
-        if (($this->config['ADMIN_UI_ENABLED'] ?? '') !== 'true') {
-            return self::error(404);
-        }
-
         // Public admin login is protected by canonical HTTPS origin,
         // account-password rate limits, secure session and fresh admin role
         // checks. User-selected API client IP whitelists remain enforced.
@@ -62,17 +58,7 @@ final readonly class AdministrativeWebEntry
             return self::error(404);
         }
 
-        $origin = $this->config['APP_URL'] ?? '';
-        $key = $this->config['LOGIN_RATE_LIMIT_KEY'] ?? '';
-        if (!preg_match('~^https://[a-z0-9.-]+(?::[0-9]{1,5})?$~iD', $origin)
-            || !preg_match('/^[0-9a-f]{64}$/D', $key)) {
-            DiagnosticLog::record('admin.configuration_invalid', 503);
-            return self::error(503);
-        }
-        if (!hash_equals(
-            strtolower(substr($origin, strlen('https://'))),
-            strtolower((string) ($server['HTTP_HOST'] ?? '')),
-        )) {
+        if (CanonicalOrigin::fromServer($server) === null) {
             return self::error(404);
         }
 
@@ -108,37 +94,38 @@ final readonly class AdministrativeWebEntry
             DiagnosticLog::record('admin.session_start_failed', 503, $exception);
             return self::error(503);
         }
+        try {
+            $key = RuntimeSecrets::limiterKey(dirname(__DIR__, 2));
+        } catch (Throwable $exception) {
+            DiagnosticLog::record('admin.secret_unavailable', 503, $exception);
+            return self::error(503);
+        }
         $accounts = new PdoLoginAccountRepository($pdo);
         $admins = new PdoAdministratorAuthorization($pdo);
         $auth = new BrowserAuthController(
             $session,
             new GuardedLoginService(
                 new LoginAuthenticator($accounts, new PasswordHasher()),
-                new PdoLoginAttemptLimiter($pdo, hex2bin($key)),
+                new PdoLoginAttemptLimiter($pdo, $key),
                 new PdoSecurityEventRecorder($pdo),
             ),
             $accounts,
             $admins,
         );
-        $review = ($this->config['ADMIN_ACTIONS_ENABLED'] ?? '') === 'true'
-            ? new AdminReviewService(
-                $pdo,
-                new AdminActions(
-                    new AccountApprovalService($pdo),
-                    new ClientManagementService($pdo),
-                ),
-                new PdoAdminActionLimiter($pdo, hex2bin($key)),
-                new PdoSecurityEventRecorder($pdo),
-                new AdminClientProvisioningService($pdo),
-            )
-            : null;
+        $review = new AdminReviewService(
+            $pdo,
+            new AdminActions(
+                new AccountApprovalService($pdo),
+                new ClientManagementService($pdo),
+            ),
+            new PdoAdminActionLimiter($pdo, $key),
+            new PdoSecurityEventRecorder($pdo),
+            new AdminClientProvisioningService($pdo),
+        );
 
-        // Opt-in view migration. The legacy renderer remains intact if
-        // Twig or compiled assets have not yet been deployed.
-        $twigEnabled = ($this->config['ADMIN_TWIG_UI_ENABLED'] ?? '') === 'true';
-        if ($twigEnabled) {
-            // Explicit opt-in requires private Composer runtime and the exact
-            // prebuilt local assets. No runtime build or unsafe fallback.
+        // Twig is the single supported administrator interface.
+        {
+            // Twig requires the private Composer autoloader and compiled local assets.
             $root = dirname(__DIR__, 2);
             foreach ([
                 'vendor/autoload.php',
@@ -156,12 +143,9 @@ final readonly class AdministrativeWebEntry
             }
         }
 
-        $pages = $twigEnabled
-            ? new TwigAdminPageRenderer(
-                new TwigRenderer(dirname(__DIR__, 2) . '/templates'),
-                ($this->config['ADMIN_SMTP_SETTINGS_ENABLED'] ?? '') === 'true',
-            )
-            : null;
+        $pages = new TwigAdminPageRenderer(
+            new TwigRenderer(dirname(__DIR__, 2) . '/templates'),
+        );
 
         $adapter = new PrivateBrowserAdapter(
             $session, $auth, $accounts, $admins,
@@ -169,16 +153,7 @@ final readonly class AdministrativeWebEntry
         );
 
         if ($path === '/admin/settings/smtp') {
-            if (($this->config['ADMIN_SMTP_SETTINGS_ENABLED'] ?? '') !== 'true'
-                || !$twigEnabled) {
-                return self::error(404);
-            }
-            try {
-                $vault = new SealedSecret($this->config['APP_KEY'] ?? '');
-            } catch (\InvalidArgumentException) {
-                DiagnosticLog::record('admin.encryption_key_invalid', 503);
-                return self::error(503);
-            }
+            $vault = new SealedSecret(RuntimeSecrets::key(dirname(__DIR__, 2)));
         }
 
         $body = null;
@@ -201,7 +176,7 @@ final readonly class AdministrativeWebEntry
         if ($path === '/admin/settings/smtp') {
             $login = new GuardedLoginService(
                 new LoginAuthenticator($accounts, new PasswordHasher()),
-                new PdoLoginAttemptLimiter($pdo, hex2bin($key)),
+                new PdoLoginAttemptLimiter($pdo, $key),
                 new PdoSecurityEventRecorder($pdo),
             );
             $response = (new SmtpAdminController(
@@ -215,20 +190,16 @@ final readonly class AdministrativeWebEntry
                 $body, (string) ($server['REMOTE_ADDR'] ?? ''), bin2hex(random_bytes(16)),
             );
         } else {
-        $response = $adapter->dispatch(
-            $method,
-            $path,
-            true,
-            isset($server['CONTENT_TYPE']) ? (string) $server['CONTENT_TYPE'] : null,
-            (string) ($server['REMOTE_ADDR'] ?? ''),
-            bin2hex(random_bytes(16)),
-            $body,
-        );
+            $response = $adapter->dispatch(
+                $method, $path, true,
+                isset($server['CONTENT_TYPE']) ? (string) $server['CONTENT_TYPE'] : null,
+                (string) ($server['REMOTE_ADDR'] ?? ''),
+                bin2hex(random_bytes(16)), $body,
+            );
         }
 
-        // Only Twig HTML pages need local scripts and styles. Existing
-        // owner/legacy browser CSP is untouched.
-        if ($twigEnabled && str_starts_with($response['content_type'], 'text/html')) {
+        // Admin HTML uses only the locally bundled Twig assets.
+        if (str_starts_with($response['content_type'], 'text/html')) {
             $response['csp'] = "default-src 'none'; style-src 'self'; script-src 'self'; "
                 . "img-src 'self' data:; font-src 'self'; form-action 'self'; "
                 . "base-uri 'none'; frame-ancestors 'none'; object-src 'none'";

@@ -8,8 +8,8 @@ namespace OPGateway\Provider;
  * Fixed-host REST facade. No arbitrary URL, encoded slash, dot segments,
  * user-controlled host, provider token issuance or unsupported root paths.
  *
- * Production writes are independently gated by GATEWAY_PROXY_WRITE_ENABLED,
- * because they may register domains, incur charges or delete resources.
+ * Paid or state-changing operations are unavailable pending a narrowly
+ * scoped operation authorization design. Availability checks are read-only.
  */
 final class OpenproviderRoutePolicy
 {

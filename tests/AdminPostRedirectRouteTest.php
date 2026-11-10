@@ -27,15 +27,14 @@ use PHPUnit\Framework\Attributes\RunInSeparateProcess;
 use PHPUnit\Framework\TestCase;
 
 /**
- * An actual successful review POST must redirect to its Twig page,
- * while legacy fallback preserves the historical Overview destination.
+ * A successful review POST always redirects to its one Twig section.
  * Mocked PDO never connects to or modifies a real database.
  */
 final class AdminPostRedirectRouteTest extends TestCase
 {
     #[RunInSeparateProcess]
     #[PreserveGlobalState(false)]
-    public function testSuccessfulReviewPostRedirectsToOwningPageOnlyInTwigMode(): void
+    public function testSuccessfulReviewPostRedirectsToOwningPage(): void
     {
         $session = new BrowserSession();
         $session->start(true);
@@ -91,13 +90,6 @@ final class AdminPostRedirectRouteTest extends TestCase
         $response = $request($twig);
         self::assertSame(303, $response['status']);
         self::assertSame('/admin/users', $response['location']);
-
-        $legacy = new PrivateBrowserAdapter(
-            $session, $auth, $accounts, $admins, null, $review,
-        );
-        $response = $request($legacy);
-        self::assertSame(303, $response['status']);
-        self::assertSame('/admin', $response['location']);
 
         self::assertTrue(session_destroy());
     }
