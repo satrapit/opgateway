@@ -13,6 +13,7 @@ use OPGateway\Identity\GuardedLoginService;
 use OPGateway\Identity\LoginAccountRepository;
 use OPGateway\Identity\LoginAuthenticator;
 use OPGateway\Identity\PasswordHasher;
+use OPGateway\View\AdminPageRenderer;
 use OPGateway\Security\LoginAttemptLimiter;
 use OPGateway\Security\SecurityEventRecorder;
 use PDO;
@@ -104,8 +105,14 @@ final class AdminOverviewRepositoryTest extends TestCase
             $admins,
         );
 
+        // The single supported admin UI always injects its Twig renderer.
+        // The non-admin role must fail before rendering or querying review data.
+        $renderer = $this->createMock(AdminPageRenderer::class);
+        $renderer->expects(self::never())->method('dashboard');
+        $renderer->expects(self::never())->method('section');
         $adapter = new PrivateBrowserAdapter(
-            $session, $auth, $accounts, $admins, new AdminOverviewRepository($pdo),
+            $session, $auth, $accounts, $admins,
+            new AdminOverviewRepository($pdo), null, $renderer,
         );
 
         $response = $adapter->dispatch(

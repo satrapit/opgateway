@@ -25,15 +25,20 @@ final class AdminAssetPolicyTest extends TestCase
         self::assertStringNotContainsString('/bin/cp -f templates/', $deployment);
     }
 
-    public function testTwigViewIsGatedAndFailsForMissingAssets(): void
+    public function testSingleTwigAdminViewRequiresBundledAssetsAndDbOnlyEnvironment(): void
     {
         $environment = file_get_contents(dirname(__DIR__) . '/.env.example');
         $entry = file_get_contents(dirname(__DIR__) . '/src/Http/AdministrativeWebEntry.php');
         self::assertIsString($environment);
         self::assertIsString($entry);
-        self::assertStringContainsString('ADMIN_TWIG_UI_ENABLED=false', $environment);
-        self::assertStringContainsString('ADMIN_ACTIONS_ENABLED=false', $environment);
+        preg_match_all('/^([A-Z][A-Z0-9_]*)=/m', $environment, $matches);
+        self::assertSame(
+            ['DB_HOST', 'DB_PORT', 'DB_NAME', 'DB_USER', 'DB_PASSWORD'],
+            $matches[1],
+        );
+        self::assertStringNotContainsString('_ENABLED', $environment);
+        self::assertStringNotContainsString('_ENABLED', $entry);
         self::assertStringContainsString('admin.twig_assets_unavailable', $entry);
-        self::assertStringContainsString('TwigAdminPageRenderer', $entry);
+        self::assertStringContainsString('new TwigAdminPageRenderer(', $entry);
     }
 }
