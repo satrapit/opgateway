@@ -7,7 +7,9 @@ shared TailAdmin/Twig design system for both admin and self-service account port
 > pre-Google rollback base with six required migrations and explicit
 > compatibility for migration 007. The current `main` also includes the
 > subsequent database-only .env cleanup. Google sign-in is still in
-> Draft PR #4; nested login settings/CAPTCHA live in Draft PR #7.
+> Draft PR #4. The replacement TailAdmin menu, image CAPTCHA and
+> creation workflows are being reviewed in the independent branch
+> `feat/admin-settings-users-image-captcha`. Neither is deployed.
 
 ## One application, no feature-flag maze
 

@@ -28,7 +28,7 @@ silently interpret old security switches. There is no `getenv()` /
 | API client IP whitelist | `client_ip_whitelists` (approved exact IP per enabled client) |
 | SMTP | `settings` table: `smtp.*` (encrypted password); `/admin/settings/smtp` |
 | Google OAuth (under development) | `settings` table: `google.*` (encrypted secret); `/admin/settings/login/google` |
-| Login CAPTCHA (under development) | `settings` table: `login.captcha_provider`, `login.recaptcha_site_key`, `login.recaptcha_secret` (encrypted); `/admin/settings/login/captcha` |
+| Login CAPTCHA (under development) | `settings` table: `login.captcha_provider`, `login.recaptcha_site_key`, `login.recaptcha_secret` (encrypted); `/admin/settings/security` |
 | Openprovider account credentials | `provider_connections` (encrypted values) |
 | Encryption and HMAC seed | Private `storage/app-secret.key` (0600), **not .env** |
 | Canonical URL | Trusted web server `SERVER_NAME`, matching `HTTP_HOST` |

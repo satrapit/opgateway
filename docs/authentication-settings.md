@@ -93,3 +93,19 @@ denials, Google SSO toggle, and both reCAPTCHA success/failure on HTTPS;
 inspect CSP, no-store and session cookies. Confirm outbound HTTPS from
 the cPanel host before selecting Google reCAPTCHA, then deploy from a
 reviewed main merge only. No separate staging domain exists.
+
+## Accessibility and release validation for image challenges
+
+The visual PNG test cannot be completed by someone who cannot perceive
+the characters. Before production, review an accessible alternative
+flow (for example an equivalent audio challenge or email-based fallback
+that does not bypass account verification) and check multiple browsers
+and mobile screen readers. Do not claim the image alone prevents all
+automated submissions. Limit challenge issuance in the deployment WAF
+and test the server's capacity for repeated image requests.
+
+Before enabling the new default image challenge, verify that the
+production PHP runtime has zlib (`function_exists('gzcompress')`).
+There is intentionally **no arithmetic fallback** when PNG generation
+fails. A missing required image encoder fails closed and must be
+identified before deployment.

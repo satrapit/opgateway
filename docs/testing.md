@@ -134,19 +134,21 @@ fresh automated and end-to-end results are reviewed.
 
 ## Independent login settings / CAPTCHA regression gate
 
-After checkout of `feat/auth-settings-pages-captcha` on Mac:
+After checkout of `feat/admin-settings-users-image-captcha` on Mac:
 run `php scripts/lint.php`, `./vendor/bin/phpunit
 tests/LoginSettingsPolicyTest.php --display-phpunit-notices`, full PHPUnit,
 smoke, `npm ci && npm run lint && npm test && npm run build`.
-Verify the Settings, Login overview, Google SSO, CAPTCHA and SMTP links
-are distinct real pages and nested disclosure navigation works on mobile.
+Verify the Settings parent has a bundled gear icon and rotating chevron,
+and Security, Google SSO and Email each open a real separate page.
+There must be no All settings or intermediate Login overview page.
+Verify keyboard, focus order, current-page links and mobile drawer behavior.
 Verify current-password/CSRF errors never modify settings.
 
 Test Account and Admin password login with raster offline CAPTCHA: correct
 binary PNG, no plaintext response in HTML/session, wrong answer,
 expired challenge, wrong session/role, replay, invalid CSRF, rate limit
 and a real successful password login. Then configure the v2 checkbox
-site and secret keys through the separate CAPTCHA page. On HTTPS
+site and secret keys through the Security page. On HTTPS
 check the CSP allows the Google script/frame, the backend rejects
 missing/replayed/expired tokens and wrong hostname, and that provider
 failure fails closed. Ensure the Google OAuth Client credentials are
@@ -154,3 +156,15 @@ separate, disabling SSO leaves local password login working, and Google
 account linking uses the verified same email with a current-password
 check. Review recovery instructions before selecting reCAPTCHA on
 the single production hostname.
+
+## Administrator creation screens
+
+Run `./vendor/bin/phpunit tests/AdminUserInvitationTest.php
+tests/AdminCreationPagesTest.php --display-phpunit-notices`.
+Review invitations on `/admin/users/invite`: account duplicate suppression,
+email resend for an unverified invitation, enforced role/CSRF/current admin
+password, SMTP unavailable, metadata-only audit, and the workflow from
+email verification to manual approval to own-password setup.
+Check `/admin/clients/create` creates a disabled client for an approved owner,
+and `/admin/ips/request` only accepts exact IPs of active clients, with
+separate activation/approval in the existing administration pages.
