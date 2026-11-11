@@ -10,7 +10,8 @@ OPGateway runs on cPanel shared hosting. Private checkout:
 0600, outside public Document Root. Back it up separately; losing it
 breaks decryption of existing SMTP and owner provider credentials.
 Actual PHP HTTPS `SERVER_NAME` must be the canonical gateway hostname,
-matching `HTTP_HOST`.
+matching `HTTP_HOST`. See [configuration](configuration.md) for the five-key
+.env policy and the locations of other settings.
 
 The `.cpanel.yml` allowlist copies only the public entrypoint and the
 reviewed precompiled admin assets. Never place private source, Composer
@@ -32,9 +33,9 @@ unit-tested on the Mac before release. Never deploy the unreviewed Google
 feature branch directly through cPanel's fixed production path.
 
 Original alpha.4 is **not** a safe code-only rollback after migration 007:
-its schema preflight rejects an extra migration. First review/merge/test
-the compatibility-only PR #5, tag the pre-Google alpha.4.1 release,
-deploy it and verify the live site at six migrations. Back up DB and
+its schema preflight rejects an extra migration. The compatibility-only
+release is already tagged `v0.1.0-alpha.4.1` on main; deploy and verify
+that release at six migrations before migrating. Back up DB and
 private secret, apply migration 007 once during a maintenance window,
 and verify that alpha.4.1 still operates with seven completed migrations.
 Only then merge/deploy the Google feature via main. If OAuth fails,

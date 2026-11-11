@@ -1,7 +1,8 @@
 # Onboarding, settings and gateway release checklist
 
-> This is an **unreleased** change in draft PR #3. It must not be deployed
-> to production before local end-to-end and security tests.
+> **Current main:** pre-Google `v0.1.0-alpha.4.1`. Google sign-in
+> remains under development in Draft PR #4; it requires migration 007
+> and separate reviewed tests and release planning.
 
 ## Configuration: minimal by design
 
@@ -24,8 +25,9 @@ path. The single privileged role is `admin`; no superadmin.
   `provider_connections` and are updated in the account portal.
 - The HTTPS public host comes from the trusted web server's
   `SERVER_NAME`. It must match the request's Host exactly.
-- The app refuses unknown .env keys, including retired flags; delete old
-  entries from local .env after pulling this branch.
+- The app rejects unknown .env keys, including retired flags. Review
+  the private production .env manually, keeping only five MySQL keys
+  (see [configuration](configuration.md)); never expose secret values.
 - The AES-256-GCM encryption key is generated once in private
   `storage/app-secret.key` (0600 permissions). HMAC throttling derives
   a distinct key from it via HKDF. It is **not in MySQL or .env**.
@@ -75,11 +77,11 @@ The absence of a feature flag does not mean everything is safe to expose:
 roles, ownership, CSRF, rate limits and explicitly supported operation
 policies remain mandatory.
 
-## Production deployment blocker
+## Database readiness and Google release
 
-The current production alpha.3 schema lacks migrations 004, 005 and 006. New code
-checks the complete migration ledger, so deploying before a manual,
-backed-up and verified schema upgrades would cause authenticated
-/admin and /account pages to return HTTP 503. The rollout needs a
-separate maintenance window and validation. Never run migrations
-automatically on cPanel. Keep this PR in Draft until finished.
+The pre-Google `v0.1.0-alpha.4.1` requires six completed migration rows and
+accepts the exact completed Google migration 007 for code-only rollback.
+Google OAuth is not included in this release and is still in Draft PR #4.
+Keep the production database unchanged until the review, backup and
+single-domain rollout plan is completed. Never run migrations automatically
+on cPanel.

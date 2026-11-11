@@ -3,12 +3,10 @@
 PHP 8.3 / MySQL Openprovider gateway for cPanel shared hosting, with a
 shared TailAdmin/Twig design system for both admin and self-service account portals.
 
-> **Release boundary:** `main` commit `ffa90e0` is the proposed
-> `v0.1.0-alpha.4` production pilot. The developer Mac verified 195/195 PHP
-> tests and 10/10 smoke tests; manual production DB migrations 004–006 and
-> real integration checks remain required.
-> Google sign-in is a separate development feature requiring migration 007
-> and is NOT included in this release.
+> **Current main:** tagged `v0.1.0-alpha.4.1` provides the tested
+> pre-Google rollback base with six required migrations and explicit
+> compatibility for migration 007. Google sign-in is still in Draft PR #4,
+> not part of the existing production tag.
 
 ## One application, no feature-flag maze
 
@@ -31,6 +29,7 @@ table (`setting_key`, `setting_value`, `updated_at`), including encrypted
 `smtp.password`. The `admin` role manages SMTP; individual owner credentials
 remain separate in `provider_connections` for access control. The application has no `*_ENABLED` switches.
 Security policy is enforced by authentication/authorization, not runtime flags.
+See [configuration locations and .env cleanup](docs/configuration.md).
 
 The canonical HTTPS host comes from the configured web-server
 `SERVER_NAME`, which must match `HTTP_HOST`. A unique AES-256-GCM
@@ -76,8 +75,8 @@ Document Root. No GitHub Actions, auto migrations or server-side Composer.
 
 The only cPanel deployment is `https://opgateway.arsamnet.com`. There
 is no staging hostname. Before migrating its database to 007, verify and
-deploy the rollback-compatible **pre-Google** release proposed in PR #5
-(alpha.4.1) to main. Verify the production backup, apply 007 once,
+deploy the **tagged** rollback-compatible pre-Google alpha.4.1
+release first. Verify the production backup, apply 007 once,
 then deploy the locally tested Google feature from a reviewed main merge.
 The original alpha.4 code will reject a database already on migration 007;
 only alpha.4.1 can serve as the code-only fallback after that upgrade.
