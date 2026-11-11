@@ -263,6 +263,9 @@
   .my-6 {
     margin-block: calc(var(--spacing) * 6);
   }
+  .ms-3 {
+    margin-inline-start: calc(var(--spacing) * 3);
+  }
   .mt-1 {
     margin-top: var(--spacing);
   }
@@ -416,6 +419,9 @@
   .justify-center {
     justify-content: center;
   }
+  .gap-1 {
+    gap: var(--spacing);
+  }
   .gap-2 {
     gap: calc(var(--spacing) * 2);
   }
@@ -468,6 +474,10 @@
   .border {
     border-style: var(--tw-border-style);
     border-width: 1px;
+  }
+  .border-s {
+    border-inline-start-style: var(--tw-border-style);
+    border-inline-start-width: 1px;
   }
   .border-t {
     border-top-style: var(--tw-border-style);
@@ -542,6 +552,9 @@
   }
   .py-16 {
     padding-block: calc(var(--spacing) * 16);
+  }
+  .ps-3 {
+    padding-inline-start: calc(var(--spacing) * 3);
   }
   .pt-4 {
     padding-top: calc(var(--spacing) * 4);
@@ -2079,6 +2092,19 @@ html[data-theme="dark"] .opg-theme-icon[data-theme-icon="dark"] {
     animation: none !important;
     transition: none !important;
   }
+}
+.opg-sidebar details > summary.opg-nav-link {
+  cursor: pointer;
+  list-style: none;
+}
+.opg-sidebar details > summary.opg-nav-link::-webkit-details-marker {
+  display: none;
+}
+.opg-sidebar details[open] > summary.opg-nav-link {
+  color: var(--color-brand-600);
+}
+.dark .opg-sidebar details[open] > summary.opg-nav-link {
+  color: var(--color-brand-300);
 }
 @property --tw-space-y-reverse {
   syntax: "*";
