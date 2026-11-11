@@ -3,10 +3,11 @@
 PHP 8.3 / MySQL Openprovider gateway for cPanel shared hosting, with a
 shared TailAdmin/Twig design system for both admin and self-service account portals.
 
-> **Current main:** tagged `v0.1.0-alpha.4.1` provides the tested
+> **Release boundary:** tagged `v0.1.0-alpha.4.1` is the tested
 > pre-Google rollback base with six required migrations and explicit
-> compatibility for migration 007. Google sign-in is still in Draft PR #4,
-> not part of the existing production tag.
+> compatibility for migration 007. The current `main` also includes the
+> subsequent database-only .env cleanup. Google sign-in is still in
+> Draft PR #4; nested login settings/CAPTCHA live in Draft PR #7.
 
 ## One application, no feature-flag maze
 

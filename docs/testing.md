@@ -20,10 +20,11 @@ composer install --no-dev --prefer-dist --optimize-autoloader
 git status --short
 ```
 
-**Last developer-verified baseline before the simplification refactor:**
-183 PHPUnit tests, 1057 assertions, 10/10 smoke tests; npm lint and
-webpack build passed. These are historical results and do **not**
-validate the new refactor. The new code requires a fresh test run.
+**Last developer-verified Google OAuth baseline, before PR #7:**
+212 PHPUnit tests with 1604 assertions, 10/10 smoke tests and 7/7
+frontend tests; npm lint and Webpack build passed. These results do
+**not** validate the new settings/CAPTCHA code; rerun the full suite
+on PR #7 before release.
 
 The smoke script probes real gateway admission (missing bearer and
 denied mutating route), health, IP helper and safe logging. It is not
