@@ -14,11 +14,12 @@ No new database migration or .env setting is required: use the existing
 | `/admin/settings/smtp` | SMTP, email verification and password recovery |
 
 The sidebar has a TailAdmin-style Settings parent button with bundled
-Lucide icon, collapsible submenu, chevron and active-link styling. Each
-link navigates to one dedicated settings category; there is no All
-settings landing page. Admin authentication and role are rechecked on each
-request. POST changes use CSRF and current-password verification, and
-successful writes use the existing metadata-only security audit table.
+Lucide icon, a smooth height/opacity submenu animation without side borders,
+chevron and active-link styling. Each link navigates to a dedicated
+settings category; there is no All settings landing page. Admin
+authentication and role are rechecked on each request. POST changes
+require CSRF but not repeat password confirmation; successful writes use
+the existing metadata-only security audit table.
 The old `GET /admin/settings/google` redirects to the Google SSO page;
 legacy POST is unavailable.
 
@@ -40,9 +41,10 @@ administrator sign-in route.
 The login settings support exactly two alternatives:
 
 - **Offline image** (default when no `login.captcha_provider` setting exists):
-  a six-character random alphanumeric image rendered to PNG on the
-  server, with per-character rotation, randomized lines, noise and pixel
-  displacement. It is bound to the session, one-use and valid for three
+  a six-character random alphanumeric image rendered to compact grayscale
+  PNG on the server, with per-character rotation, darker/thicker crossing
+  lines and noise dots, and pixel displacement. The image scales down to
+  the width available in the login form without overflow. It is bound to the session, one-use and valid for three
   minutes; CAPTCHA submissions are separately limited per source IP
   (30 per 15 minutes). The server stores only a keyed answer digest and
   short-lived image bytes, not the plaintext answer. PNG generation

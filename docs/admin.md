@@ -37,7 +37,8 @@ admin approval. Admin lifecycle actions record metadata-only audit events.
 SMTP uses seven `smtp.*` keys in the shared key/value `settings` table,
 not a dedicated table and never `.env`.
 Visit `/admin/settings/smtp` and provide host, port, encryption, account,
-password, sender address/name and the **current admin password**.
+password and sender address/name. The authenticated administrator
+session and CSRF token authorize the change; no password re-entry is needed.
 
 Supported TLS modes: port 587 STARTTLS or port 465 SMTPS with peer
 verification. The SMTP password is encrypted at rest and never displayed
@@ -63,9 +64,9 @@ coordinated deployment.
 
 ## Google OAuth settings — unreleased
 
-At `/admin/settings/google`, the existing admin role may configure a
-Google OAuth Web Client ID, encrypted client secret, and confirm the current
-administrator password. The secret is never returned to the browser.
+At `/admin/settings/login/google`, the existing admin role may configure a
+Google OAuth Web Client ID and encrypted client secret without re-entering
+their password. The secret is never returned to the browser.
 Use the exact callback URI shown on the page in Google Cloud Console.
 The global key/value settings table stores the credentials; never store
 OAuth secrets in the .env file or Git. This UI is draft, not alpha.4.
@@ -73,8 +74,8 @@ OAuth secrets in the .env file or Git. This UI is draft, not alpha.4.
 ## Administrator creation workflows
 
 Invite an owner at `/admin/users/invite`. SMTP must be configured. The
-request requires the current administrator password and a valid CSRF
-token. Existing account emails receive a generic result. The invite is
+request requires an active administrator session and a valid CSRF
+token; there is no extra password confirmation. Existing account emails receive a generic result. The invite is
 stored as pending with an unusable random password hash and no role grant.
 The user receives an email verification link; the administrator approves
 them on the Users page after verification. The user then sets a password

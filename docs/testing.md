@@ -142,7 +142,8 @@ Verify the Settings parent has a bundled gear icon and rotating chevron,
 and Security, Google SSO and Email each open a real separate page.
 There must be no All settings or intermediate Login overview page.
 Verify keyboard, focus order, current-page links and mobile drawer behavior.
-Verify current-password/CSRF errors never modify settings.
+Verify CSRF and invalid/expired administrator session errors cannot
+modify settings; routine actions no longer ask for the admin password.
 
 Test Account and Admin password login with raster offline CAPTCHA: correct
 binary PNG, no plaintext response in HTML/session, wrong answer,

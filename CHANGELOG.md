@@ -1,5 +1,17 @@
 # Changelog
 
+## Unreleased — Admin settings UX and compact image CAPTCHA (2026-11-11)
+
+- Remove the vertical border next to Settings submenu links and add
+  smooth height/opacity animation with reduced-motion support.
+- Make both login CAPTCHA images responsive and encode PNG as grayscale
+  rather than RGB; add darker three-pixel lines and larger interference dots.
+- Remove repeat password confirmation from administrator-only Security,
+  Google SSO, SMTP and Invite user forms. Keep role and session checks,
+  CSRF, existing action throttles, and audit events.
+- No database migrations, additional .env variables, or CI workflows.
+
+
 ## Unreleased — Admin workflows, navigation and image CAPTCHA (2026-11-11)
 
 - Replace nested native Details navigation with TailAdmin-style Settings
