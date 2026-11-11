@@ -1,5 +1,18 @@
 # Changelog
 
+## Unreleased — Single-domain rollback bridge (2026-11-11)
+
+- Preserve six-migration alpha.4.1 behavior while recognizing the exact
+  completed/checksummed additive Google migration 007 in a later database.
+- This allows a code rollback to a pre-Google release without deleting
+  migration history or dropping the Google mapping table. Unexpected or
+  incomplete migrations still fail closed; Google sign-in is not enabled.
+- No database change, frontend assets, secrets or extra configuration.
+- Deploy and verify this patch **before** performing migration 007 on the
+  production domain. The original alpha.4 tag is not a valid code-only
+  rollback after migration 007.
+
+
 ## Unreleased — Anonymous session CSRF preservation (2026-11-11)
 
 - Preserve login-form CSRF when an anonymous visitor follows a protected Account

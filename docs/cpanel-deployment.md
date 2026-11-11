@@ -17,6 +17,38 @@ reviewed precompiled admin assets. Never place private source, Composer
 vendor, key, `.env`, templates or logs in Document Root. No server-side
 Composer, npm, database migration, cron or GitHub workflow runs.
 
+## Single-domain Google release — rollback prerequisite
+
+Only `https://opgateway.arsamnet.com` is used for deployed testing and
+production. No separate staging hostname is required or assumed. All
+unreleased work and automated tests happen locally on Mac first.
+
+The original `v0.1.0-alpha.4` is **not** a safe code-only rollback after
+migration 007: its strict schema preflight rejects the extra migration.
+This compatibility-only patch should be reviewed, tested, merged into main
+and tagged as the pre-Google fallback (proposed `v0.1.0-alpha.4.1`).
+It accepts the exact completed migration 007 checksum in addition to its
+six known migrations, but does not implement or configure Google sign-in.
+
+Required deployment order on the single production hostname:
+
+1. Back up the database and `storage/app-secret.key`. Verify backup.
+2. Deploy and verify this compatibility-only main version while the DB
+   still contains six completed migrations.
+3. Review and apply the additive migration 007 ONCE during maintenance.
+   The compatibility version continues serving Account and Admin pages.
+4. After local PHP/MySQL/browser review, merge Google feature to main,
+   deploy Google code via the existing cPanel allowlist to the same domain,
+   and set Google OAuth Web callback URI exactly to
+   `https://opgateway.arsamnet.com/account/google/callback`.
+5. If the Google version fails, restore the compatibility-only commit
+   (alpha.4.1), *not* the original alpha.4, keeping migration 007 and
+   all existing database data in place. Correct any partial deploy first.
+
+No Google feature or migration 007 may be deployed during the original
+alpha.4 production pilot. Changing the shared host's private checkout
+affects the live domain; do not perform a feature-branch cPanel deploy.
+
 ## Controlled rollout
 
 1. **Do not deploy the draft PR yet.** On a disposable database, validate
