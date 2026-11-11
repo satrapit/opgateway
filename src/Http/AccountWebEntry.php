@@ -169,7 +169,7 @@ final readonly class AccountWebEntry
         $captcha = new LoginCaptcha($captchaSettings, $pdo, $secret, $origin, 'account');
         $adapter = new AccountBrowserAdapter(
             $session, $login, $accounts, $ownerOverview,
-            $credentials, $integration, $registration !== null,
+            $credentials, $integration, $registration !== null || $googleAvailable,
             $googleAvailable, $captcha, $googleIdentities,
         );
 
@@ -213,7 +213,8 @@ final readonly class AccountWebEntry
                 bin2hex(random_bytes(16)), (string) ($server['QUERY_STRING'] ?? ''),
             );
         } elseif (SelfServiceBrowserController::route($path)) {
-            if ($registration === null
+            if ($registration === null && !($path === '/account/register'
+                && $method === 'GET' && $googleAvailable)
                 && in_array($path, ['/account/register', '/account/verify',
                     '/account/verify/resend'], true)) {
                 return self::error(503);
@@ -225,7 +226,7 @@ final readonly class AccountWebEntry
             }
             $response = (new SelfServiceBrowserController(
                 $session, $accounts, $registration, $integration, $origin,
-                $login, $ownerOverview, $passwordReset, false,
+                $login, $ownerOverview, $passwordReset, $googleAvailable,
             ))->dispatch(
                 $method, $path,
                 isset($server['CONTENT_TYPE']) ? (string) $server['CONTENT_TYPE'] : null,

@@ -296,14 +296,13 @@ final readonly class GoogleOidcBrowserController
         }
 
         try {
-            // Code-only rollback boundary: existing identities may continue
-            // to sign in by stable subject, but this build does not create or
-            // join accounts during a Google callback.
-            $result = $this->identities->loginBySubject($google['sub']);
+            $result = $this->identities->loginOrRegister(
+                $google['sub'], $google['email'],
+            );
         } catch (Throwable) {
             $this->record('google_login_denied', $requestId);
             return self::googleError('Google sign-in unavailable',
-                'The account could not be verified. Try again later.', 503);
+                'The account could not be completed. Try again later.', 503);
         }
         if ($result['status'] === 'authenticated') {
             $this->record('google_login_allowed', $requestId);
@@ -312,14 +311,48 @@ final readonly class GoogleOidcBrowserController
             );
             return self::redirect('/account');
         }
+        if ($result['status'] === 'created') {
+            $this->record('google_signup_created', $requestId);
+            return self::googleError('Account awaiting approval',
+                'Your verified Google account is registered. An administrator must approve access before you can sign in.', 403);
+        }
         if ($result['status'] === 'pending') {
             $this->record('google_login_denied', $requestId);
             return self::googleError('Account awaiting approval',
                 'An administrator must approve access before you can sign in.', 403);
         }
+        if ($result['status'] === 'confirmation_required') {
+            if ($this->confirmationMailer === null) {
+                return self::googleError('Email confirmation unavailable',
+                    'The existing account could not be confirmed. Try again later.', 503);
+            }
+            try {
+                $token = $this->identities->issueConfirmation(
+                    (int) $result['user_id'], $google['sub'], $google['email'],
+                    $pending['transaction_id'],
+                );
+                $this->confirmationMailer->sendGoogleIdentityConfirmation(
+                    $google['email'], $token, $this->origin,
+                );
+            } catch (Throwable) {
+                if (isset($token)) {
+                    $this->identities->cancelConfirmation($token);
+                }
+                return self::googleError('Email confirmation unavailable',
+                    'The existing account could not be confirmed. Try again later.', 503);
+            }
+            try {
+                $this->record('google_confirmation_sent', $requestId);
+            } catch (Throwable $error) {
+                $this->identities->cancelConfirmation($token);
+                throw $error;
+            }
+            return self::googleError('Check your email',
+                'An existing account uses that address. Open the one-time confirmation link we sent before Google can be connected.', 200);
+        }
         $this->record('google_login_denied', $requestId);
-        return self::googleError('Google account not connected',
-            'Use password recovery or sign in with a linked Google account.', 403);
+        return self::googleError('Google sign-in unavailable',
+            'This account is not eligible to sign in.', 403);
     }
 
     /** @return array{status:int,content_type:string,body:string,location?:string} */
