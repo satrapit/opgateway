@@ -93,6 +93,18 @@
       <path d="M12 8v4" />
       <path d="M12 16h.01" />
   </symbol>
+  <symbol id="opg-icon-settings" viewBox="0 0 24 24">
+    <path d="M12 8a4 4 0 1 0 0 8 4 4 0 0 0 0-8"/>
+    <path d="M20 12a8 8 0 0 0-.11-1.31l1.59-1.24-1.55-2.7-1.89.7a8 8 0 0 0-2.26-1.31L15.44 4h-3.12l-.33 2.14a8 8 0 0 0-2.26 1.31l-1.89-.7-1.56 2.7 1.6 1.24a8 8 0 0 0 0 2.62l-1.6 1.24 1.56 2.7 1.89-.7a8 8 0 0 0 2.26 1.31l.33 2.14h3.12l.33-2.14a8 8 0 0 0 2.26-1.31l1.89.7 1.55-2.7-1.59-1.24A8 8 0 0 0 20 12Z" transform="translate(-1.8 0)"/>
+  </symbol>
+  <symbol id="opg-icon-chevron-down" viewBox="0 0 24 24">
+    <path d="m6 9 6 6 6-6"/>
+  </symbol>
+  <symbol id="opg-icon-user-plus" viewBox="0 0 24 24">
+    <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/>
+    <circle cx="9" cy="7" r="4"/>
+    <path d="M20 8v6m-3-3h6"/>
+  </symbol>
   <symbol id="opg-icon-ellipsis-vertical" viewBox="0 0 24 24">
     <circle cx="12" cy="12" r="1" />
       <circle cx="12" cy="5" r="1" />
