@@ -19,13 +19,14 @@ final readonly class TwigAdminPageRenderer implements AdminPageRenderer
     {
     }
 
-    public function login(string $csrfToken, bool $showError = false): string
+    public function login(string $csrfToken, bool $showError = false, array $captcha = []): string
     {
         self::validateCsrf($csrfToken);
 
         return $this->twig->render('admin/login.html.twig', [
             'csrf_token' => $csrfToken,
             'show_error' => $showError,
+            'captcha' => $captcha,
         ]);
     }
 

@@ -16,8 +16,20 @@
     {% if allow_registration %}
     <div class="text-right"><a class="text-sm font-semibold text-brand-600 hover:underline dark:text-brand-300" href="/account/forgot-password">Forgot password?</a></div>
     {% endif %}
+    {% if captcha.mode|default('') == 'offline' %}
+      <div>
+        <label class="opg-label" for="account-captcha">Verification: {{ captcha.prompt }}</label>
+        <input type="hidden" name="captcha_id" value="{{ captcha.challenge_id }}">
+        <input class="opg-input" id="account-captcha" name="captcha_answer" inputmode="numeric" pattern="[0-9]{1,2}" maxlength="2" autocomplete="off" required>
+      </div>
+    {% elseif captcha.mode|default('') == 'recaptcha' %}
+      <div class="g-recaptcha" data-sitekey="{{ captcha.site_key }}"></div>
+    {% endif %}
     <button type="submit" class="opg-primary-button w-full">Sign in</button>
   </form>
+  {% if captcha.mode|default('') == 'recaptcha' %}
+    <script src="https://www.google.com/recaptcha/api.js" async defer></script>
+  {% endif %}
   {% if google_available %}
     <div class="my-6 flex items-center gap-3 text-xs text-gray-500 dark:text-gray-400">
       <span class="h-px flex-1 bg-gray-200 dark:bg-gray-700"></span>or<span class="h-px flex-1 bg-gray-200 dark:bg-gray-700"></span>

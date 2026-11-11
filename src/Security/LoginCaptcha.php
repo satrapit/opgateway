@@ -27,8 +27,10 @@ final readonly class LoginCaptcha
         private PDO $pdo,
         private string $limiterKey,
         private string $origin,
+        private string $scope = 'account',
     ) {
-        if (strlen($limiterKey) < 32
+        if (!in_array($scope, ['account', 'admin'], true)
+            || strlen($limiterKey) < 32
             || preg_match('~^https://[a-z0-9.-]+$~D', $origin) !== 1) {
             throw new RuntimeException('CAPTCHA configuration unavailable.');
         }
@@ -48,7 +50,7 @@ final readonly class LoginCaptcha
         self::assertSession();
         $settings = $this->settings->summary();
         if ($settings['provider'] === 'recaptcha') {
-            unset($_SESSION[self::CHALLENGE_KEY]);
+            unset($_SESSION[$this->sessionKey()]);
             if ($this->settings->recaptchaCredentials() === null) {
                 throw new RuntimeException('reCAPTCHA is not configured.');
             }
@@ -57,7 +59,7 @@ final readonly class LoginCaptcha
         $a = random_int(2, 19);
         $b = random_int(2, 19);
         $id = bin2hex(random_bytes(16));
-        $_SESSION[self::CHALLENGE_KEY] = [
+        $_SESSION[$this->sessionKey()] = [
             'id' => $id,
             'answer' => $a + $b,
             'issued_at' => time(),
@@ -76,14 +78,14 @@ final readonly class LoginCaptcha
         // Consume a throttle slot before checking a challenge. No bypass
         // exists for incorrect tokens or fresh browser sessions from one IP.
         if (!$this->allowIp($sourceIp)) {
-            unset($_SESSION[self::CHALLENGE_KEY]);
+            unset($_SESSION[$this->sessionKey()]);
             return false;
         }
 
         $mode = $this->settings->summary()['provider'];
         if ($mode === 'offline') {
-            $pending = $_SESSION[self::CHALLENGE_KEY] ?? null;
-            unset($_SESSION[self::CHALLENGE_KEY]);
+            $pending = $_SESSION[$this->sessionKey()] ?? null;
+            unset($_SESSION[$this->sessionKey()]);
             if (!is_array($pending)
                 || !is_string($pending['id'] ?? null)
                 || !is_int($pending['answer'] ?? null)
@@ -98,7 +100,7 @@ final readonly class LoginCaptcha
             return hash_equals((string) $pending['answer'], $fields['captcha_answer']);
         }
 
-        unset($_SESSION[self::CHALLENGE_KEY]);
+        unset($_SESSION[$this->sessionKey()]);
         $credentials = $this->settings->recaptchaCredentials();
         $token = $fields['g-recaptcha-response'] ?? '';
         if ($credentials === null || $token === '' || strlen($token) > 4096
@@ -181,6 +183,11 @@ SQL);
         $read->execute();
         $count = $read->fetchColumn();
         return $count !== false && (int) $count <= self::IP_LIMIT;
+    }
+
+    private function sessionKey(): string
+    {
+        return self::CHALLENGE_KEY . '_' . $this->scope;
     }
 
     private static function assertSession(): void

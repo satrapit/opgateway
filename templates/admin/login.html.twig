@@ -30,9 +30,21 @@
           <label class="opg-label" for="password">Password</label>
           <input class="opg-input" id="password" name="password" type="password" autocomplete="current-password" required{% if show_error %} aria-describedby="login-error"{% endif %}>
         </div>
-        <button class="opg-primary-button w-full" type="submit">Sign in securely</button>
+        {% if captcha.mode|default('') == 'offline' %}
+          <div>
+            <label class="opg-label" for="admin-captcha">Verification: {{ captcha.prompt }}</label>
+            <input type="hidden" name="captcha_id" value="{{ captcha.challenge_id }}">
+            <input class="opg-input" id="admin-captcha" name="captcha_answer" inputmode="numeric" pattern="[0-9]{1,2}" maxlength="2" autocomplete="off" required>
+          </div>
+        {% elseif captcha.mode|default('') == 'recaptcha' %}
+          <div class="g-recaptcha" data-sitekey="{{ captcha.site_key }}"></div>
+        {% endif %}
+        <button class="opg-primary-button w-full" type="submit">Sign in</button>
       </form>
-      <p class="mt-8 text-center text-xs text-gray-500 dark:text-gray-400">Only authenticated and pre-approved administrators can enter.</p>
+      {% if captcha.mode|default('') == 'recaptcha' %}
+        <script src="https://www.google.com/recaptcha/api.js" async defer></script>
+      {% endif %}
+      <p class="mt-8 text-center text-xs text-gray-500 dark:text-gray-400">Administrator access requires an approved account.</p>
     </div>
   </main>
   <aside class="hidden items-center justify-center bg-brand-950 px-12 text-white lg:flex" aria-label="About the workspace">

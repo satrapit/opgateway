@@ -7,7 +7,8 @@ namespace OPGateway\View;
 /** Presentation-only contract for the single administrator Twig UI. */
 interface AdminPageRenderer
 {
-    public function login(string $csrfToken, bool $showError = false): string;
+    /** @param array<string,string> $captcha */
+    public function login(string $csrfToken, bool $showError = false, array $captcha = []): string;
 
     /**
      * @param array<string,mixed>|null $pending Already-authorized, bounded DB data.

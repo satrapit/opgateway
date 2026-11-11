@@ -9,6 +9,7 @@ use OPGateway\Identity\GuardedLoginService;
 use OPGateway\Identity\LoginAccountRepository;
 use OPGateway\Clients\OwnerIntegrationService;
 use OPGateway\Security\OwnerCredentialManager;
+use OPGateway\Security\LoginCaptcha;
 
 /**
  * HTTPS-only account surface. Only an approved owner can see their clients.
@@ -29,6 +30,7 @@ final readonly class AccountBrowserAdapter
         private ?OwnerIntegrationService $integration = null,
         private bool $registrationAvailable = false,
         private bool $googleAvailable = false,
+        private ?LoginCaptcha $captcha = null,
     ) {
     }
 
@@ -52,6 +54,7 @@ final readonly class AccountBrowserAdapter
             return self::html(AccountViews::login(
                 $this->session->csrfToken(), false,
                 $this->registrationAvailable, $this->googleAvailable,
+                $this->captcha?->challenge() ?? [],
             ));
         }
 
@@ -60,12 +63,23 @@ final readonly class AccountBrowserAdapter
                 return self::error(415);
             }
             $form = $body === null ? null
-                : StrictForm::decode($body, ['_csrf', 'email', 'password']);
+                : StrictForm::decode($body, [
+                    '_csrf', 'email', 'password', ...($this->captcha?->fields() ?? []),
+                ]);
             if ($form === null || strlen($form['email']) > 254 || strlen($form['password']) > 1024) {
                 return self::error(400);
             }
             if (!$this->session->csrfValid($form['_csrf'])) {
                 return self::error(403);
+            }
+
+            if ($this->captcha !== null
+                && !$this->captcha->verify($form, $sourceIp)) {
+                return self::html(AccountViews::login(
+                    $this->session->csrfToken(), true,
+                    $this->registrationAvailable, $this->googleAvailable,
+                    $this->captcha->challenge(),
+                ), 403);
             }
 
             $identity = $this->login->authenticateWithStamp(
@@ -75,6 +89,7 @@ final readonly class AccountBrowserAdapter
                 return self::html(AccountViews::login(
                     $this->session->csrfToken(), true,
                     $this->registrationAvailable, $this->googleAvailable,
+                    $this->captcha?->challenge() ?? [],
                 ), 401);
             }
             $this->session->authenticate($identity['id'], $identity['stamp']);

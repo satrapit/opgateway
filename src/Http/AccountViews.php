@@ -18,7 +18,7 @@ final class AccountViews
 {
     public static function login(
         string $csrfToken, bool $failed = false, bool $allowRegistration = false,
-        bool $googleAvailable = false,
+        bool $googleAvailable = false, array $captcha = [],
     ): string
     {
         self::validateCsrf($csrfToken);
@@ -30,6 +30,7 @@ final class AccountViews
             'show_error' => $failed,
             'allow_registration' => $allowRegistration,
             'google_available' => $googleAvailable,
+            'captcha' => $captcha,
         ]);
     }
 

@@ -7,6 +7,7 @@ namespace OPGateway\Http;
 use OPGateway\Identity\BrowserSession;
 use OPGateway\Identity\LoginAccountRepository;
 use OPGateway\Identity\AdministratorAuthorization;
+use OPGateway\Security\LoginCaptcha;
 use OPGateway\View\AdminPageRenderer;
 
 /**
@@ -27,6 +28,7 @@ final readonly class PrivateBrowserAdapter
         private ?AdminOverviewRepository $overview = null,
         private ?AdminReviewService $review = null,
         private ?AdminPageRenderer $pages = null,
+        private ?LoginCaptcha $captcha = null,
     ) {
     }
 
@@ -48,13 +50,25 @@ final readonly class PrivateBrowserAdapter
 
         if ($path === '/admin/login' && $method === 'GET') {
             return $this->pages === null ? self::error(404)
-                : self::html($this->pages->login($this->session->csrfToken()));
+                : self::html($this->pages->login(
+                    $this->session->csrfToken(), false,
+                    $this->captcha?->challenge() ?? [],
+                ));
         }
 
         if ($path === '/admin/login' && $method === 'POST') {
-            $form = $body === null ? null : StrictForm::decode($body, ['_csrf', 'email', 'password']);
+            $expected = ['_csrf', 'email', 'password',
+                ...($this->captcha?->fields() ?? [])];
+            $form = $body === null ? null : StrictForm::decode($body, $expected);
             if ($form === null || strlen($form['email']) > 254 || strlen($form['password']) > 1024) {
                 return self::error(400);
+            }
+            if ($this->captcha !== null
+                && !$this->captcha->verify($form, $sourceIp)) {
+                return $this->pages === null ? self::error(403)
+                    : self::html($this->pages->login(
+                        $this->session->csrfToken(), true, $this->captcha->challenge(),
+                    ), 403);
             }
             $result = $this->auth->login(
                 $trustedHttps, $method, $contentType,
@@ -64,7 +78,10 @@ final readonly class PrivateBrowserAdapter
                 return self::redirect('/admin');
             }
             return $this->pages === null ? self::error(404)
-                : self::html($this->pages->login($this->session->csrfToken(), true), $result['status']);
+                : self::html($this->pages->login(
+                    $this->session->csrfToken(), true,
+                    $this->captcha?->challenge() ?? [],
+                ), $result['status']);
         }
 
         // One Twig renderer for every admin page; the role check is fresh.
