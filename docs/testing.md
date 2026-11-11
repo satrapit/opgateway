@@ -133,10 +133,10 @@ fresh automated and end-to-end results are reviewed.
 
 ## Independent login settings / CAPTCHA regression gate
 
-After checkout of \`feat/auth-settings-pages-captcha\` on Mac:
-run \`php scripts/lint.php\`, \`./vendor/bin/phpunit
-tests/LoginSettingsPolicyTest.php --display-phpunit-notices\`, full PHPUnit,
-smoke, \`npm ci && npm run lint && npm test && npm run build\`.
+After checkout of `feat/auth-settings-pages-captcha` on Mac:
+run `php scripts/lint.php`, `./vendor/bin/phpunit
+tests/LoginSettingsPolicyTest.php --display-phpunit-notices`, full PHPUnit,
+smoke, `npm ci && npm run lint && npm test && npm run build`.
 Verify the Settings, Login overview, Google SSO, CAPTCHA and SMTP links
 are distinct real pages and nested disclosure navigation works on mobile.
 Verify current-password/CSRF errors never modify settings.
