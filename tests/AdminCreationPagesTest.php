@@ -75,6 +75,14 @@ final class AdminCreationPagesTest extends TestCase
         self::assertStringContainsString('#opg-icon-settings', $layout);
         self::assertStringContainsString('#opg-icon-chevron-down', $layout);
         self::assertStringContainsString('x-on:click="toggleSettingsMenu"', $layout);
+        self::assertStringContainsString('x-bind:aria-expanded="settingsMenuOpen"', $layout);
+        $css = file_get_contents(dirname(__DIR__) . '/public/assets/admin/app.css');
+        self::assertIsString($css);
+        self::assertStringContainsString(
+            '.opg-nav-parent[aria-expanded="true"] + .opg-nav-submenu', $css,
+        );
+        self::assertStringContainsString('grid-template-rows: 0fr;', $css);
+        self::assertStringContainsString('.opg-captcha-frame', $css);
         self::assertStringContainsString('/admin/settings/security', $layout);
         self::assertStringContainsString('/admin/settings/smtp', $layout);
         self::assertStringNotContainsString('All settings', $layout);
