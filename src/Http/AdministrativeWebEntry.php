@@ -182,7 +182,18 @@ final readonly class AdministrativeWebEntry
             }
         }
 
-        if ($path === '/admin/users/invite') {
+        if (in_array($path, ['/admin/clients/create', '/admin/ips/request'], true)) {
+            $response = (new AdminProvisionPageController(
+                $session, $accounts, $admins,
+                new AdminOverviewRepository($pdo), $review,
+                new TwigRenderer(dirname(__DIR__, 2) . '/templates'),
+            ))->handle(
+                $method, $path,
+                isset($server['CONTENT_TYPE']) ? (string) $server['CONTENT_TYPE'] : null,
+                $body, (string) ($server['REMOTE_ADDR'] ?? ''),
+                bin2hex(random_bytes(16)),
+            );
+        } elseif ($path === '/admin/users/invite') {
             $settings = new PdoSmtpSettings($pdo, $vault);
             $mailer = new PhpMailerVerificationMailer($settings);
             $login = new GuardedLoginService(

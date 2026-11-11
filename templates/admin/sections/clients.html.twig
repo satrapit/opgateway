@@ -6,7 +6,15 @@
       <h2 id="clients-title" class="opg-section-title">API clients</h2>
       <p class="opg-section-subtitle">Activate or disable existing clients and request exact IPv4/IPv6 addresses.</p>
     </div>
-    <span class="opg-count">{{ queues.clients|length }} shown</span>
+    <div class="flex flex-wrap items-center gap-3">
+      <span class="opg-count">{{ queues.clients|length }} shown</span>
+      {% if actions_enabled %}
+        <a href="/admin/clients/create" class="opg-primary-button">
+          <svg viewBox="0 0 24 24" class="opg-icon" aria-hidden="true" focusable="false"><use href="{{ admin_assets.icons }}#opg-icon-plus"></use></svg>
+          Create client
+        </a>
+      {% endif %}
+    </div>
   </div>
   {% if queues.clients is empty %}
   <p class="opg-empty" role="status">No clients belonging to eligible owners were found.</p>

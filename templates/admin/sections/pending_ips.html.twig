@@ -6,7 +6,15 @@
       <h2 id="pending-ips-title" class="opg-section-title">Pending IP allowlist requests</h2>
       <p class="opg-section-subtitle">Only exact IPv4 or IPv6 entries; approval is separate from request creation.</p>
     </div>
-    <span class="opg-count">{{ queues.ips|length }} shown</span>
+    <div class="flex flex-wrap items-center gap-3">
+      <span class="opg-count">{{ queues.ips|length }} shown</span>
+      {% if actions_enabled %}
+        <a href="/admin/ips/request" class="opg-primary-button">
+          <svg viewBox="0 0 24 24" class="opg-icon" aria-hidden="true" focusable="false"><use href="{{ admin_assets.icons }}#opg-icon-plus"></use></svg>
+          Request IP
+        </a>
+      {% endif %}
+    </div>
   </div>
   {% if queues.ips is empty %}
   <p class="opg-empty" role="status">No pending IP requests for active clients.</p>
