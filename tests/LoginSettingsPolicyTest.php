@@ -7,12 +7,24 @@ namespace OPGateway\Tests;
 use InvalidArgumentException;
 use OPGateway\Google\PdoGoogleOAuthSettings;
 use OPGateway\Http\AccountViews;
+use OPGateway\Http\AccountBrowserAdapter;
+use OPGateway\Http\BrowserAuthController;
+use OPGateway\Http\OwnerOverviewProvider;
+use OPGateway\Http\PrivateBrowserAdapter;
 use OPGateway\Http\BrowserGetPath;
 use OPGateway\Identity\BrowserSession;
+use OPGateway\Identity\GuardedLoginService;
+use OPGateway\Identity\LoginAccountRepository;
+use OPGateway\Identity\LoginAuthenticator;
+use OPGateway\Identity\AdministratorAuthorization;
+use OPGateway\Identity\PasswordHasher;
 use OPGateway\Security\LoginCaptcha;
 use OPGateway\Security\PdoLoginCaptchaSettings;
 use OPGateway\Security\SealedSecret;
+use OPGateway\Security\LoginAttemptLimiter;
+use OPGateway\Security\SecurityEventRecorder;
 use OPGateway\View\TwigRenderer;
+use OPGateway\View\TwigAdminPageRenderer;
 use PDO;
 use PDOStatement;
 use PHPUnit\Framework\Attributes\PreserveGlobalState;
@@ -188,6 +200,121 @@ final class LoginSettingsPolicyTest extends TestCase
             'captcha_id' => $b['challenge_id'],
             'captcha_answer' => (string) ((int) $matches[1] + (int) $matches[2]),
         ], '192.0.2.8'));
+        self::assertTrue(session_destroy());
+    }
+
+    /** @return array{captcha_id:string,captcha_answer:string} */
+    private static function offlineAnswerFromHtml(string $html): array
+    {
+        self::assertSame(1, preg_match(
+            '/name="captcha_id" value="([0-9a-f]{32})"/', $html, $id,
+        ));
+        self::assertSame(1, preg_match(
+            '/Verification: What is ([0-9]+) \+ ([0-9]+)\?/', $html, $numbers,
+        ));
+        return [
+            'captcha_id' => $id[1],
+            'captcha_answer' => (string) ((int) $numbers[1] + (int) $numbers[2]),
+        ];
+    }
+
+    /**
+     * @return array{0:LoginAccountRepository,1:GuardedLoginService}
+     */
+    private function loginDependencies(): array
+    {
+        $accounts = $this->createStub(LoginAccountRepository::class);
+        $hash = password_hash('example-password-123', PASSWORD_DEFAULT);
+        $accounts->method('findEligibleByEmail')->willReturn([
+            'id' => 17, 'password_hash' => $hash,
+        ]);
+        $accounts->method('isEligible')->willReturn(true);
+        $accounts->method('currentSessionStamp')->willReturn(
+            \OPGateway\Identity\PasswordSessionStamp::fromHash($hash),
+        );
+        $limiter = $this->createStub(LoginAttemptLimiter::class);
+        $limiter->method('allow')->willReturn(true);
+        return [
+            $accounts,
+            new GuardedLoginService(
+                new LoginAuthenticator($accounts, new PasswordHasher()),
+                $limiter, $this->createStub(SecurityEventRecorder::class),
+            ),
+        ];
+    }
+
+    #[RunInSeparateProcess]
+    #[PreserveGlobalState(false)]
+    public function testAccountPasswordPostRequiresRealOfflineChallenge(): void
+    {
+        $db = self::database();
+        $settings = new PdoLoginCaptchaSettings($db,
+            new SealedSecret(str_repeat('a', 64)));
+        (new BrowserSession())->start(true);
+        // A fresh instance shares the current underlying PHP session.
+        $session = new BrowserSession();
+        [$accounts, $login] = $this->loginDependencies();
+        $overview = $this->createStub(OwnerOverviewProvider::class);
+        $captcha = new LoginCaptcha($settings, $db, str_repeat('x', 32),
+            'https://opgateway.arsamnet.com', 'account');
+        $adapter = new AccountBrowserAdapter($session, $login, $accounts,
+            $overview, null, null, false, false, $captcha);
+        $send = static fn (string $method, ?string $body = null): array =>
+            $adapter->dispatch($method, '/account/login', true,
+                'application/x-www-form-urlencoded', '192.0.2.31',
+                str_repeat('a', 32), $body);
+        $get = $send('GET');
+        self::assertSame(200, $get['status']);
+        $answer = self::offlineAnswerFromHtml($get['body']);
+        $csrf = $session->csrfToken();
+        $fields = ['_csrf' => $csrf, 'email' => 'owner@example.com',
+            'password' => 'example-password-123', ...$answer];
+        self::assertSame(403, $send('POST', http_build_query([
+            ...$fields, 'captcha_answer' => '99',
+        ]))['status']);
+        // A failed challenge is consumed; use the new form returned by POST.
+        $fresh = $send('GET');
+        $answer = self::offlineAnswerFromHtml($fresh['body']);
+        self::assertSame(303, $send('POST',
+            http_build_query([...$fields, ...$answer]))['status']);
+        self::assertTrue(session_destroy());
+    }
+
+    #[RunInSeparateProcess]
+    #[PreserveGlobalState(false)]
+    public function testAdministratorPasswordPostRequiresOfflineChallenge(): void
+    {
+        $db = self::database();
+        $settings = new PdoLoginCaptchaSettings($db,
+            new SealedSecret(str_repeat('a', 64)));
+        (new BrowserSession())->start(true);
+        $session = new BrowserSession();
+        [$accounts, $login] = $this->loginDependencies();
+        $admins = $this->createStub(AdministratorAuthorization::class);
+        $admins->method('isAdministrator')->willReturn(true);
+        $auth = new BrowserAuthController($session, $login, $accounts, $admins);
+        $pages = new TwigAdminPageRenderer(
+            new TwigRenderer(dirname(__DIR__) . '/templates'),
+        );
+        $captcha = new LoginCaptcha($settings, $db, str_repeat('x', 32),
+            'https://opgateway.arsamnet.com', 'admin');
+        $adapter = new PrivateBrowserAdapter($session, $auth, $accounts, $admins,
+            null, null, $pages, $captcha);
+        $send = static fn (string $method, ?string $body = null): array =>
+            $adapter->dispatch($method, '/admin/login', true,
+                'application/x-www-form-urlencoded', '192.0.2.32',
+                str_repeat('a', 32), $body);
+        $get = $send('GET');
+        self::assertSame(200, $get['status']);
+        $answer = self::offlineAnswerFromHtml($get['body']);
+        $csrf = $session->csrfToken();
+        $fields = ['_csrf' => $csrf, 'email' => 'admin@example.com',
+            'password' => 'example-password-123', ...$answer];
+        self::assertSame(403, $send('POST', http_build_query([
+            ...$fields, '_csrf' => str_repeat('0', 64),
+        ]))['status']);
+        // Rejection of a bad CSRF token must not consume the CAPTCHA.
+        self::assertSame(303, $send('POST', http_build_query($fields))['status']);
         self::assertTrue(session_destroy());
     }
 
