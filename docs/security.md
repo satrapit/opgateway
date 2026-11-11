@@ -54,3 +54,16 @@ Security logs contain only allowlisted metadata: request ID, event code,
 timestamp, status and safe categories. Never log passwords, bearer tokens,
 full request bodies, email addresses, raw source IPs, CSRF, SQL or traces.
 Rejected requests return HTTP status codes; the app is not a packet firewall.
+
+## Google OpenID Connect cookie policy (unreleased)
+
+OIDC authorization-code/PKCE uses Google's cross-site **top-level GET**
+redirect to `/account/google/callback`. The browser session cookie is
+explicit `SameSite=Lax; Secure; HttpOnly` so the callback receives the
+same server-side state and nonce (Strict would withhold it). This does not
+authorize state-changing GETs or cross-site POSTs: every local mutation
+requires a server-side CSRF token, account eligibility and password
+reauthentication where appropriate. The callback consumes a session-bound,
+short-lived, single-use `state` and verifies the signed ID token and nonce.
+Do not change this to `SameSite=None`, enable client-driven redirects, or
+remove CSRF protections. See docs/testing.md for real-browser validation.

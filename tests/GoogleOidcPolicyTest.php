@@ -78,6 +78,10 @@ final class GoogleOidcPolicyTest extends TestCase
     {
         $session = new BrowserSession();
         $session->start(true);
+        $cookie = session_get_cookie_params();
+        self::assertSame('Lax', $cookie['samesite']);
+        self::assertTrue($cookie['secure']);
+        self::assertTrue($cookie['httponly']);
         $flow = GoogleOidcFlow::begin(
             self::CLIENT_ID, 'https://opgateway.test', 'login', null,
         );

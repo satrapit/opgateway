@@ -93,6 +93,11 @@ use a registered HTTPS staging domain for live tests. Verify server outbound
 HTTPS access to `oauth2.googleapis.com` and `www.googleapis.com` without
 disabling TLS validation.
 
+Browser acceptance must verify the OAuth callback receives the PHP session
+cookie after Google's top-level GET redirect. It uses explicit
+`SameSite=Lax; Secure; HttpOnly`, not Strict or None; session-bound state,
+nonce and all POST CSRF checks remain mandatory.
+
 Browser acceptance: register with local password, verify email and receive
 admin approval; sign in with password; confirm password to connect Google;
 consent with the Google account using the same verified email; sign out and

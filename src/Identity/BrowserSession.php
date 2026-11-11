@@ -39,7 +39,10 @@ final class BrowserSession
             'path' => '/',
             'secure' => true,
             'httponly' => true,
-            'samesite' => 'Strict',
+            // Google OIDC returns via a cross-site top-level GET. Lax keeps
+            // the same server-side state available without allowing cookies
+            // on cross-site POSTs; all mutations still require CSRF tokens.
+            'samesite' => 'Lax',
         ]);
         ini_set('session.use_strict_mode', '1');
         ini_set('session.use_only_cookies', '1');
@@ -135,7 +138,7 @@ final class BrowserSession
                 'domain' => $params['domain'],
                 'secure' => $params['secure'],
                 'httponly' => $params['httponly'],
-                'samesite' => $params['samesite'] ?? 'Strict',
+                'samesite' => $params['samesite'] ?? 'Lax',
             ]);
         }
         if (!session_destroy()) {
