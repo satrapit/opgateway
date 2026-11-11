@@ -18,9 +18,7 @@
         <span class="min-w-0 flex-1">Settings</span>
         <svg viewBox="0 0 24 24" class="opg-icon opg-nav-chevron" aria-hidden="true" focusable="false" x-bind:class="settingsChevronClass"><use href="{{ admin_assets.icons }}#opg-icon-chevron-down"></use></svg>
       </button>
-      <div id="opg-settings-submenu" class="opg-nav-submenu"
-        x-bind:class="settingsSubmenuClass" x-bind:aria-hidden="settingsMenuHidden"
-        x-bind:inert="settingsMenuHidden">
+      <div id="opg-settings-submenu" class="opg-nav-submenu">
         <div class="opg-nav-submenu-inner">
           <a class="opg-nav-sublink" href="/admin/settings/security"{% if active_section == 'security' %} aria-current="page"{% endif %}>Security</a>
           <a class="opg-nav-sublink" href="/admin/settings/login/google"{% if active_section == 'google' %} aria-current="page"{% endif %}>Google SSO</a>

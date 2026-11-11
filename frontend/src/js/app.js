@@ -60,12 +60,6 @@ Alpine.data('adminShell', () => ({
   get settingsChevronClass() {
     return this.settingsMenuOpen ? 'is-expanded' : '';
   },
-  get settingsSubmenuClass() {
-    return this.settingsMenuOpen ? 'is-expanded' : '';
-  },
-  get settingsMenuHidden() {
-    return !this.settingsMenuOpen;
-  },
   openSidebar(event) {
     this.lastActivator = event?.currentTarget ?? null;
     this.sidebarOpen = true;

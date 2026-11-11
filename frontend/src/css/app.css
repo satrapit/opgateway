@@ -340,10 +340,13 @@ html[data-theme="dark"] .opg-theme-icon[data-theme-icon="dark"] { display: inlin
   opacity: 0;
   visibility: hidden;
   pointer-events: none;
+  border-inline-start: 0;
+  padding-inline-start: 0;
   transition: grid-template-rows .26s cubic-bezier(.2,.8,.2,1),
     opacity .2s ease, visibility 0s linear .26s;
 }
-.opg-nav-submenu.is-expanded {
+/* Alpine already manages the parent's aria-expanded: no extra JS state is needed. */
+.opg-nav-parent[aria-expanded="true"] + .opg-nav-submenu {
   grid-template-rows: 1fr;
   opacity: 1;
   visibility: visible;
