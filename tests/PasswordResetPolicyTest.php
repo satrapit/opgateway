@@ -32,6 +32,11 @@ final class PasswordResetPolicyTest extends TestCase
         $reset = AccountViews::resetPasswordForm(self::CSRF, str_repeat('a', 64));
         self::assertStringContainsString('action="/account/reset-password"', $reset);
         self::assertStringContainsString('name="password_confirmation"', $reset);
+        self::assertStringContainsString('name="referrer" content="no-referrer"', $reset);
+        $entry = file_get_contents(dirname(__DIR__) . '/public/index.php');
+        self::assertIsString($entry);
+        self::assertStringContainsString("'/account/reset-password'", $entry);
+        self::assertStringContainsString("'/account/verify'", $entry);
         self::assertTrue(SelfServiceBrowserController::route('/account/forgot-password'));
         self::assertTrue(SelfServiceBrowserController::route('/account/reset-password'));
     }
@@ -205,5 +210,86 @@ final class PasswordResetPolicyTest extends TestCase
         }
         self::assertStringContainsString('token_hash CHAR(64)', $script);
         self::assertStringContainsString('consumed_at DATETIME(6)', $script);
+    }
+
+    public function testMailFailureInvalidatesTheUndeliveredResetToken(): void
+    {
+        $database = new class extends PDO {
+            public bool $transaction = false;
+            public bool $tokenCanceled = false;
+            public function __construct()
+            {
+            }
+            public function beginTransaction(): bool
+            {
+                $this->transaction = true;
+                return true;
+            }
+            public function commit(): bool
+            {
+                $this->transaction = false;
+                return true;
+            }
+            public function rollBack(): bool
+            {
+                $this->transaction = false;
+                return true;
+            }
+            public function inTransaction(): bool
+            {
+                return $this->transaction;
+            }
+            public function prepare(string $query, array $options = []): PDOStatement|false
+            {
+                return new class($this, $query) extends PDOStatement {
+                    public function __construct(private PDO $db, private string $sql)
+                    {
+                    }
+                    public function bindValue(
+                        string|int $param, mixed $value, int $type = PDO::PARAM_STR,
+                    ): bool {
+                        return true;
+                    }
+                    public function execute(?array $params = null): bool
+                    {
+                        if (str_contains($this->sql, 'WHERE token_hash = ?')
+                            && str_contains($this->sql, 'SET consumed_at')) {
+                            $this->db->tokenCanceled = true;
+                        }
+                        return true;
+                    }
+                    public function fetchColumn(int $column = 0): mixed
+                    {
+                        if (str_contains($this->sql, 'SELECT attempts')) {
+                            return 1;
+                        }
+                        if (str_contains($this->sql, 'SELECT id FROM users')) {
+                            return 17;
+                        }
+                        return false;
+                    }
+                };
+            }
+        };
+        $mailer = new class implements PasswordResetMailer {
+            public function sendPasswordReset(string $email, string $token, string $origin): void
+            {
+                throw new \RuntimeException('test transport failure');
+            }
+        };
+        $service = new PasswordResetService(
+            $database, new PasswordHasher(),
+            new PdoPasswordResetLimiter($database, str_repeat('k', 32)), $mailer,
+        );
+        try {
+            $service->request(
+                'owner@example.test', '192.0.2.10', 'https://opgateway.test',
+            );
+            self::fail('Mail failure must be reported.');
+        } catch (\RuntimeException $error) {
+            self::assertSame('Password reset delivery unavailable.', $error->getMessage());
+        }
+        self::assertTrue($database->tokenCanceled);
+        self::assertFalse($database->transaction);
     }
 }

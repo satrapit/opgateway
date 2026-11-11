@@ -19,12 +19,19 @@
       <input class="opg-input" id="provider-password" name="password" type="password" maxlength="1024" autocomplete="new-password" required>
     </div>
     <div class="sm:col-span-2">
-      <label class="opg-label" for="provider-confirm-password">Confirm your gateway account password</label>
-      <input class="opg-input" id="provider-confirm-password" name="current_password" type="password" maxlength="1024" autocomplete="current-password" required>
+      <label class="opg-label" for="provider-confirm-password">Current gateway password, or leave blank after Google verification</label>
+      <input class="opg-input" id="provider-confirm-password" name="current_password" type="password" maxlength="1024" autocomplete="current-password">
     </div>
     <div class="sm:col-span-2">
       <button class="opg-primary-button w-full sm:w-auto" type="submit">Save changes</button>
     </div>
   </form>
+  {% if google_step_up %}
+    <form method="post" action="/account/google/verify" class="mt-4">
+      <input type="hidden" name="_csrf" value="{{ csrf_token }}">
+      <input type="hidden" name="action" value="provider_credentials">
+      <button class="opg-secondary-button" type="submit">Verify with Google</button>
+    </form>
+  {% endif %}
 </section>
 {% endif %}

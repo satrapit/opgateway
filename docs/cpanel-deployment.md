@@ -44,6 +44,12 @@ restore alpha.4.1 code while retaining the additive migration 007.
 Google OAuth callback URI on the only deployed host:
 `https://opgateway.arsamnet.com/account/google/callback`.
 
+The later Google-first optional-password branch requires migration 008 and is
+not covered by the alpha.4.1 migration-007 rollback bridge. Review
+[the migration 008 rollback plan](google-first-password-rollback.md) and prepare
+an 008-compatible code rollback before any future maintenance window. Do not
+deploy this feature branch or apply 008 to production.
+
 ## Controlled rollout
 
 1. **Do not deploy the draft PR yet.** On a disposable database, validate

@@ -1,26 +1,59 @@
 {% extends 'layouts/account.html.twig' %}
 {% block dashboard_content %}
-<section class="opg-panel p-6 sm:p-8" aria-labelledby="google-account-title">
-  <h2 id="google-account-title" class="opg-section-title">Google sign-in</h2>
-  <p class="opg-section-subtitle">You can keep signing in with your email and password, even if Google is unavailable.</p>
-  {% if not google_available %}
-    <div class="opg-alert mt-6" role="status">Google sign-in has not been configured by the administrator.</div>
-  {% elseif linked_email %}
-    <p class="mt-6 text-sm text-gray-700 dark:text-gray-300">Connected Google account: <strong>{{ linked_email }}</strong></p>
-    <form method="post" action="/account/google/unlink" class="mt-6 grid max-w-lg gap-4">
+<div class="grid min-w-0 gap-6 xl:grid-cols-2">
+  <section class="opg-panel p-6 sm:p-8" aria-labelledby="password-method-title">
+    <div class="flex flex-wrap items-start justify-between gap-3">
+      <div><h2 id="password-method-title" class="opg-section-title">Local password</h2>
+      <p class="opg-section-subtitle">{{ has_password ? 'Change your existing password.' : 'Add a recovery password without disconnecting Google.' }}</p></div>
+      <span class="opg-badge {{ has_password ? 'opg-badge-green' : 'opg-badge-neutral' }}">{{ has_password ? 'Available' : 'Not set' }}</span>
+    </div>
+    <form method="post" action="/account/security/password" class="mt-6 grid gap-4" autocomplete="off">
       <input type="hidden" name="_csrf" value="{{ csrf_token }}">
-      <label class="opg-label" for="google-unlink-password">Confirm your account password to disconnect Google</label>
-      <input class="opg-input" id="google-unlink-password" type="password" name="current_password" autocomplete="current-password" maxlength="1024" required>
-      <button class="opg-danger-button" type="submit">Disconnect Google</button>
+      {% if has_password %}
+        <div><label class="opg-label" for="security-current-password">Current password</label>
+        <input class="opg-input" id="security-current-password" name="current_password" type="password" maxlength="1024" autocomplete="current-password" required></div>
+      {% else %}
+        <input type="hidden" name="current_password" value="">
+      {% endif %}
+      <div><label class="opg-label" for="security-new-password">{{ has_password ? 'New password' : 'Password' }}</label>
+      <input class="opg-input" id="security-new-password" name="new_password" type="password" minlength="12" maxlength="1024" autocomplete="new-password" required>
+      <p class="opg-muted mt-2">At least 12 characters. Saving signs out all browser sessions.</p></div>
+      <div><label class="opg-label" for="security-confirm-password">Confirm password</label>
+      <input class="opg-input" id="security-confirm-password" name="password_confirmation" type="password" minlength="12" maxlength="1024" autocomplete="new-password" required></div>
+      <button class="opg-primary-button" type="submit">{{ has_password ? 'Change password' : 'Set password' }}</button>
     </form>
-  {% else %}
-    <p class="mt-6 text-sm text-gray-600 dark:text-gray-300">Connect a Google account that uses the same verified email address as this OPGateway account.</p>
-    <form method="post" action="/account/google/link" class="mt-6 grid max-w-lg gap-4">
-      <input type="hidden" name="_csrf" value="{{ csrf_token }}">
-      <label class="opg-label" for="google-link-password">Confirm your account password</label>
-      <input class="opg-input" id="google-link-password" type="password" name="current_password" autocomplete="current-password" maxlength="1024" required>
-      <button class="opg-primary-button" type="submit">Connect Google account</button>
-    </form>
-  {% endif %}
-</section>
+  </section>
+
+  <section class="opg-panel p-6 sm:p-8" aria-labelledby="google-method-title">
+    <div class="flex flex-wrap items-start justify-between gap-3">
+      <div><h2 id="google-method-title" class="opg-section-title">Google sign-in</h2>
+      <p class="opg-section-subtitle">Use a verified Google identity without storing provider tokens.</p></div>
+      <span class="opg-badge {{ linked_email ? 'opg-badge-green' : 'opg-badge-neutral' }}">{{ linked_email ? 'Connected' : 'Not connected' }}</span>
+    </div>
+    {% if not google_available %}
+      <div class="opg-alert mt-6" role="status">Google sign-in is currently unavailable. Password sign-in and recovery remain available.</div>
+    {% elseif linked_email %}
+      <p class="mt-6 break-all text-sm text-gray-700 dark:text-gray-300">Connected address: <strong>{{ linked_email }}</strong></p>
+      {% if has_password %}
+        <form method="post" action="/account/google/unlink" class="mt-6 grid gap-4">
+          <input type="hidden" name="_csrf" value="{{ csrf_token }}">
+          <div><label class="opg-label" for="google-unlink-password">Current password</label>
+          <input class="opg-input" id="google-unlink-password" type="password" name="current_password" autocomplete="current-password" maxlength="1024" required></div>
+          <p class="opg-muted">Disconnecting Google signs out every browser session.</p>
+          <button class="opg-danger-button" type="submit">Disconnect Google</button>
+        </form>
+      {% else %}
+        <div class="opg-alert mt-6" role="status">Set a local password before disconnecting Google. An account must always retain at least one recovery method.</div>
+      {% endif %}
+    {% elseif has_password %}
+      <p class="mt-6 text-sm text-gray-600 dark:text-gray-300">Connect the Google account with the same verified email address.</p>
+      <form method="post" action="/account/google/link" class="mt-6 grid gap-4">
+        <input type="hidden" name="_csrf" value="{{ csrf_token }}">
+        <div><label class="opg-label" for="google-link-password">Current password</label>
+        <input class="opg-input" id="google-link-password" type="password" name="current_password" autocomplete="current-password" maxlength="1024" required></div>
+        <button class="opg-primary-button" type="submit">Connect Google account</button>
+      </form>
+    {% endif %}
+  </section>
+</div>
 {% endblock %}

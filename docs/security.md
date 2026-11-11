@@ -7,7 +7,10 @@ pages require fresh account eligibility and role checks. Admin login can
 originate from any IP; **API clients cannot**, because the exact source
 address must have prior approval for the active client.
 
-Passwords used for browser authentication remain one-way hashed.
+Passwords used for browser authentication remain one-way hashed and are
+optional only for Google-created accounts. A NULL password hash can never pass
+password verification. Browser sessions carry an opaque marker derived from a
+non-null server-controlled authentication version, not the password hash.
 Self-service email tokens are random, one-use and SHA-256 hashed in MySQL.
 Only self-service accounts are activated through email verification; old
 manual accounts retain administrative approval. Sessions are Secure,
@@ -16,8 +19,9 @@ by CSRF and SQL-backed HMAC-isolated throttling.
 
 Admin review/provision requires the existing `admin` role, current
 authorization, CSRF, strict bounded forms, rate limits and transactional
-metadata-only audit. Owner API key issue requires fresh password
-confirmation. Newly created clients are disabled and IPs are unapproved;
+metadata-only audit. Owner API key issue and provider credential changes
+require either current password confirmation or a short-lived, one-use Google
+verification bound to that owner and action. Newly created clients are disabled and IPs are unapproved;
 access requires explicitly approved exact IPv4/IPv6 plus an active owner,
 active client and valid non-revoked gateway bearer digest.
 
@@ -64,6 +68,12 @@ same server-side state and nonce (Strict would withhold it). This does not
 authorize state-changing GETs or cross-site POSTs: every local mutation
 requires a server-side CSRF token, account eligibility and password
 reauthentication where appropriate. The callback consumes a session-bound,
-short-lived, single-use `state` and verifies the signed ID token and nonce.
+short-lived, single-use `state` and verifies the signed ID token, nonce and
+`email_verified`. Subject mapping identifies repeat users. A mailbox collision
+uses a separate hashed, expiring email confirmation token bound to the consumed
+OIDC transaction; mailbox equality alone is never login authority.
+Sensitive-action step-up additionally requests and validates Google's signed
+`auth_time`, rejecting authentication older than five minutes before issuing a
+single-use, account- and action-bound session grant.
 Do not change this to `SameSite=None`, enable client-driven redirects, or
 remove CSRF protections. See docs/testing.md for real-browser validation.

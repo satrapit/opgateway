@@ -32,15 +32,15 @@ AES-256-GCM with a separate private, backed-up
 a domain-separated HKDF key. Canonical host and TLS are configured in
 the web-server virtual host, never accepted from untrusted forwarded headers.
 
-The five sequential migration definitions are applied explicitly in
-order; cPanel deploy never auto-migrates. Existing populated alpha.3
-databases require migrations 004 and 005 and a backup before using
-the new source. Migration 005 consolidates global settings; removing feature flags
-itself did not require a schema migration.
+Eight sequential migration definitions are applied explicitly in order;
+cPanel deploy never auto-migrates. Migration 008 makes local passwords
+optional, adds a non-null authentication-session version and stores only
+hashed one-time Google collision-confirmation tokens. Earlier migration
+definitions and checksums remain immutable.
 
 ## Out of scope before release
 
 Version-pinned full OpenAPI compatibility, domain ownership/scope checks
 for paid writes, idempotency policy, full end-to-end live SMTP/Provider
-and browser verification, password reset and MFA. These are release
+and browser verification and MFA. These are release
 hardening tasks, not reasons to add arbitrary runtime switches.

@@ -10,7 +10,7 @@ use RuntimeException;
 use Throwable;
 
 /** SMTP verification and reset mail with peer TLS verification and no debug output. */
-final readonly class PhpMailerVerificationMailer implements VerificationMailer, PasswordResetMailer, InvitationMailer
+final readonly class PhpMailerVerificationMailer implements VerificationMailer, PasswordResetMailer, InvitationMailer, GoogleIdentityConfirmationMailer
 {
     public function __construct(private PdoSmtpSettings $settings)
     {
@@ -43,6 +43,17 @@ final readonly class PhpMailerVerificationMailer implements VerificationMailer, 
             "To choose a new password, open this one-time link:\n"
             . $origin . '/account/reset-password?token=' . $token
             . "\n\nThe link expires in 15 minutes.\nIf you did not request this, ignore this message.");
+    }
+
+    public function sendGoogleIdentityConfirmation(
+        string $email, string $token, string $origin,
+    ): void {
+        $this->validateLink($email, $token, $origin);
+        $this->send($email, 'Confirm Google sign-in for OPGateway',
+            "A Google account requested access to your existing OPGateway account.\n"
+            . "Confirm this one-time request:\n"
+            . $origin . '/account/google/confirm?token=' . $token
+            . "\n\nThe link expires in 15 minutes. If this was not you, ignore this message.");
     }
 
     private function validateLink(string $email, string $token, string $origin): void

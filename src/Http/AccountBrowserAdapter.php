@@ -10,6 +10,7 @@ use OPGateway\Identity\LoginAccountRepository;
 use OPGateway\Clients\OwnerIntegrationService;
 use OPGateway\Security\OwnerCredentialManager;
 use OPGateway\Security\LoginCaptcha;
+use OPGateway\Identity\PdoGoogleIdentityStore;
 
 /**
  * HTTPS-only account surface. Only an approved owner can see their clients.
@@ -31,6 +32,7 @@ final readonly class AccountBrowserAdapter
         private bool $registrationAvailable = false,
         private bool $googleAvailable = false,
         private ?LoginCaptcha $captcha = null,
+        private ?PdoGoogleIdentityStore $googleIdentities = null,
     ) {
     }
 
@@ -116,6 +118,8 @@ final readonly class AccountBrowserAdapter
                 $this->session->csrfToken(), $data, $this->credentials !== null,
                 $this->integration !== null, $this->integration?->summary($userId) ?? [],
                 $sections[$path],
+                $this->googleAvailable
+                    && $this->googleIdentities?->linked($userId) !== null,
             ));
         }
 
@@ -142,12 +146,9 @@ final readonly class AccountBrowserAdapter
             if (!$this->session->csrfValid($form['_csrf'])) {
                 return self::error(403);
             }
-            // The current password is checked again before minting a bearer
-            // credential. An unrelated account's password never authorizes.
-            $email = $this->overview->eligibleEmail($userId);
-            if ($email === null || $this->login->authenticate(
-                $email, $form['password'], $sourceIp, $requestId,
-            ) !== $userId) {
+            if (!$this->authorizedAction(
+                $userId, 'api_key_issue', $form['password'], $sourceIp, $requestId,
+            )) {
                 return self::error(403);
             }
 
@@ -212,6 +213,19 @@ final readonly class AccountBrowserAdapter
         }
 
         return self::error(404);
+    }
+
+    private function authorizedAction(
+        int $userId, string $action, string $password,
+        string $sourceIp, string $requestId,
+    ): bool {
+        if ($password === '') {
+            return $this->session->consumeGoogleAction($userId, $action);
+        }
+        $email = $this->overview->eligibleEmail($userId);
+        return $email !== null && $this->login->authenticate(
+            $email, $password, $sourceIp, $requestId,
+        ) === $userId;
     }
 
     private static function isForm(?string $contentType): bool

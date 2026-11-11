@@ -7,7 +7,7 @@ shared TailAdmin/Twig design system for both admin and self-service account port
 > pre-Google rollback base with six required migrations and explicit
 > compatibility for migration 007. The current `main` also includes the
 > subsequent database-only .env cleanup. Google sign-in is still in
-> Draft PR #4. The replacement TailAdmin menu, image CAPTCHA and
+> Draft PR #9. The replacement TailAdmin menu, image CAPTCHA and
 > creation workflows are being reviewed in the independent branch
 > `feat/admin-settings-users-image-captcha`. Neither is deployed.
 
@@ -51,11 +51,13 @@ backed up**; never save this key in MySQL, Git or the public directory.
 1. Run `composer install` on PHP 8.3 with MySQL extensions.
 2. Copy `.env.example` to private `.env` and provide **local** DB credentials.
    If upgrading a local checkout, remove retired non-DB entries from .env.
-3. For an empty database on the Google development branch, import the
-   complete schema once (7 migration records), but only after confirming it
+3. For an empty database on this Google-first development branch, import the
+   complete schema once (8 migration records), but only after confirming it
    has no existing data. For an existing alpha.3 database, alpha.4 requires
    applying 004, 005 and 006 in order after a verified backup. The Google
-   feature requires migration 007 in addition, tested locally first.
+   original Google feature requires migration 007. Google-first optional
+   passwords additionally require migration 008, reviewed and tested only on
+   a disposable/local backup before any production change.
 4. On first run create an admin using the existing reviewed SQL in
    [database documentation](docs/database.md), if none exists.
 5. Use HTTPS at a correctly configured canonical virtual host.
@@ -91,3 +93,8 @@ The original alpha.4 code will reject a database already on migration 007;
 only alpha.4.1 can serve as the code-only fallback after that upgrade.
 Use the exact OAuth redirect URI
 `https://opgateway.arsamnet.com/account/google/callback`.
+
+The Google-first branch supports first registration without a local password,
+one-time mailbox confirmation for collisions with existing accounts, and a
+separate Account Security page. It is unreleased and must not be deployed or
+merged until migration 008 and its rollback plan receive independent review.

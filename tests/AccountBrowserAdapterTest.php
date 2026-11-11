@@ -23,6 +23,56 @@ final class AccountBrowserAdapterTest extends TestCase
 {
     #[RunInSeparateProcess]
     #[PreserveGlobalState(false)]
+    public function testGoogleOnlyOwnerCanIssueKeyWithActionBoundVerification(): void
+    {
+        $session = new BrowserSession();
+        $session->start(true);
+        $stamp = \OPGateway\Identity\AuthenticationSessionVersion::stamp(3);
+        $session->authenticate(17, $stamp);
+        $session->grantGoogleAction(17, 'api_key_issue');
+        $accounts = $this->createStub(LoginAccountRepository::class);
+        $accounts->method('currentSessionStamp')->willReturn($stamp);
+        $accounts->method('findEligibleByEmail')->willReturn([
+            'id' => 17, 'password_hash' => null, 'session_stamp' => $stamp,
+        ]);
+        $login = new GuardedLoginService(
+            new LoginAuthenticator($accounts, new PasswordHasher()),
+            $this->createStub(LoginAttemptLimiter::class),
+            $this->createStub(SecurityEventRecorder::class),
+        );
+        $overview = $this->createStub(OwnerOverviewProvider::class);
+        $overview->method('eligibleEmail')->willReturn('google-only@example.test');
+        $key = ApiKey::issue()['key'];
+        $manager = $this->createMock(OwnerCredentialManager::class);
+        $manager->expects(self::once())->method('issue')->willReturn([
+            'status' => 200, 'key' => $key,
+        ]);
+        $adapter = new AccountBrowserAdapter(
+            $session, $login, $accounts, $overview, $manager,
+        );
+        $body = http_build_query([
+            '_csrf' => $session->csrfToken(), 'client_id' => '13', 'password' => '',
+        ]);
+        $first = $adapter->dispatch(
+            'POST', '/account/keys/issue', true,
+            'application/x-www-form-urlencoded', '192.0.2.7',
+            str_repeat('a', 32), $body,
+        );
+        self::assertSame(200, $first['status']);
+        self::assertStringContainsString($key, $first['body']);
+        $replay = $adapter->dispatch(
+            'POST', '/account/keys/issue', true,
+            'application/x-www-form-urlencoded', '192.0.2.7',
+            str_repeat('b', 32), http_build_query([
+                '_csrf' => $session->csrfToken(), 'client_id' => '13', 'password' => '',
+            ]),
+        );
+        self::assertSame(403, $replay['status']);
+        self::assertTrue(session_destroy());
+    }
+
+    #[RunInSeparateProcess]
+    #[PreserveGlobalState(false)]
     public function testOwnerLoginOneTimeIssueRevocationAndCsrfRotation(): void
     {
         $session = new BrowserSession();
@@ -35,7 +85,7 @@ final class AccountBrowserAdapterTest extends TestCase
             'id' => 17, 'password_hash' => $verifiedHash,
         ]);
         $accounts->method('currentSessionStamp')->willReturn(
-            \OPGateway\Identity\PasswordSessionStamp::fromHash($verifiedHash),
+            \OPGateway\Identity\AuthenticationSessionVersion::stamp(1),
         );
         $limits = $this->createStub(LoginAttemptLimiter::class);
         $limits->method('allow')->willReturn(true);

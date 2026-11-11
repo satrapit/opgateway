@@ -199,7 +199,7 @@ final readonly class AdministrativeWebEntry
             $response = (new AdminUserInvitationController(
                 $session, $accounts, $admins,
                 new AdminUserInvitation(
-                    $pdo, new PasswordHasher(),
+                    $pdo,
                     new EmailVerificationService(
                         new PdoEmailVerificationRepository($pdo, true),
                     ),

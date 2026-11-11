@@ -11,15 +11,18 @@ migrated in a separately reviewed change. No duplicate CSS, remote CDN,
 additional UI feature flags or new login endpoints are introduced.
 
 
-Registration POST requires `password_confirmation` and rejects mismatched
-passwords server-side before creating an account. The browser form already
-includes the confirmation field. Account sections `/account`, `/account/provider`,
+Password registration POST requires `password_confirmation` and rejects
+mismatched passwords server-side before creating an account. When Google is
+configured, Continue with Google is also a first-registration path and creates
+a verified pending user with `password_hash = NULL`; it never creates a dummy
+password or bypasses approval. Account sections `/account`, `/account/provider`,
 `/account/clients`, `/account/keys` and `/account/ips` are separate routes and
 render distinct Twig sections, not a single anchor-based page.
 
 Password recovery: `/account/forgot-password` requests a generic-response,
 rate-limited email with a 15-minute, single-use reset link. Only a digest
-is stored in MySQL. The reset POST validates password confirmation and
+is stored in MySQL. It can establish a password for an eligible Google-only
+account even while Google login is disabled. The reset POST validates password confirmation and
 CSRF and does not automatically sign the user in. Migration 006 must be
 applied manually before using updated source.
 
@@ -49,14 +52,26 @@ database at `storage/app-secret.key`, outside the public document root.
 
 See [onboarding](gateway-onboarding.md) for a local end-to-end checklist.
 
-## Google sign-in — unreleased
+## Account Security and Google sign-in — unreleased
 
-Existing users create a local password-based account, verify email, and
-receive normal administrator approval. At `/account/google`, an approved
-signed-in user re-enters their password to link Google via consent. The
-verified Google `sub` is stored for subsequent sign-in; the app never
-stores Google access/refresh tokens. Matching email alone never logs in
-or links an account. Local password login and recovery remain available,
-and an owner can disconnect Google after password reauthentication.
+`/account/security` shows the available authentication methods. A Google-only
+user can set a local password; a password user must provide the current
+password to change it. Password set/change/reset increments a server-controlled
+session version and revokes older browser sessions.
 
-Requires administrator Google settings and migration 007. Not in alpha.4.
+Continue with Google validates issuer, audience, signature, nonce, PKCE,
+one-time state and `email_verified`. Stored `sub` is the only repeat-login
+identifier. A new subject with no local email row creates a passwordless,
+verified pending account. If the verified Google email collides with an
+existing unlinked user, the system sends a 15-minute single-use confirmation
+to that address and binds it to the consumed OIDC transaction and intended
+user. Email equality alone never authenticates or links.
+
+Unlink requires a current local password and is denied when Google is the last
+method. API-key issue and Openprovider credential changes accept either the
+current password or a five-minute, one-use Google verification bound to the
+specific account and action. The step-up request requires Google's signed
+`auth_time` claim and rejects provider authentication older than five minutes.
+No Google access/refresh token is stored.
+
+Requires administrator Google settings and migrations 007–008. Not released.

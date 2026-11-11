@@ -19,11 +19,14 @@ final class HttpReferrerPolicyTest extends TestCase
         $source = file_get_contents(dirname(__DIR__) . '/public/index.php');
         self::assertIsString($source);
 
-        // The callback alone must use no-referrer to avoid leaking the
-        // authorization code in subsequent requests.
+        // Every URL that can contain an authorization or recovery token uses
+        // no-referrer so a subsequent request cannot disclose that secret.
+        self::assertStringContainsString("'/account/google/callback'", $source);
+        self::assertStringContainsString("'/account/google/confirm'", $source);
+        self::assertStringContainsString("'/account/reset-password'", $source);
+        self::assertStringContainsString("'/account/verify'", $source);
         self::assertStringContainsString(
-            "header('Referrer-Policy: ' . (\$path === '/account/google/callback'",
-            $source,
+            'in_array($path, $noReferrerPaths, true)', $source,
         );
         self::assertStringContainsString("? 'no-referrer' : 'same-origin'", $source);
 

@@ -28,6 +28,7 @@ final readonly class SelfServiceBrowserController
         private ?GuardedLoginService $reauth = null,
         private ?OwnerOverviewProvider $overview = null,
         private ?PasswordResetService $passwordReset = null,
+        private bool $googleAvailable = false,
     ) {
     }
 
@@ -85,7 +86,9 @@ final readonly class SelfServiceBrowserController
                 return self::error(400);
             }
             try {
-                $result = $this->passwordReset->reset($form['token'], $form['password']);
+                $result = $this->passwordReset->reset(
+                    $form['token'], $form['password'], $requestId,
+                );
             } catch (InvalidArgumentException) {
                 return self::error(400);
             }
@@ -94,11 +97,15 @@ final readonly class SelfServiceBrowserController
         }
 
         if (in_array($path, ['/account/register', '/account/verify', '/account/verify/resend'], true)) {
+            if ($path === '/account/register' && $method === 'GET'
+                && ($this->registration !== null || $this->googleAvailable)) {
+                return self::html(AccountViews::register(
+                    $this->session->csrfToken(), $this->googleAvailable,
+                    $this->registration !== null,
+                ));
+            }
             if ($this->registration === null) {
                 return self::error(404);
-            }
-            if ($path === '/account/register' && $method === 'GET') {
-                return self::html(AccountViews::register($this->session->csrfToken()));
             }
             if ($path === '/account/verify' && $method === 'GET') {
                 $token = preg_match('/^token=([0-9a-fA-F]{64})$/D', $rawQuery, $matches) === 1
@@ -169,14 +176,16 @@ final readonly class SelfServiceBrowserController
         try {
             if ($path === '/account/provider/save') {
                 if ($this->reauth === null || $this->overview === null
-                    || strlen($form['current_password']) === 0
                     || strlen($form['current_password']) > 1024) {
                     return self::error(403);
                 }
-                $email = $this->overview->eligibleEmail($userId);
-                if ($email === null || $this->reauth->authenticate(
-                    $email, $form['current_password'], $sourceIp, $requestId,
-                ) !== $userId) {
+                $authorized = $form['current_password'] === ''
+                    ? $this->session->consumeGoogleAction($userId, 'provider_credentials')
+                    : (($email = $this->overview->eligibleEmail($userId)) !== null
+                        && $this->reauth->authenticate(
+                            $email, $form['current_password'], $sourceIp, $requestId,
+                        ) === $userId);
+                if (!$authorized) {
                     return self::error(403);
                 }
                 $result = $this->integration->saveAccount(

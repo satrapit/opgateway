@@ -6,6 +6,7 @@ namespace OPGateway\Identity;
 
 use InvalidArgumentException;
 use OPGateway\Security\PdoPasswordResetLimiter;
+use OPGateway\Security\SecurityEventRecorder;
 use PDO;
 use RuntimeException;
 use Throwable;
@@ -21,6 +22,7 @@ final readonly class PasswordResetService
         private PasswordHasher $hasher,
         private PdoPasswordResetLimiter $limiter,
         private PasswordResetMailer $mailer,
+        private ?SecurityEventRecorder $events = null,
     ) {
     }
 
@@ -77,6 +79,11 @@ SQL);
         try {
             $this->mailer->sendPasswordReset($email, $token, $origin);
         } catch (Throwable $error) {
+            $cancel = $this->pdo->prepare(<<<'SQL'
+UPDATE password_reset_tokens SET consumed_at = UTC_TIMESTAMP(6)
+WHERE token_hash = ? AND consumed_at IS NULL
+SQL);
+            $cancel->execute([hash('sha256', $token)]);
             throw new RuntimeException('Password reset delivery unavailable.', 0, $error);
         }
         return 'accepted';
@@ -104,7 +111,7 @@ SQL);
         return $read->fetchColumn() !== false;
     }
 
-    public function reset(string $token, string $password): bool
+    public function reset(string $token, string $password, ?string $requestId = null): bool
     {
         if (preg_match('/^[a-f0-9]{64}$/iD', $token) !== 1) {
             return false;
@@ -132,7 +139,9 @@ SQL);
             // Do not run expensive password hashing for invalid/expired tokens.
             $passwordHash = $this->hasher->hash($password);
             $update = $this->pdo->prepare(<<<'SQL'
-UPDATE users SET password_hash = ?, updated_at = UTC_TIMESTAMP(6)
+UPDATE users SET password_hash = ?,
+auth_session_version = auth_session_version + 1,
+updated_at = UTC_TIMESTAMP(6)
 WHERE id = ? AND status = 'active'
 AND email_verified_at IS NOT NULL AND approved_at IS NOT NULL
 SQL);
@@ -146,6 +155,9 @@ UPDATE password_reset_tokens SET consumed_at = UTC_TIMESTAMP(6)
 WHERE user_id = ? AND consumed_at IS NULL
 SQL);
             $consume->execute([$userId]);
+            if ($this->events !== null && is_string($requestId)) {
+                $this->events->record('password_reset', $requestId);
+            }
             $this->pdo->commit();
             return true;
         } catch (Throwable $error) {

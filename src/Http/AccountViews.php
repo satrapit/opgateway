@@ -34,14 +34,21 @@ final class AccountViews
         ]);
     }
 
-    public static function register(string $csrfToken): string
+    public static function register(
+        string $csrfToken, bool $googleAvailable = false,
+        bool $passwordRegistrationAvailable = true,
+    ): string
     {
         self::validateCsrf($csrfToken);
         return self::render('account/register.html.twig', [
             'page_title' => 'Create your account',
             'page_eyebrow' => 'Join OPGateway',
-            'page_description' => 'Enter your email and choose a password.',
+            'page_description' => $passwordRegistrationAvailable
+                ? 'Use Google, or enter your email and choose a password.'
+                : 'Use Google to create your account.',
             'csrf_token' => $csrfToken,
+            'google_available' => $googleAvailable,
+            'password_registration_available' => $passwordRegistrationAvailable,
         ]);
     }
 
@@ -157,6 +164,7 @@ final class AccountViews
     public static function dashboard(
         string $csrfToken, array $overview, bool $keysEnabled,
         bool $integrationEnabled = false, array $provider = [], string $section = 'overview',
+        bool $googleStepUp = false,
     ): string {
         self::validateCsrf($csrfToken);
         $sections = [
@@ -182,17 +190,19 @@ final class AccountViews
             'keys_enabled' => $keysEnabled,
             'integration_enabled' => $integrationEnabled,
             'provider' => $provider,
+            'google_step_up' => $googleStepUp,
         ]);
     }
 
-    /** Account sign-in methods; local password login is always retained. */
-    public static function google(
-        string $csrfToken, string $email, bool $googleAvailable, ?string $linkedEmail,
+    /** Account sign-in and recovery methods. */
+    public static function security(
+        string $csrfToken, string $email, bool $hasPassword,
+        bool $googleAvailable, ?string $linkedEmail,
     ): string {
         self::validateCsrf($csrfToken);
         return self::render('account/google.html.twig', [
-            'active_section' => 'google',
-            'section_title' => 'Google sign-in',
+            'active_section' => 'security',
+            'section_title' => 'Account Security',
             'csrf_token' => $csrfToken,
             'workspace_home' => '/account',
             'workspace_name' => 'Account',
@@ -201,6 +211,26 @@ final class AccountViews
             'user_label' => $email,
             'google_available' => $googleAvailable,
             'linked_email' => $linkedEmail,
+            'has_password' => $hasPassword,
+        ]);
+    }
+
+    /** Backward-compatible view helper used by older focused tests. */
+    public static function google(
+        string $csrfToken, string $email, bool $googleAvailable, ?string $linkedEmail,
+    ): string {
+        return self::security($csrfToken, $email, true, $googleAvailable, $linkedEmail);
+    }
+
+    public static function googleConfirmation(string $csrfToken, string $token): string
+    {
+        self::validateCsrf($csrfToken);
+        return self::render('account/google-confirm.html.twig', [
+            'page_title' => 'Confirm Google sign-in',
+            'page_eyebrow' => 'Account security',
+            'page_description' => 'Confirm the one-time request before Google is connected.',
+            'csrf_token' => $csrfToken,
+            'token' => preg_match('/^[0-9a-f]{64}$/D', $token) === 1 ? $token : '',
         ]);
     }
 
