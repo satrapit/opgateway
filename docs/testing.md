@@ -62,6 +62,20 @@ and Back navigation restores the original label and state. Check icon-only
 logout buttons and reduced-motion mode. Run `npm test` for submission tests. Validate actual browser asset responses
 and strict `script-src 'self'` / `style-src 'self'` CSP with no inline CSS.
 
+## Browser session invalidation on password reset
+
+Admin and Account sessions created before this code change lack a password
+fingerprint and must sign in again. New sessions hold only a fingerprint of
+the stored hash verified at sign-in; each protected request compares against
+the current eligible user's stored password hash. Changing that hash through
+password recovery invalidates all previous browser sessions on their next
+protected request. Stale CSRF data is also discarded. API bearer keys remain
+independent and are not automatically revoked.
+
+Test successful recovery in one browser while another logged-in browser has
+an Account session and (separately) an Admin session. Confirm both old sessions
+are redirected to login and freshly signed-in sessions work. No migration.
+
 ## UI and release review
 
 Use real browsers at 320, 375, 390, 768, 1024 and 1440px. Verify

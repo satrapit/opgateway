@@ -50,12 +50,12 @@ final readonly class BrowserAuthController
 
         // The password is never logged, included in a response or stored in
         // the browser session. GuardedLoginService reserves attempts first.
-        $userId = $this->login->authenticate($email, $password, $sourceIp, $requestId);
-        if ($userId === null || !$this->admins->isAdministrator($userId)) {
+        $identity = $this->login->authenticateWithStamp($email, $password, $sourceIp, $requestId);
+        if ($identity === null || !$this->admins->isAdministrator($identity['id'])) {
             return self::denied(401, 'invalid_credentials');
         }
 
-        $this->session->authenticate($userId);
+        $this->session->authenticate($identity['id'], $identity['stamp']);
         return ['status' => 200, 'body' => ['status' => 'authenticated']];
     }
 

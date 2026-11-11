@@ -15,4 +15,7 @@ interface LoginAccountRepository
 
     /** Recheck state at each protected request; sessions are not authority. */
     public function isEligible(int $userId): bool;
+
+    /** Current approved user's password-derived session fingerprint, or null. */
+    public function currentSessionStamp(int $userId): ?string;
 }

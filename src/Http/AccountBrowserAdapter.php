@@ -64,13 +64,13 @@ final readonly class AccountBrowserAdapter
                 return self::error(403);
             }
 
-            $userId = $this->login->authenticate(
+            $identity = $this->login->authenticateWithStamp(
                 $form['email'], $form['password'], $sourceIp, $requestId,
             );
-            if ($userId === null) {
+            if ($identity === null) {
                 return self::html(AccountViews::login($this->session->csrfToken(), true, $this->registrationAvailable), 401);
             }
-            $this->session->authenticate($userId);
+            $this->session->authenticate($identity['id'], $identity['stamp']);
             return self::redirect('/account');
         }
 

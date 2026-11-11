@@ -27,6 +27,10 @@ final class GuardedLoginServiceTest extends TestCase
             {
                 return false;
             }
+            public function currentSessionStamp(int $userId): ?string
+            {
+                return null;
+            }
         };
         $limiter = new class implements LoginAttemptLimiter {
             public function allow(string $sourceIp, string $email): bool
@@ -61,6 +65,10 @@ final class GuardedLoginServiceTest extends TestCase
             public function isEligible(int $userId): bool
             {
                 return false;
+            }
+            public function currentSessionStamp(int $userId): ?string
+            {
+                return null;
             }
         };
         $limiter = new class implements LoginAttemptLimiter {

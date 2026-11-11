@@ -31,10 +31,17 @@ final class LoginAuthenticatorTest extends TestCase
             {
                 return $userId === 17;
             }
+            public function currentSessionStamp(int $userId): ?string
+            {
+                return $userId === 17
+                    ? \OPGateway\Identity\PasswordSessionStamp::fromHash($this->hash) : null;
+            }
         };
 
         $auth = new LoginAuthenticator($repo, $hasher);
         self::assertSame(17, $auth->authenticate(' TEST@Example.Com ', $password));
+        self::assertSame($repo->currentSessionStamp(17),
+            $auth->authenticateWithStamp('test@example.com', $password)['stamp']);
         self::assertNull($auth->authenticate('test@example.com', 'incorrect'));
         self::assertNull($auth->authenticate('missing@example.com', $password));
         self::assertNull($auth->authenticate('not an email', $password));
@@ -52,6 +59,10 @@ final class LoginAuthenticatorTest extends TestCase
             public function isEligible(int $userId): bool
             {
                 return false;
+            }
+            public function currentSessionStamp(int $userId): ?string
+            {
+                return null;
             }
         };
         self::assertNull((new LoginAuthenticator($repo, new PasswordHasher()))

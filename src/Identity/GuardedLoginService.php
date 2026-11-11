@@ -29,13 +29,20 @@ final readonly class GuardedLoginService
         string $sourceIp,
         string $requestId,
     ): ?int {
+        return $this->authenticateWithStamp($email, $password, $sourceIp, $requestId)['id'] ?? null;
+    }
+
+    /** @return array{id:int,stamp:string}|null */
+    public function authenticateWithStamp(
+        string $email, string $password, string $sourceIp, string $requestId,
+    ): ?array {
         if (!$this->limiter->allow($sourceIp, $email)) {
             $this->events->record('login_throttled', $requestId);
             return null;
         }
 
-        $userId = $this->authenticator->authenticate($email, $password);
-        $this->events->record($userId === null ? 'login_denied' : 'login_allowed', $requestId);
-        return $userId;
+        $identity = $this->authenticator->authenticateWithStamp($email, $password);
+        $this->events->record($identity === null ? 'login_denied' : 'login_allowed', $requestId);
+        return $identity;
     }
 }

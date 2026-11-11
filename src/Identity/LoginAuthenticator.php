@@ -25,6 +25,17 @@ final readonly class LoginAuthenticator
     /** Return the authenticated user id or null. Never expose why denied. */
     public function authenticate(string $email, string $password): ?int
     {
+        return $this->authenticateWithStamp($email, $password)['id'] ?? null;
+    }
+
+    /**
+     * Bind the session fingerprint to the same hash used for verification.
+     * This prevents a reset/login race from accepting the previous password.
+     *
+     * @return array{id:int,stamp:string}|null
+     */
+    public function authenticateWithStamp(string $email, string $password): ?array
+    {
         $email = strtolower(trim($email));
         if (strlen($email) > 254 || filter_var($email, FILTER_VALIDATE_EMAIL) === false
             || preg_match('/[^\x21-\x7E]/', $email) === 1
@@ -40,6 +51,7 @@ final readonly class LoginAuthenticator
             return null;
         }
 
-        return $account['id'];
+        return ['id' => $account['id'],
+            'stamp' => PasswordSessionStamp::fromHash($hash)];
     }
 }

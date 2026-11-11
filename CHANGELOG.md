@@ -1,5 +1,17 @@
 # Changelog
 
+## Unreleased — Browser session revocation on password recovery (2026-11-11)
+
+- Bind authenticated Account and Admin sessions to a fingerprint of the exact
+  password hash used for successful login, checked against the current stored
+  hash on every protected request.
+- Password resets invalidate existing browser sessions on their next request;
+  old sessions without a fingerprint require a new sign-in.
+- No plaintext password or database hash is stored in PHP sessions. API
+  credentials are unaffected. No new migrations or dependencies.
+- Pending full Mac PHP test suite and browser verification.
+
+
 ## Unreleased — Public landing and browser route normalization (2026-11-11)
 
 - Redirect GET `/` to `/account` (HTTP 303), retaining account login and

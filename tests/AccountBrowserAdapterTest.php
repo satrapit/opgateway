@@ -30,9 +30,13 @@ final class AccountBrowserAdapterTest extends TestCase
         $csrf = $session->csrfToken();
         $accounts = $this->createStub(LoginAccountRepository::class);
         $accounts->method('isEligible')->willReturn(true);
+        $verifiedHash = password_hash('correct-owner-password', PASSWORD_DEFAULT);
         $accounts->method('findEligibleByEmail')->willReturn([
-            'id' => 17, 'password_hash' => password_hash('correct-owner-password', PASSWORD_DEFAULT),
+            'id' => 17, 'password_hash' => $verifiedHash,
         ]);
+        $accounts->method('currentSessionStamp')->willReturn(
+            \OPGateway\Identity\PasswordSessionStamp::fromHash($verifiedHash),
+        );
         $limits = $this->createStub(LoginAttemptLimiter::class);
         $limits->method('allow')->willReturn(true);
         $login = new GuardedLoginService(
@@ -127,10 +131,11 @@ final class AccountBrowserAdapterTest extends TestCase
     {
         $session = new BrowserSession();
         $session->start(true);
-        $session->authenticate(17);
+        $session->authenticate(17, str_repeat('a', 64));
 
         $accounts = $this->createStub(LoginAccountRepository::class);
         $accounts->method('isEligible')->willReturn(true);
+        $accounts->method('currentSessionStamp')->willReturn(str_repeat('a', 64));
         $login = new GuardedLoginService(
             new LoginAuthenticator($accounts, new PasswordHasher()),
             $this->createStub(LoginAttemptLimiter::class),
@@ -171,9 +176,10 @@ final class AccountBrowserAdapterTest extends TestCase
     {
         $session = new BrowserSession();
         $session->start(true);
-        $session->authenticate(17);
+        $session->authenticate(17, str_repeat('a', 64));
         $accounts = $this->createStub(LoginAccountRepository::class);
         $accounts->method('isEligible')->willReturn(true);
+        $accounts->method('currentSessionStamp')->willReturn(str_repeat('a', 64));
         $login = new GuardedLoginService(
             new LoginAuthenticator($accounts, new PasswordHasher()),
             $this->createStub(LoginAttemptLimiter::class),

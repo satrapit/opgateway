@@ -37,11 +37,12 @@ final class AdminProvisionRouteTest extends TestCase
     {
         $session = new BrowserSession();
         $session->start(true);
-        $session->authenticate(4);
+        $session->authenticate(4, str_repeat('a', 64));
         $csrf = $session->csrfToken();
 
         $accounts = $this->createStub(LoginAccountRepository::class);
         $accounts->method('isEligible')->willReturn(true);
+        $accounts->method('currentSessionStamp')->willReturn(str_repeat('a', 64));
         $admins = $this->createStub(AdministratorAuthorization::class);
         $admins->method('isAdministrator')->willReturn(true);
 

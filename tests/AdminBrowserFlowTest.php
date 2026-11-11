@@ -38,10 +38,14 @@ final class AdminBrowserFlowTest extends TestCase
 
         $accounts = $this->createStub(LoginAccountRepository::class);
         $accounts->method('isEligible')->willReturn(true);
+        $verifiedHash = password_hash('correct-horse-123', PASSWORD_DEFAULT);
         $accounts->method('findEligibleByEmail')->willReturn([
             'id' => 17,
-            'password_hash' => password_hash('correct-horse-123', PASSWORD_DEFAULT),
+            'password_hash' => $verifiedHash,
         ]);
+        $accounts->method('currentSessionStamp')->willReturn(
+            \OPGateway\Identity\PasswordSessionStamp::fromHash($verifiedHash),
+        );
         $admins = $this->createStub(AdministratorAuthorization::class);
         $admins->method('isAdministrator')->willReturn(true);
         $limits = $this->createStub(LoginAttemptLimiter::class);

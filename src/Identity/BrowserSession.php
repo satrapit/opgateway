@@ -17,6 +17,7 @@ final class BrowserSession
     private const USER_KEY = 'opgateway_user_id';
     private const CSRF_KEY = 'opgateway_csrf';
     private const AUTH_AT_KEY = 'opgateway_auth_at';
+    private const STAMP_KEY = 'opgateway_password_stamp';
     private const MAX_AGE_SECONDS = 1800;
 
     /** Start a locked-down server-side session over an explicitly trusted HTTPS request. */
@@ -49,17 +50,19 @@ final class BrowserSession
         }
     }
 
-    /** Regenerate session identifier before attaching authenticated identity. */
-    public function authenticate(int $userId): void
+    /** Attach the fingerprint of the password hash actually verified at sign-in. */
+    public function authenticate(int $userId, string $verifiedPasswordStamp): void
     {
         $this->assertActive();
-        if ($userId < 1 || !session_regenerate_id(true)) {
+        if ($userId < 1 || preg_match('/^[0-9a-f]{64}$/D', $verifiedPasswordStamp) !== 1
+            || !session_regenerate_id(true)) {
             throw new RuntimeException('Unable to establish authenticated session.');
         }
 
         $_SESSION = [
             self::USER_KEY => $userId,
             self::AUTH_AT_KEY => time(),
+            self::STAMP_KEY => $verifiedPasswordStamp,
             self::CSRF_KEY => bin2hex(random_bytes(32)),
         ];
     }
@@ -70,9 +73,19 @@ final class BrowserSession
         $this->assertActive();
         $userId = $_SESSION[self::USER_KEY] ?? null;
         $authenticatedAt = $_SESSION[self::AUTH_AT_KEY] ?? null;
+        $oldStamp = $_SESSION[self::STAMP_KEY] ?? null;
         if (!is_int($userId) || $userId < 1 || !is_int($authenticatedAt)
             || $authenticatedAt > time() || time() - $authenticatedAt >= self::MAX_AGE_SECONDS
-            || !$accounts->isEligible($userId)) {
+            || !is_string($oldStamp) || preg_match('/^[0-9a-f]{64}$/D', $oldStamp) !== 1) {
+            $this->clearIdentity();
+            return null;
+        }
+
+        // This lookup also enforces active, verified, approved account state.
+        // Any password hash replacement rejects existing browser sessions.
+        $currentStamp = $accounts->currentSessionStamp($userId);
+        if (!is_string($currentStamp) || strlen($currentStamp) !== 64
+            || !hash_equals($oldStamp, $currentStamp)) {
             $this->clearIdentity();
             return null;
         }
@@ -132,7 +145,8 @@ final class BrowserSession
 
     private function clearIdentity(): void
     {
-        unset($_SESSION[self::USER_KEY], $_SESSION[self::AUTH_AT_KEY]);
+        unset($_SESSION[self::USER_KEY], $_SESSION[self::AUTH_AT_KEY],
+            $_SESSION[self::STAMP_KEY], $_SESSION[self::CSRF_KEY]);
     }
 
     private function assertActive(): void
