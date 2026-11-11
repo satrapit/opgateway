@@ -89,6 +89,17 @@ Private diagnostics: `storage/logs/opgateway.jsonl`; use
 migration problems; `admin.secret_unavailable` means a missing or
 incorrectly permissioned private application key.
 
+Google collision-confirmation failures use metadata-only events:
+`account.google_confirmation_configuration_failed`,
+`account.google_confirmation_token_creation_failed`,
+`account.google_confirmation_delivery_failed`, and
+`account.google_confirmation_cancellation_failed`. They distinguish missing or
+unreadable SMTP configuration, database/token issuance, PHPMailer transport,
+and failed token invalidation without recording an email, token, credential,
+exception message, SQL text, request body or remote address. Correlate the
+event with `X-Request-ID`; inspect the SMTP admin configuration and private key
+locally rather than adding sensitive diagnostic output.
+
 For hosted MySQL `DB_HOST=db`; for local MySQL use the actual endpoint,
 often `127.0.0.1` instead of the Unix socket selected by `localhost`.
 

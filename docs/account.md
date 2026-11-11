@@ -67,6 +67,14 @@ existing unlinked user, the system sends a 15-minute single-use confirmation
 to that address and binds it to the consumed OIDC transaction and intended
 user. Email equality alone never authenticates or links.
 
+The password-confirmed Connect Google POST redirects only to the same-origin
+`/account/google/continue` page. A five-minute, one-use session grant is checked
+against the freshly eligible signed-in account before OIDC state, nonce and
+PKCE are created. The page uses a no-referrer immediate navigation to the fixed
+Google authorization endpoint and keeps a visible keyboard-native link for
+manual continuation. This avoids weakening `form-action 'self'` and works
+without JavaScript.
+
 Unlink requires a current local password and is denied when Google is the last
 method. API-key issue and Openprovider credential changes accept either the
 current password or a five-minute, one-use Google verification bound to the

@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace OPGateway\Mail;
 
+use InvalidArgumentException;
 use PHPMailer\PHPMailer\PHPMailer;
 use OPGateway\Identity\PasswordResetMailer;
-use RuntimeException;
 use Throwable;
 
 /** SMTP verification and reset mail with peer TLS verification and no debug output. */
@@ -60,20 +60,27 @@ final readonly class PhpMailerVerificationMailer implements VerificationMailer, 
     {
         if (filter_var($email, FILTER_VALIDATE_EMAIL) === false
             || preg_match('/^[a-f0-9]{64}$/D', $token) !== 1
-            || preg_match('~^https://[a-z0-9.-]+(?::[0-9]{1,5})?$~iD', $origin) !== 1
-            || !class_exists(PHPMailer::class)) {
-            throw new RuntimeException('SMTP delivery is unavailable.');
+            || preg_match('~^https://[a-z0-9.-]+(?::[0-9]{1,5})?$~iD', $origin) !== 1) {
+            throw new InvalidArgumentException('Invalid email delivery request.');
+        }
+        if (!class_exists(PHPMailer::class)) {
+            throw new SmtpConfigurationException('SMTP dependency is unavailable.');
         }
     }
 
     private function send(string $email, string $subject, string $message): void
     {
-        $config = $this->settings->connection();
-        if ($config === null) {
-            throw new RuntimeException('SMTP is not configured.');
-        }
-        $mailer = new PHPMailer(true);
         try {
+            $config = $this->settings->connection();
+        } catch (Throwable $error) {
+            throw new SmtpConfigurationException('SMTP configuration is unavailable.', 0, $error);
+        }
+        if ($config === null) {
+            throw new SmtpConfigurationException('SMTP is not configured.');
+        }
+        $mailer = null;
+        try {
+            $mailer = new PHPMailer(true);
             $mailer->isSMTP();
             $mailer->Host = $config->host;
             $mailer->Port = $config->port;
@@ -96,13 +103,17 @@ final readonly class PhpMailerVerificationMailer implements VerificationMailer, 
             $mailer->Body = $message;
             $mailer->isHTML(false);
             if (!$mailer->send()) {
-                throw new RuntimeException('SMTP delivery failed.');
+                throw new SmtpDeliveryException('SMTP delivery failed.');
             }
+        } catch (SmtpDeliveryException $error) {
+            throw $error;
         } catch (Throwable $error) {
-            throw new RuntimeException('SMTP delivery failed.', 0, $error);
+            throw new SmtpDeliveryException('SMTP delivery failed.', 0, $error);
         } finally {
-            $mailer->smtpClose();
-            $mailer->Password = '';
+            if ($mailer instanceof PHPMailer) {
+                $mailer->smtpClose();
+                $mailer->Password = '';
+            }
         }
     }
 }

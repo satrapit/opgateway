@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace OPGateway\Tests;
 
 use OPGateway\Mail\PdoSmtpSettings;
+use OPGateway\Mail\PhpMailerVerificationMailer;
+use OPGateway\Mail\SmtpConfigurationException;
 use OPGateway\Security\SealedSecret;
 use PDO;
 use PDOStatement;
@@ -67,5 +69,21 @@ final class PdoSmtpSettingsTest extends TestCase
         self::assertFalse($smtp->configured());
         self::assertNull($smtp->connection());
         self::assertFalse($smtp->summary()['password_set']);
+    }
+
+    public function testMailerClassifiesIncompleteSettingsAsConfigurationFailure(): void
+    {
+        $statement = $this->createStub(PDOStatement::class);
+        $statement->method('fetchAll')->willReturn(['smtp.host' => 'smtp.example.net']);
+        $pdo = $this->createStub(PDO::class);
+        $pdo->method('prepare')->willReturn($statement);
+        $mailer = new PhpMailerVerificationMailer(
+            new PdoSmtpSettings($pdo, new SealedSecret(str_repeat('a1', 32))),
+        );
+
+        $this->expectException(SmtpConfigurationException::class);
+        $mailer->sendGoogleIdentityConfirmation(
+            'owner@example.com', str_repeat('a', 64), 'https://opgateway.test',
+        );
     }
 }

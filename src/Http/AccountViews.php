@@ -234,6 +234,25 @@ final class AccountViews
         ]);
     }
 
+    public static function googleContinuation(string $authorizationUrl): string
+    {
+        $parts = parse_url($authorizationUrl);
+        if (!is_array($parts) || ($parts['scheme'] ?? null) !== 'https'
+            || ($parts['host'] ?? null) !== 'accounts.google.com'
+            || ($parts['path'] ?? null) !== '/o/oauth2/v2/auth'
+            || !is_string($parts['query'] ?? null) || $parts['query'] === ''
+            || isset($parts['user']) || isset($parts['pass'])
+            || isset($parts['port']) || isset($parts['fragment'])) {
+            throw new InvalidArgumentException('Invalid Google authorization URL.');
+        }
+        return self::render('account/google-continue.html.twig', [
+            'page_title' => 'Continue to Google',
+            'page_eyebrow' => 'Account security',
+            'page_description' => 'Complete the verified Google authorization request.',
+            'authorization_url' => $authorizationUrl,
+        ]);
+    }
+
     public static function googleStatus(string $title, string $message): string
     {
         return self::status($title, 'Google sign-in', $message,

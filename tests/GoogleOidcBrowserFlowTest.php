@@ -16,6 +16,8 @@ use OPGateway\Identity\LoginAuthenticator;
 use OPGateway\Identity\PasswordHasher;
 use OPGateway\Identity\PdoGoogleIdentityStore;
 use OPGateway\Mail\GoogleIdentityConfirmationMailer;
+use OPGateway\Mail\SmtpConfigurationException;
+use OPGateway\Observability\DiagnosticLog;
 use OPGateway\Security\LoginAttemptLimiter;
 use OPGateway\Security\SealedSecret;
 use OPGateway\Security\SecurityEventRecorder;
@@ -32,6 +34,7 @@ final class GoogleOidcBrowserFlowTest extends TestCase
     /** @return array{0:GoogleOidcBrowserController,1:PDO,2:BrowserSession,3:LoginAccountRepository,4:GoogleOidcProvider,5:GoogleIdentityConfirmationMailer} */
     private function harness(
         bool $userExists = true, ?SecurityEventRecorder $eventRecorder = null,
+        bool $confirmationMailerAvailable = true,
     ): array
     {
         $passwordHash = password_hash('account-password-123', PASSWORD_DEFAULT);
@@ -44,6 +47,7 @@ final class GoogleOidcBrowserFlowTest extends TestCase
             public ?array $confirmation = null;
             public bool $transaction = false;
             public bool $identityConflict = false;
+            public bool $confirmationInsertFails = false;
             public bool $googleConfigured = true;
             public string $userStatus = 'active';
             public string $userEmail = 'owner@example.com';
@@ -102,6 +106,9 @@ final class GoogleOidcBrowserFlowTest extends TestCase
                             $this->db->googleEmail = (string) $this->db->lastParams[2];
                         }
                         if (str_starts_with(trim($this->query), 'INSERT INTO google_identity_confirmations')) {
+                            if ($this->db->confirmationInsertFails) {
+                                throw new \PDOException('Test confirmation token failure.');
+                            }
                             $this->db->confirmation = [
                                 'id' => 4, 'user_id' => 17,
                                 'google_sub' => $this->db->lastParams[1],
@@ -256,13 +263,16 @@ final class GoogleOidcBrowserFlowTest extends TestCase
         $mailer = new class implements GoogleIdentityConfirmationMailer {
             public ?string $recipient = null;
             public ?string $token = null;
-            public bool $fail = false;
+            public ?string $failure = null;
             public function sendGoogleIdentityConfirmation(
                 string $email, string $token, string $origin,
             ): void {
                 $this->recipient = $email;
                 $this->token = $token;
-                if ($this->fail) {
+                if ($this->failure === 'configuration') {
+                    throw new SmtpConfigurationException('Test SMTP configuration unavailable.');
+                }
+                if ($this->failure === 'delivery') {
                     throw new \RuntimeException('Test mail transport unavailable.');
                 }
             }
@@ -270,7 +280,8 @@ final class GoogleOidcBrowserFlowTest extends TestCase
         $controller = new GoogleOidcBrowserController(
             $session, $accounts, $login, $overview,
             new PdoGoogleIdentityStore($db), new PdoGoogleOAuthSettings($db, $vault),
-            $provider, 'https://opgateway.test', $mailer, null, $events,
+            $provider, 'https://opgateway.test',
+            $confirmationMailerAvailable ? $mailer : null, null, $events,
         );
         return [$controller, $db, $session, $accounts, $provider, $mailer];
     }
@@ -281,6 +292,30 @@ final class GoogleOidcBrowserFlowTest extends TestCase
         self::assertIsString($query);
         parse_str($query, $params);
         return $params['state'];
+    }
+
+    /** @param array{status:int,body:string,location?:string} $response */
+    private static function continuationUrl(array $response): string
+    {
+        self::assertSame(200, $response['status']);
+        self::assertArrayNotHasKey('location', $response);
+        self::assertMatchesRegularExpression('/http-equiv="refresh"/', $response['body']);
+        self::assertSame(1, preg_match(
+            '/href="(https:\/\/accounts\.google\.com\/o\/oauth2\/v2\/auth\?[^\"]+)"/',
+            $response['body'], $matches,
+        ));
+        return html_entity_decode($matches[1], ENT_QUOTES | ENT_HTML5, 'UTF-8');
+    }
+
+    /** @return array{0:string,1:string} */
+    private static function diagnosticFile(): array
+    {
+        $directory = sys_get_temp_dir() . '/opgateway-google-diagnostic-'
+            . bin2hex(random_bytes(8));
+        self::assertTrue(mkdir($directory, 0700));
+        $filename = $directory . '/test.jsonl';
+        DiagnosticLog::initialize($filename, str_repeat('d', 32));
+        return [$directory, $filename];
     }
 
     #[RunInSeparateProcess]
@@ -318,7 +353,14 @@ final class GoogleOidcBrowserFlowTest extends TestCase
         $start = $controller->dispatch('POST', '/account/google/link',
             'application/x-www-form-urlencoded', $request($session->csrfToken()),
             '192.0.2.3', str_repeat('a', 32), '');
-        $state = self::state($start['location']);
+        self::assertSame(303, $start['status']);
+        self::assertSame('/account/google/continue', $start['location']);
+        $continuation = $controller->dispatch('GET', '/account/google/continue',
+            null, null, '192.0.2.3', str_repeat('a', 32), '');
+        $state = self::state(self::continuationUrl($continuation));
+        $replay = $controller->dispatch('GET', '/account/google/continue',
+            null, null, '192.0.2.3', str_repeat('a', 32), '');
+        self::assertSame(403, $replay['status']);
         $linked = $controller->dispatch('GET', '/account/google/callback', null, null,
             '192.0.2.3', str_repeat('a', 32), 'state=' . $state . '&code=test-code');
         self::assertSame('/account/security', $linked['location']);
@@ -440,10 +482,12 @@ final class GoogleOidcBrowserFlowTest extends TestCase
                 '_csrf' => $session->csrfToken(),
                 'current_password' => 'account-password-123',
             ]), '192.0.2.3', str_repeat('a', 32), '');
+        $continuation = $controller->dispatch('GET', $start['location'], null, null,
+            '192.0.2.3', str_repeat('a', 32), '');
         $db->identityConflict = true;
         $response = $controller->dispatch('GET', '/account/google/callback', null, null,
             '192.0.2.3', str_repeat('b', 32),
-            'state=' . self::state($start['location']) . '&code=test-code');
+            'state=' . self::state(self::continuationUrl($continuation)) . '&code=test-code');
         self::assertSame(409, $response['status']);
         self::assertNull($db->googleSub);
         self::assertSame(17, $session->currentUserId($accounts));
@@ -455,16 +499,84 @@ final class GoogleOidcBrowserFlowTest extends TestCase
     public function testConfirmationMailFailureCancelsIssuedToken(): void
     {
         [$controller, $db, , , , $mailer] = $this->harness();
-        $mailer->fail = true;
-        $start = $controller->dispatch('GET', '/account/google/start', null, null,
-            '192.0.2.3', str_repeat('a', 32), '');
-        $response = $controller->dispatch('GET', '/account/google/callback', null, null,
-            '192.0.2.3', str_repeat('b', 32),
-            'state=' . self::state($start['location']) . '&code=test-code');
-        self::assertSame(503, $response['status']);
-        self::assertTrue($db->confirmation['consumed']);
-        self::assertNull($db->googleSub);
-        self::assertTrue(session_destroy());
+        $mailer->failure = 'delivery';
+        [$directory, $filename] = self::diagnosticFile();
+        try {
+            $start = $controller->dispatch('GET', '/account/google/start', null, null,
+                '192.0.2.3', str_repeat('a', 32), '');
+            $response = $controller->dispatch('GET', '/account/google/callback', null, null,
+                '192.0.2.3', str_repeat('b', 32),
+                'state=' . self::state($start['location']) . '&code=test-code');
+            self::assertSame(503, $response['status']);
+            self::assertTrue($db->confirmation['consumed']);
+            self::assertNull($db->googleSub);
+            $log = file_get_contents($filename);
+            self::assertIsString($log);
+            self::assertStringContainsString(
+                'account.google_confirmation_delivery_failed', $log,
+            );
+            self::assertStringNotContainsString('owner@example.com', $log);
+            self::assertStringNotContainsString((string) $mailer->token, $log);
+        } finally {
+            self::assertTrue(session_destroy());
+            @unlink($filename);
+            @rmdir($directory);
+        }
+    }
+
+    #[RunInSeparateProcess]
+    #[PreserveGlobalState(false)]
+    public function testMissingConfirmationMailerLogsConfigurationFailure(): void
+    {
+        [$controller] = $this->harness(true, null, false);
+        [$directory, $filename] = self::diagnosticFile();
+        try {
+            $start = $controller->dispatch('GET', '/account/google/start', null, null,
+                '192.0.2.3', str_repeat('a', 32), '');
+            $response = $controller->dispatch('GET', '/account/google/callback', null, null,
+                '192.0.2.3', str_repeat('b', 32),
+                'state=' . self::state($start['location']) . '&code=test-code');
+            self::assertSame(503, $response['status']);
+            $log = file_get_contents($filename);
+            self::assertIsString($log);
+            self::assertStringContainsString(
+                'account.google_confirmation_configuration_failed', $log,
+            );
+            self::assertStringNotContainsString('owner@example.com', $log);
+        } finally {
+            self::assertTrue(session_destroy());
+            @unlink($filename);
+            @rmdir($directory);
+        }
+    }
+
+    #[RunInSeparateProcess]
+    #[PreserveGlobalState(false)]
+    public function testConfirmationTokenFailureHasDedicatedSafeDiagnostic(): void
+    {
+        [$controller, $db] = $this->harness();
+        $db->confirmationInsertFails = true;
+        [$directory, $filename] = self::diagnosticFile();
+        try {
+            $start = $controller->dispatch('GET', '/account/google/start', null, null,
+                '192.0.2.3', str_repeat('a', 32), '');
+            $response = $controller->dispatch('GET', '/account/google/callback', null, null,
+                '192.0.2.3', str_repeat('b', 32),
+                'state=' . self::state($start['location']) . '&code=test-code');
+            self::assertSame(503, $response['status']);
+            self::assertNull($db->confirmation);
+            $log = file_get_contents($filename);
+            self::assertIsString($log);
+            self::assertStringContainsString(
+                'account.google_confirmation_token_creation_failed', $log,
+            );
+            self::assertStringContainsString('"error_category":"database"', $log);
+            self::assertStringNotContainsString('owner@example.com', $log);
+        } finally {
+            self::assertTrue(session_destroy());
+            @unlink($filename);
+            @rmdir($directory);
+        }
     }
 
     #[RunInSeparateProcess]

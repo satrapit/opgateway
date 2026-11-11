@@ -141,6 +141,8 @@ class ComposerStaticInitcb109a7a1de8ebf40905cc5da50c91ce
         'OPGateway\\Mail\\PdoSmtpSettings' => __DIR__ . '/../..' . '/src/Mail/PdoSmtpSettings.php',
         'OPGateway\\Mail\\PhpMailerVerificationMailer' => __DIR__ . '/../..' . '/src/Mail/PhpMailerVerificationMailer.php',
         'OPGateway\\Mail\\SmtpConfiguration' => __DIR__ . '/../..' . '/src/Mail/SmtpConfiguration.php',
+        'OPGateway\\Mail\\SmtpConfigurationException' => __DIR__ . '/../..' . '/src/Mail/SmtpConfigurationException.php',
+        'OPGateway\\Mail\\SmtpDeliveryException' => __DIR__ . '/../..' . '/src/Mail/SmtpDeliveryException.php',
         'OPGateway\\Mail\\VerificationMailer' => __DIR__ . '/../..' . '/src/Mail/VerificationMailer.php',
         'OPGateway\\Observability\\DatabaseFailure' => __DIR__ . '/../..' . '/src/Observability/DatabaseFailure.php',
         'OPGateway\\Observability\\DiagnosticLog' => __DIR__ . '/../..' . '/src/Observability/DiagnosticLog.php',

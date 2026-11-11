@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="referrer" content="{% block referrer_policy %}same-origin{% endblock %}">
   <meta name="robots" content="noindex, nofollow">
+  {% block head_meta %}{% endblock %}
   <title>{% block title %}OPGateway{% endblock %} | OPGateway</title>
   {# Icons are browser-rendered SVG; preload the same-origin shared sprite. #}
   <link rel="preload" href="{{ admin_assets.icons }}" as="image" type="image/svg+xml">

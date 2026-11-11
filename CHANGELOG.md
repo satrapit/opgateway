@@ -1,5 +1,20 @@
 # Changelog
 
+## Unreleased — Google authentication hotfix (2026-11-12)
+
+- Route password-confirmed Google account linking through a one-use,
+  account-bound same-origin continuation page before navigating to Google.
+  This preserves strict `form-action 'self'`, CSRF, reauthentication, OIDC
+  state/nonce/PKCE and a no-JavaScript accessible continuation link.
+- Classify SMTP configuration and transport failures separately and add
+  metadata-only diagnostics for Google confirmation configuration, token
+  creation, delivery and cancellation failures. Diagnostics never include
+  email addresses, tokens, credentials, exception messages or request bodies.
+- Keep existing-email collisions behind the hashed, expiring mailbox token;
+  verified Google email equality never links or authenticates an account.
+- No migration, deployment, production data access or CSP weakening is part of
+  this hotfix. Real-browser Google and SMTP acceptance remain release gates.
+
 ## Unreleased — Google-first onboarding and optional password (2026-11-12)
 
 - Add an explicit subject-only Google login path and focused Migration 008

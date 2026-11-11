@@ -18,11 +18,17 @@ test('Google is the first account login and registration action', () => {
 test('account security controls retain labels, autocomplete and keyboard-native forms', () => {
   const security = read('templates/account/google.html.twig');
   const confirmation = read('templates/account/google-confirm.html.twig');
+  const continuation = read('templates/account/google-continue.html.twig');
   assert.match(security, /<label[^>]+for="security-new-password"/);
   assert.match(security, /id="security-new-password"[^>]+autocomplete="new-password"/);
   assert.match(security, /method="post" action="\/account\/google\/unlink"/);
   assert.match(confirmation, /<button type="submit"/);
   assert.match(confirmation, /block referrer_policy %}no-referrer/);
+  assert.match(continuation, /block referrer_policy %}no-referrer/);
+  assert.match(continuation, /http-equiv="refresh"/);
+  assert.match(continuation, /href="{{ authorization_url }}"/);
+  assert.match(continuation, /If you are not redirected automatically/);
+  assert.doesNotMatch(continuation, /<form/);
   assert.match(read('templates/account/reset-password.html.twig'), /block referrer_policy %}no-referrer/);
   assert.match(read('templates/account/verify.html.twig'), /block referrer_policy %}no-referrer/);
   assert.doesNotMatch(security, /tabindex="-1"/);
