@@ -87,23 +87,28 @@ final class OfflineCaptchaImage
             for ($x = 0; $x < $w; $x++) {
                 $noise = ($noise * 1103515245 + 12345) & 0x7fffffff;
                 $v = max(215, min(255, $background + ($noise % 22) - 9));
-                $pixels[$y * $w + $x] = ($v << 16) | (($v - 1) << 8) | $v;
+                $pixels[$y * $w + $x] = $v;
             }
         }
-        $plot = static function (int $x, int $y, int $rgb) use (&$pixels, $w, $h): void {
+        // One 8-bit grayscale channel is enough for a readable challenge;
+        // this reduces both PNG bytes and PHP session storage versus RGB.
+        $plot = static function (int $x, int $y, int $shade) use (&$pixels, $w, $h): void {
             if ($x >= 0 && $x < $w && $y >= 0 && $y < $h) {
-                $pixels[$y * $w + $x] = $rgb;
+                $pixels[$y * $w + $x] = $shade;
             }
         };
-        for ($i = 0; $i < 11; $i++) {
+        for ($i = 0; $i < 13; $i++) {
             $base = random_int(0, $h - 1);
             $phase = random_int(0, 600) / 70;
             $amp = random_int(5, 20);
-            $shade = random_int(163, 202);
-            $color = ($shade << 16) | ($shade << 8) | ($shade + 2);
+            $shade = random_int(116, 166);
             for ($x = 0; $x < $w; $x++) {
                 $y = (int) round($base + sin($x / 18 + $phase) * $amp);
-                $plot($x, $y, $color);
+                // Three-pixel strands intersect glyphs rather than floating
+                // above the image as hairline noise.
+                $plot($x, $y - 1, $shade);
+                $plot($x, $y, $shade);
+                $plot($x, $y + 1, $shade);
             }
         }
         $chars = str_split($answer);
@@ -114,8 +119,7 @@ final class OfflineCaptchaImage
             $cx = 31 + $index * 47 + random_int(-4, 4);
             $cy = 51 + random_int(-10, 10);
             $scale = random_int(4, 5);
-            $shade = random_int(19, 58);
-            $ink = ($shade << 16) | (($shade + 13) << 8) | ($shade + 21);
+            $ink = random_int(19, 58);
             for ($gy = 0; $gy < 7; $gy++) {
                 for ($gx = 0; $gx < 5; $gx++) {
                     if ($rows[$gy][$gx] !== '1') {
@@ -134,10 +138,14 @@ final class OfflineCaptchaImage
             }
         }
         // Add layered distractors; never encode the answer as SVG/HTML text.
-        for ($i = 0; $i < 950; $i++) {
+        for ($i = 0; $i < 1150; $i++) {
             $x = random_int(0, $w - 1); $y = random_int(0, $h - 1);
-            $v = random_int(125, 210);
-            $plot($x, $y, ($v << 16) | (($v + 3) << 8) | $v);
+            $v = random_int(98, 168);
+            $plot($x, $y, $v);
+            if ($i % 3 === 0) {
+                $plot($x + 1, $y, $v);
+                $plot($x, $y + 1, $v);
+            }
         }
         $phase = random_int(1, 1000) / 80;
         $scanlines = '';
@@ -146,12 +154,10 @@ final class OfflineCaptchaImage
             $offset = (int) round(3.2 * sin($y / 11 + $phase));
             for ($x = 0; $x < $w; $x++) {
                 $srcX = max(0, min($w - 1, $x + $offset));
-                $rgb = $pixels[$y * $w + $srcX];
-                $scanlines .= chr(($rgb >> 16) & 255)
-                    . chr(($rgb >> 8) & 255) . chr($rgb & 255);
+                $scanlines .= chr($pixels[$y * $w + $srcX]);
             }
         }
-        $compressed = gzcompress($scanlines, 6);
+        $compressed = gzcompress($scanlines, 8);
         if ($compressed === false) {
             throw new RuntimeException('Image CAPTCHA compression failed.');
         }
@@ -160,7 +166,7 @@ final class OfflineCaptchaImage
                 . pack('N', crc32($type . $data));
         };
         return "\x89PNG\r\n\x1a\n"
-            . $chunk('IHDR', pack('NNCCCCC', $w, $h, 8, 2, 0, 0, 0))
+            . $chunk('IHDR', pack('NNCCCCC', $w, $h, 8, 0, 0, 0, 0))
             . $chunk('IDAT', $compressed) . $chunk('IEND', '');
     }
 }
