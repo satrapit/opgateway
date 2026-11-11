@@ -196,13 +196,8 @@ final readonly class AdministrativeWebEntry
         } elseif ($path === '/admin/users/invite') {
             $settings = new PdoSmtpSettings($pdo, $vault);
             $mailer = new PhpMailerVerificationMailer($settings);
-            $login = new GuardedLoginService(
-                new LoginAuthenticator($accounts, new PasswordHasher()),
-                new PdoLoginAttemptLimiter($pdo, $key),
-                new PdoSecurityEventRecorder($pdo),
-            );
             $response = (new AdminUserInvitationController(
-                $session, $accounts, $admins, $login,
+                $session, $accounts, $admins,
                 new AdminUserInvitation(
                     $pdo, new PasswordHasher(),
                     new EmailVerificationService(
@@ -213,7 +208,7 @@ final readonly class AdministrativeWebEntry
                 ),
                 $settings,
                 new TwigRenderer(dirname(__DIR__, 2) . '/templates'),
-                $pdo, CanonicalOrigin::fromServer($server) ?? '',
+                CanonicalOrigin::fromServer($server) ?? '',
             ))->handle(
                 $method,
                 isset($server['CONTENT_TYPE']) ? (string) $server['CONTENT_TYPE'] : null,
@@ -246,13 +241,8 @@ final readonly class AdministrativeWebEntry
             '/admin/settings', '/admin/settings/login',
             '/admin/settings/security',
         ], true)) {
-            $login = new GuardedLoginService(
-                new LoginAuthenticator($accounts, new PasswordHasher()),
-                new PdoLoginAttemptLimiter($pdo, $key),
-                new PdoSecurityEventRecorder($pdo),
-            );
             $response = (new AdminLoginSettingsController(
-                $session, $accounts, $admins, $login, $captchaSettings,
+                $session, $accounts, $admins, $captchaSettings,
                 new TwigRenderer(dirname(__DIR__, 2) . '/templates'), $pdo,
             ))->handle(
                 $method, $path,
@@ -261,13 +251,8 @@ final readonly class AdministrativeWebEntry
                 bin2hex(random_bytes(16)),
             );
         } elseif ($path === '/admin/settings/login/google') {
-            $login = new GuardedLoginService(
-                new LoginAuthenticator($accounts, new PasswordHasher()),
-                new PdoLoginAttemptLimiter($pdo, $key),
-                new PdoSecurityEventRecorder($pdo),
-            );
             $response = (new GoogleAdminSettingsController(
-                $session, $accounts, $admins, $login,
+                $session, $accounts, $admins,
                 new PdoGoogleOAuthSettings($pdo, $vault),
                 new TwigRenderer(dirname(__DIR__, 2) . '/templates'),
                 $pdo, CanonicalOrigin::fromServer($server) ?? '',
@@ -277,13 +262,8 @@ final readonly class AdministrativeWebEntry
                 $body, (string) ($server['REMOTE_ADDR'] ?? ''), bin2hex(random_bytes(16)),
             );
         } elseif ($path === '/admin/settings/smtp') {
-            $login = new GuardedLoginService(
-                new LoginAuthenticator($accounts, new PasswordHasher()),
-                new PdoLoginAttemptLimiter($pdo, $key),
-                new PdoSecurityEventRecorder($pdo),
-            );
             $response = (new SmtpAdminController(
-                $session, $accounts, $admins, $login,
+                $session, $accounts, $admins,
                 new PdoSmtpSettings($pdo, $vault),
                 new TwigRenderer(dirname(__DIR__, 2) . '/templates'),
                 $pdo,
