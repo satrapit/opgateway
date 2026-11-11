@@ -24,6 +24,25 @@ Composer, npm, database migration, cron or GitHub workflow runs.
 final tables. Subsequent Google OIDC development lives separately and must
 NOT be deployed during this pilot.
 
+## Single-domain Google rollout
+
+Only `https://opgateway.arsamnet.com` is deployed; there is no staging
+hostname or separate production clone. Google code is developed and
+unit-tested on the Mac before release. Never deploy the unreviewed Google
+feature branch directly through cPanel's fixed production path.
+
+Original alpha.4 is **not** a safe code-only rollback after migration 007:
+its schema preflight rejects an extra migration. First review/merge/test
+the compatibility-only PR #5, tag the pre-Google alpha.4.1 release,
+deploy it and verify the live site at six migrations. Back up DB and
+private secret, apply migration 007 once during a maintenance window,
+and verify that alpha.4.1 still operates with seven completed migrations.
+Only then merge/deploy the Google feature via main. If OAuth fails,
+restore alpha.4.1 code while retaining the additive migration 007.
+
+Google OAuth callback URI on the only deployed host:
+`https://opgateway.arsamnet.com/account/google/callback`.
+
 ## Controlled rollout
 
 1. **Do not deploy the draft PR yet.** On a disposable database, validate

@@ -70,3 +70,16 @@ Document Root. No GitHub Actions, auto migrations or server-side Composer.
 - [API compatibility](docs/api-compatibility.md)
 - [Frontend and design](docs/frontend-architecture.md)
 - [Testing](docs/testing.md)
+
+
+### Single-domain Google rollout
+
+The only cPanel deployment is `https://opgateway.arsamnet.com`. There
+is no staging hostname. Before migrating its database to 007, verify and
+deploy the rollback-compatible **pre-Google** release proposed in PR #5
+(alpha.4.1) to main. Verify the production backup, apply 007 once,
+then deploy the locally tested Google feature from a reviewed main merge.
+The original alpha.4 code will reject a database already on migration 007;
+only alpha.4.1 can serve as the code-only fallback after that upgrade.
+Use the exact OAuth redirect URI
+`https://opgateway.arsamnet.com/account/google/callback`.

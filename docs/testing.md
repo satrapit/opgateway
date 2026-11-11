@@ -84,13 +84,21 @@ after a reviewed, backed-up manual migration 007 on the **local** database.
 A fresh install needs 7 migration entries and 14 final tables. Never deploy
 the OAuth source against production that is still at migration 006.
 
+For the sole deployed hostname `opgateway.arsamnet.com`, first verify and
+deploy the compatibility-only pre-Google release (planned alpha.4.1 from
+PR #5) while production still has six migrations. It accepts migration 007
+without activating Google. Back up the production DB and private secret,
+run migration 007 manually during maintenance, and only then deploy
+reviewed Google OAuth code. Code-only rollback after 007 must use
+alpha.4.1, not alpha.4.
+
 In Google Cloud Console create an OAuth 2.0 **Web application**, register the
 redirect URI exactly as rendered by `/admin/settings/google` (production:
 `https://opgateway.arsamnet.com/account/google/callback`), and enter its
 client ID/secret only through the authenticated admin screen. No secrets
 belong in .env, Git or chat logs. Google may reject custom `.test` domains:
-use a registered HTTPS staging domain for live tests. Verify server outbound
-HTTPS access to `oauth2.googleapis.com` and `www.googleapis.com` without
+use the registered production HTTPS domain for the final consent flow.
+No separate staging domain exists. Verify server outbound HTTPS access to `oauth2.googleapis.com` and `www.googleapis.com` without
 disabling TLS validation.
 
 Browser acceptance must verify the OAuth callback receives the PHP session
