@@ -1,7 +1,7 @@
 {% extends 'layouts/account-auth.html.twig' %}
 {% block account_form %}
   {% if show_error %}
-    <div class="opg-alert opg-alert-error mb-6" role="alert" id="account-login-error">Incorrect email or password.</div>
+    <div class="opg-alert opg-alert-error mb-6" role="alert" id="account-login-error">Sign-in failed. Check your details and verification, then try again.</div>
   {% endif %}
   <form method="post" action="/account/login" autocomplete="on" class="space-y-5">
     <input type="hidden" name="_csrf" value="{{ csrf_token }}">

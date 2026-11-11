@@ -328,3 +328,9 @@ html[data-theme="dark"] .opg-theme-icon[data-theme-icon="dark"] { display: inlin
     transition: none !important;
   }
 }
+
+/* Nested Settings navigation uses native disclosure controls, without JS. */
+.opg-sidebar details > summary.opg-nav-link { cursor: pointer; list-style: none; }
+.opg-sidebar details > summary.opg-nav-link::-webkit-details-marker { display: none; }
+.opg-sidebar details[open] > summary.opg-nav-link { color: var(--color-brand-600); }
+.dark .opg-sidebar details[open] > summary.opg-nav-link { color: var(--color-brand-300); }

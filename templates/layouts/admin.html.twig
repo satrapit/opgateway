@@ -15,9 +15,14 @@
         <summary class="opg-nav-link">Settings</summary>
         <div class="ms-3 grid gap-1 border-s border-gray-200 ps-3 dark:border-gray-800">
           <a class="opg-nav-link" href="/admin/settings"{% if active_section == 'settings' %} aria-current="page"{% endif %}>All settings</a>
-          <a class="opg-nav-link" href="/admin/settings/login"{% if active_section == 'login_settings' %} aria-current="page"{% endif %}>Login settings</a>
-          <a class="opg-nav-link" href="/admin/settings/login/google"{% if active_section == 'google' %} aria-current="page"{% endif %}>Google SSO</a>
-          <a class="opg-nav-link" href="/admin/settings/login/captcha"{% if active_section == 'captcha' %} aria-current="page"{% endif %}>CAPTCHA</a>
+          <details{% if active_section in ['login_settings','google','captcha'] %} open{% endif %}>
+            <summary class="opg-nav-link">Login settings</summary>
+            <div class="ms-3 grid gap-1 border-s border-gray-200 ps-3 dark:border-gray-800">
+              <a class="opg-nav-link" href="/admin/settings/login"{% if active_section == 'login_settings' %} aria-current="page"{% endif %}>Overview</a>
+              <a class="opg-nav-link" href="/admin/settings/login/google"{% if active_section == 'google' %} aria-current="page"{% endif %}>Google SSO</a>
+              <a class="opg-nav-link" href="/admin/settings/login/captcha"{% if active_section == 'captcha' %} aria-current="page"{% endif %}>CAPTCHA</a>
+            </div>
+          </details>
           <a class="opg-nav-link" href="/admin/settings/smtp"{% if active_section == 'smtp' %} aria-current="page"{% endif %}>Email / SMTP</a>
         </div>
       </details>

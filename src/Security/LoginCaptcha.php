@@ -113,7 +113,7 @@ final readonly class LoginCaptcha
         }
         $response = '';
         try {
-            curl_setopt_array($ch, [
+            if (!curl_setopt_array($ch, [
                 CURLOPT_POST => true,
                 CURLOPT_POSTFIELDS => http_build_query([
                     'secret' => $credentials['secret'], 'response' => $token,
@@ -134,7 +134,9 @@ final readonly class LoginCaptcha
                     $response .= $chunk;
                     return strlen($chunk);
                 },
-            ]);
+            ])) {
+                return false;
+            }
             $ok = curl_exec($ch);
             $status = curl_getinfo($ch, CURLINFO_RESPONSE_CODE);
         } finally {

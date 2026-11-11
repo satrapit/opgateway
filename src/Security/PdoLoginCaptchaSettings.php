@@ -60,6 +60,13 @@ final readonly class PdoLoginCaptchaSettings
         $siteKey = trim($siteKey);
         $storedSiteKey = $siteKey !== '' ? $siteKey
             : ($existing['login.recaptcha_site_key'] ?? '');
+        if ($provider === 'recaptcha' && $secret === ''
+            && $siteKey !== ''
+            && $siteKey !== ($existing['login.recaptcha_site_key'] ?? '')) {
+            throw new InvalidArgumentException(
+                'Changing a reCAPTCHA site key requires its matching secret.',
+            );
+        }
         $storedSecret = $secret === ''
             ? ($existing['login.recaptcha_secret'] ?? null)
             : $this->vault->encrypt($secret, 'captcha:recaptcha');
