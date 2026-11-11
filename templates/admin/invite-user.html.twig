@@ -1,0 +1,35 @@
+{% extends 'layouts/admin.html.twig' %}
+{% block dashboard_content %}
+<section class="opg-panel p-6 sm:p-8" aria-labelledby="invite-title">
+  <div class="mb-6 flex flex-wrap items-center justify-between gap-3">
+    <div>
+      <h2 id="invite-title" class="opg-section-title">Invite user</h2>
+      <p class="opg-section-subtitle">Send an email verification link. No password is chosen or shared by an administrator.</p>
+    </div>
+    <a href="/admin/users" class="opg-secondary-button">Back to users</a>
+  </div>
+  {% if invitation_sent %}
+    <div class="opg-alert mb-5" role="status">If the address is eligible, a verification link has been sent. Existing accounts are not modified.</div>
+  {% endif %}
+  {% if not smtp_ready %}
+    <div class="opg-alert opg-alert-error mb-5" role="alert">Configure Email / SMTP before inviting users.</div>
+  {% endif %}
+  <form action="/admin/users/invite" method="post" class="grid max-w-xl gap-5">
+    <input type="hidden" name="_csrf" value="{{ csrf_token }}">
+    <div>
+      <label class="opg-label" for="invite-email">Email address</label>
+      <input class="opg-input" type="email" id="invite-email" name="email" maxlength="254" autocomplete="off" required>
+    </div>
+    <div>
+      <label class="opg-label" for="invite-password">Your administrator password</label>
+      <input class="opg-input" type="password" id="invite-password" name="current_password" autocomplete="current-password" maxlength="1024" required>
+    </div>
+    <button class="opg-primary-button" type="submit"{% if not smtp_ready %} disabled{% endif %}>Send invitation</button>
+  </form>
+  <div class="opg-alert mt-7">
+    <strong class="block">Next steps</strong>
+    <p class="mt-2">The invitee verifies their email. An administrator then approves the account on the Users page. Once approved, they use Forgot password to set a personal password.</p>
+    <p class="mt-2">Invitations do not grant an administrator role or create API credentials automatically.</p>
+  </div>
+</section>
+{% endblock %}
