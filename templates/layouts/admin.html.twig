@@ -12,6 +12,7 @@
       <a class="opg-nav-link" href="/admin/ips/approved"{% if active_section == 'approved_ips' %} aria-current="page"{% endif %}><svg viewBox="0 0 24 24" class="opg-icon" aria-hidden="true" focusable="false"><use href="{{ admin_assets.icons }}#opg-icon-shield-check"></use></svg> Approved IPs</a>
       <p class="px-3 pb-2 pt-6 text-xs font-semibold uppercase tracking-widest text-gray-400">System administration</p>
       <a class="opg-nav-link" href="/admin/settings/smtp"{% if active_section == 'smtp' %} aria-current="page"{% endif %}>SMTP settings</a>
+      <a class="opg-nav-link" href="/admin/settings/google"{% if active_section == 'google' %} aria-current="page"{% endif %}>Google sign-in</a>
     </nav>
 {% endblock %}
 

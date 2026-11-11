@@ -1,0 +1,28 @@
+{% extends 'layouts/admin.html.twig' %}
+{% block dashboard_content %}
+<section class="opg-panel p-6 sm:p-8" aria-labelledby="google-admin-title">
+  <h2 id="google-admin-title" class="opg-section-title">Google sign-in settings</h2>
+  <p class="opg-section-subtitle">Create an OAuth Web application in Google Cloud Console. Configure the authorized redirect URI for each deployed hostname.</p>
+  <div class="opg-alert mt-6" role="note">Authorized redirect URI: <code class="break-all">{{ redirect_uri }}</code></div>
+  <form method="post" action="/admin/settings/google" class="mt-6 grid max-w-xl gap-5" autocomplete="off">
+    <input type="hidden" name="_csrf" value="{{ csrf_token }}">
+    <div>
+      <label class="opg-label" for="google-client-id">Google OAuth Client ID</label>
+      <input class="opg-input" id="google-client-id" name="client_id" maxlength="255" value="{{ google.client_id }}" required>
+    </div>
+    <div>
+      <label class="opg-label" for="google-client-secret">Google OAuth Client Secret</label>
+      <input class="opg-input" id="google-client-secret" type="password" name="client_secret" maxlength="4096"
+       autocomplete="new-password" placeholder="{{ google.secret_set ? 'Leave blank to keep existing secret' : 'Required for first setup' }}"
+       {% if not google.secret_set %}required{% endif %}>
+    </div>
+    <div>
+      <label class="opg-label" for="google-current-password">Confirm your administrator password</label>
+      <input class="opg-input" id="google-current-password" type="password" name="current_password"
+       maxlength="1024" autocomplete="current-password" required>
+    </div>
+    <button type="submit" class="opg-primary-button">Save Google settings</button>
+  </form>
+  <p class="mt-6 text-sm text-gray-500 dark:text-gray-400">Sign-in with email and password always remains enabled. Link Google only from an approved account.</p>
+</section>
+{% endblock %}

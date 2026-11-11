@@ -7,6 +7,7 @@ namespace OPGateway\Http;
 use OPGateway\Database\Migrations\MigrationCatalog;
 use OPGateway\Identity\AdministratorAuthorization;
 use OPGateway\Mail\PdoSmtpSettings;
+use OPGateway\Google\PdoGoogleOAuthSettings;
 use OPGateway\Security\SealedSecret;
 use OPGateway\Security\RuntimeSecrets;
 use OPGateway\Database\Migrations\SchemaReadiness;
@@ -152,7 +153,7 @@ final readonly class AdministrativeWebEntry
             new AdminOverviewRepository($pdo), $review, $pages,
         );
 
-        if ($path === '/admin/settings/smtp') {
+        if (in_array($path, ['/admin/settings/smtp', '/admin/settings/google'], true)) {
             $vault = new SealedSecret(RuntimeSecrets::key(dirname(__DIR__, 2)));
         }
 
@@ -173,7 +174,23 @@ final readonly class AdministrativeWebEntry
             }
         }
 
-        if ($path === '/admin/settings/smtp') {
+        if ($path === '/admin/settings/google') {
+            $login = new GuardedLoginService(
+                new LoginAuthenticator($accounts, new PasswordHasher()),
+                new PdoLoginAttemptLimiter($pdo, $key),
+                new PdoSecurityEventRecorder($pdo),
+            );
+            $response = (new GoogleAdminSettingsController(
+                $session, $accounts, $admins, $login,
+                new PdoGoogleOAuthSettings($pdo, $vault),
+                new TwigRenderer(dirname(__DIR__, 2) . '/templates'),
+                $pdo, CanonicalOrigin::fromServer($server) ?? '',
+            ))->handle(
+                $method,
+                isset($server['CONTENT_TYPE']) ? (string) $server['CONTENT_TYPE'] : null,
+                $body, (string) ($server['REMOTE_ADDR'] ?? ''), bin2hex(random_bytes(16)),
+            );
+        } elseif ($path === '/admin/settings/smtp') {
             $login = new GuardedLoginService(
                 new LoginAuthenticator($accounts, new PasswordHasher()),
                 new PdoLoginAttemptLimiter($pdo, $key),
