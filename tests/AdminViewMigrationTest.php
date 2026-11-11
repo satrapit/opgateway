@@ -28,10 +28,11 @@ final class AdminViewMigrationTest extends TestCase
     {
         $session = new BrowserSession();
         $session->start(true);
-        $session->authenticate(11);
+        $session->authenticate(11, str_repeat('a', 64));
 
         $accounts = $this->createStub(LoginAccountRepository::class);
         $accounts->method('isEligible')->willReturn(true);
+        $accounts->method('currentSessionStamp')->willReturn(str_repeat('a', 64));
         $admins = $this->createStub(AdministratorAuthorization::class);
         $admins->method('isAdministrator')->willReturn(true);
 
@@ -76,9 +77,10 @@ final class AdminViewMigrationTest extends TestCase
     {
         $session = new BrowserSession();
         $session->start(true);
-        $session->authenticate(11);
+        $session->authenticate(11, str_repeat('a', 64));
         $accounts = $this->createStub(LoginAccountRepository::class);
         $accounts->method('isEligible')->willReturn(true);
+        $accounts->method('currentSessionStamp')->willReturn(str_repeat('a', 64));
         $admins = $this->createStub(AdministratorAuthorization::class);
         $admins->method('isAdministrator')->willReturn(false);
         $pages = $this->createMock(AdminPageRenderer::class);
