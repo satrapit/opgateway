@@ -17,6 +17,10 @@ use OPGateway\Database\PdoConnectionFactory;
 use OPGateway\Clients\ClientManagementService;
 use OPGateway\Clients\AdminClientProvisioningService;
 use OPGateway\Identity\AccountApprovalService;
+use OPGateway\Identity\AdminUserInvitation;
+use OPGateway\Identity\EmailVerificationService;
+use OPGateway\Identity\PdoEmailVerificationRepository;
+use OPGateway\Mail\PhpMailerVerificationMailer;
 use OPGateway\Identity\BrowserSession;
 use OPGateway\Identity\GuardedLoginService;
 use OPGateway\Identity\LoginAuthenticator;
@@ -178,7 +182,34 @@ final readonly class AdministrativeWebEntry
             }
         }
 
-        if ($path === '/admin/captcha/image') {
+        if ($path === '/admin/users/invite') {
+            $settings = new PdoSmtpSettings($pdo, $vault);
+            $mailer = new PhpMailerVerificationMailer($settings);
+            $login = new GuardedLoginService(
+                new LoginAuthenticator($accounts, new PasswordHasher()),
+                new PdoLoginAttemptLimiter($pdo, $key),
+                new PdoSecurityEventRecorder($pdo),
+            );
+            $response = (new AdminUserInvitationController(
+                $session, $accounts, $admins, $login,
+                new AdminUserInvitation(
+                    $pdo, new PasswordHasher(),
+                    new EmailVerificationService(
+                        new PdoEmailVerificationRepository($pdo, true),
+                    ),
+                    $mailer, new PdoAdminActionLimiter($pdo, $key),
+                    new PdoSecurityEventRecorder($pdo),
+                ),
+                $settings,
+                new TwigRenderer(dirname(__DIR__, 2) . '/templates'),
+                $pdo, CanonicalOrigin::fromServer($server) ?? '',
+            ))->handle(
+                $method,
+                isset($server['CONTENT_TYPE']) ? (string) $server['CONTENT_TYPE'] : null,
+                $body, (string) ($server['REMOTE_ADDR'] ?? ''),
+                bin2hex(random_bytes(16)), (string) ($server['QUERY_STRING'] ?? ''),
+            );
+        } elseif ($path === '/admin/captcha/image') {
             $image = $method === 'GET' ? $captcha->image() : null;
             $response = $image === null ? self::error(404) : [
                 'status' => 200, 'content_type' => 'image/png', 'body' => $image,

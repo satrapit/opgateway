@@ -4,9 +4,17 @@
   <div class="opg-panel-header">
     <div>
       <h2 id="users-title" class="opg-section-title">Pending user approvals</h2>
-      <p class="opg-section-subtitle">Email-verified users waiting for a manual operator decision.</p>
+      <p class="opg-section-subtitle">Review pending users and invite new accounts through email verification.</p>
     </div>
-    <span class="opg-count">{{ queues.users|length }} shown</span>
+    <div class="flex flex-wrap items-center gap-3">
+      <span class="opg-count">{{ queues.users|length }} shown</span>
+      {% if actions_enabled %}
+        <a href="/admin/users/invite" class="opg-primary-button">
+          <svg viewBox="0 0 24 24" class="opg-icon" aria-hidden="true" focusable="false"><use href="{{ admin_assets.icons }}#opg-icon-user-plus"></use></svg>
+          Invite user
+        </a>
+      {% endif %}
+    </div>
   </div>
   {% if queues.users is empty %}
   <p class="opg-empty" role="status">No verified users are currently waiting for approval.</p>

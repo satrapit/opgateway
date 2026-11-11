@@ -6,7 +6,13 @@
       <h2 id="owners-title" class="opg-section-title">Approved account owners</h2>
       <p class="opg-section-subtitle">Create a disabled client for an approved owner. Activation is a separate step.</p>
     </div>
-    <span class="opg-count">{{ queues.owners|length }} shown</span>
+    <div class="flex flex-wrap items-center gap-3">
+      <span class="opg-count">{{ queues.owners|length }} shown</span>
+      <a href="/admin/users/invite" class="opg-secondary-button">
+        <svg viewBox="0 0 24 24" class="opg-icon" aria-hidden="true" focusable="false"><use href="{{ admin_assets.icons }}#opg-icon-user-plus"></use></svg>
+        Invite owner
+      </a>
+    </div>
   </div>
   {% if queues.owners is empty %}
   <p class="opg-empty" role="status">No approved account owners were found in this listing.</p>
