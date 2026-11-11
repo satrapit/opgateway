@@ -1,7 +1,7 @@
 {% extends 'layouts/auth.html.twig' %}
 {% block title %}{{ section_title }}{% endblock %}
 {% block content %}
-<div class="opg-shell min-h-screen lg:flex" x-data="adminShell">
+<div class="opg-shell min-h-screen lg:flex" x-data="adminShell" data-settings-active="{{ active_section|default('') in ['security', 'google', 'smtp'] ? '1' : '0' }}">
   <div class="opg-backdrop" x-show="backdropVisible" x-on:click="closeSidebar" x-cloak aria-hidden="true"></div>
   <aside id="admin-sidebar" class="opg-sidebar" x-ref="sidebar" x-bind:class="sidebarClass" aria-label="Main navigation" tabindex="-1">
     <div class="opg-sidebar-header flex h-20 shrink-0 items-center justify-between gap-3 border-b border-gray-200 px-6 dark:border-gray-800">

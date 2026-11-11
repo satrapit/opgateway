@@ -334,3 +334,12 @@ html[data-theme="dark"] .opg-theme-icon[data-theme-icon="dark"] { display: inlin
 .opg-sidebar details > summary.opg-nav-link::-webkit-details-marker { display: none; }
 .opg-sidebar details[open] > summary.opg-nav-link { color: var(--color-brand-600); }
 .dark .opg-sidebar details[open] > summary.opg-nav-link { color: var(--color-brand-300); }
+
+/* TailAdmin-style parent with icon, active state, chevron and grouped links. */
+.opg-nav-parent-active { @apply bg-brand-50 text-brand-600 dark:bg-brand-500/15 dark:text-brand-300; }
+.opg-nav-chevron { margin-inline-start: auto; width: 1rem; height: 1rem; transition: transform .2s ease; }
+.opg-nav-chevron.is-expanded { transform: rotate(180deg); }
+.opg-nav-submenu { @apply mb-2 ms-6 mt-1 flex flex-col gap-1 border-s border-gray-200 ps-3 dark:border-gray-800; }
+.opg-nav-sublink { @apply flex min-h-10 items-center rounded-lg px-3 py-2 text-sm text-gray-600 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-white/5; }
+.opg-nav-sublink[aria-current="page"] { @apply bg-brand-50 font-semibold text-brand-600 dark:bg-brand-500/15 dark:text-brand-300; }
+@media (prefers-reduced-motion: reduce) { .opg-nav-chevron { transition: none; } }

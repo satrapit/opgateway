@@ -178,7 +178,18 @@ final readonly class AdministrativeWebEntry
             }
         }
 
-        if ($path === '/admin/settings/google') {
+        if (in_array($path, [
+            '/admin/settings', '/admin/settings/login',
+            '/admin/settings/login/captcha', '/admin/settings/google',
+        ], true) && $method === 'GET') {
+            $response = [
+                'status' => 303, 'content_type' => 'text/plain; charset=utf-8',
+                'body' => '', 'location' => match ($path) {
+                    '/admin/settings/google' => '/admin/settings/login/google',
+                    default => '/admin/settings/security',
+                },
+            ];
+        } elseif ($path === '/admin/settings/google') {
             // Keep the previous bookmark working without accepting legacy POSTs.
             $response = $method === 'GET'
                 ? ['status' => 303, 'content_type' => 'text/plain; charset=utf-8',
@@ -186,7 +197,7 @@ final readonly class AdministrativeWebEntry
                 : self::error(404);
         } elseif (in_array($path, [
             '/admin/settings', '/admin/settings/login',
-            '/admin/settings/login/captcha',
+            '/admin/settings/security',
         ], true)) {
             $login = new GuardedLoginService(
                 new LoginAuthenticator($accounts, new PasswordHasher()),

@@ -21,7 +21,7 @@ final class BrowserGetPath
         return in_array($canonical, [
             '/admin', '/admin/login', '/admin/users', '/admin/owners',
             '/admin/clients', '/admin/ips/pending', '/admin/ips/approved',
-            '/admin/settings', '/admin/settings/login',
+            '/admin/settings', '/admin/settings/security', '/admin/settings/login',
             '/admin/settings/login/google', '/admin/settings/login/captcha',
             '/admin/settings/smtp', '/admin/settings/google',
             '/account', '/account/login', '/account/register',

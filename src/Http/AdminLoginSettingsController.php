@@ -50,8 +50,8 @@ final readonly class AdminLoginSettingsController
                 '/admin/settings/login' => [
                     'admin/login-settings.html.twig', 'login_settings', 'Login settings',
                 ],
-                '/admin/settings/login/captcha' => [
-                    'admin/captcha.html.twig', 'captcha', 'CAPTCHA settings',
+                '/admin/settings/security', '/admin/settings/login/captcha' => [
+                    'admin/captcha.html.twig', 'security', 'Security',
                 ],
                 default => [null, '', ''],
             };
@@ -72,7 +72,7 @@ final readonly class AdminLoginSettingsController
             ];
         }
 
-        if ($method !== 'POST' || $path !== '/admin/settings/login/captcha') {
+        if ($method !== 'POST' || $path !== '/admin/settings/security') {
             return self::error(404);
         }
         if ($contentType === null || preg_match(
@@ -119,7 +119,7 @@ final readonly class AdminLoginSettingsController
             throw $exception;
         }
         $this->session->rotateCsrf();
-        return self::redirect('/admin/settings/login/captcha');
+        return self::redirect('/admin/settings/security');
     }
 
     /** @return array{status:int,content_type:string,body:string,location:string} */

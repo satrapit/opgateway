@@ -2,10 +2,10 @@
 {% block dashboard_content %}
 <section class="opg-panel p-6 sm:p-8" aria-labelledby="captcha-settings-title">
   <div class="mb-6">
-    <h2 id="captcha-settings-title" class="opg-section-title">CAPTCHA</h2>
-    <p class="opg-section-subtitle">Choose how password sign-in forms verify challenges. The same setting applies to administrator and account sign-in.</p>
+    <h2 id="captcha-settings-title" class="opg-section-title">Security</h2>
+    <p class="opg-section-subtitle">Configure CAPTCHA for administrator and account password sign-in. Existing account throttles remain active.</p>
   </div>
-  <form method="post" action="/admin/settings/login/captcha" class="grid max-w-xl gap-5" autocomplete="off">
+  <form method="post" action="/admin/settings/security" class="grid max-w-xl gap-5" autocomplete="off">
     <input type="hidden" name="_csrf" value="{{ csrf_token }}">
     <fieldset>
       <legend class="opg-label">Verification method</legend>

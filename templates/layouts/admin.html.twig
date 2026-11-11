@@ -10,22 +10,19 @@
       <a class="opg-nav-link" href="/admin/clients"{% if active_section == 'clients' %} aria-current="page"{% endif %}><svg viewBox="0 0 24 24" class="opg-icon" aria-hidden="true" focusable="false"><use href="{{ admin_assets.icons }}#opg-icon-server"></use></svg> API clients</a>
       <a class="opg-nav-link" href="/admin/ips/pending"{% if active_section == 'pending_ips' %} aria-current="page"{% endif %}><svg viewBox="0 0 24 24" class="opg-icon" aria-hidden="true" focusable="false"><use href="{{ admin_assets.icons }}#opg-icon-clock"></use></svg> Pending IPs</a>
       <a class="opg-nav-link" href="/admin/ips/approved"{% if active_section == 'approved_ips' %} aria-current="page"{% endif %}><svg viewBox="0 0 24 24" class="opg-icon" aria-hidden="true" focusable="false"><use href="{{ admin_assets.icons }}#opg-icon-shield-check"></use></svg> Approved IPs</a>
-      <p class="px-3 pb-2 pt-6 text-xs font-semibold uppercase tracking-widest text-gray-400">System administration</p>
-      <details class="mt-2"{% if active_section in ['settings','login_settings','google','captcha','smtp'] %} open{% endif %}>
-        <summary class="opg-nav-link">Settings</summary>
-        <div class="ms-3 grid gap-1 border-s border-gray-200 ps-3 dark:border-gray-800">
-          <a class="opg-nav-link" href="/admin/settings"{% if active_section == 'settings' %} aria-current="page"{% endif %}>All settings</a>
-          <details{% if active_section in ['login_settings','google','captcha'] %} open{% endif %}>
-            <summary class="opg-nav-link">Login settings</summary>
-            <div class="ms-3 grid gap-1 border-s border-gray-200 ps-3 dark:border-gray-800">
-              <a class="opg-nav-link" href="/admin/settings/login"{% if active_section == 'login_settings' %} aria-current="page"{% endif %}>Overview</a>
-              <a class="opg-nav-link" href="/admin/settings/login/google"{% if active_section == 'google' %} aria-current="page"{% endif %}>Google SSO</a>
-              <a class="opg-nav-link" href="/admin/settings/login/captcha"{% if active_section == 'captcha' %} aria-current="page"{% endif %}>CAPTCHA</a>
-            </div>
-          </details>
-          <a class="opg-nav-link" href="/admin/settings/smtp"{% if active_section == 'smtp' %} aria-current="page"{% endif %}>Email / SMTP</a>
-        </div>
-      </details>
+      <p class="px-3 pb-2 pt-6 text-xs font-semibold uppercase tracking-widest text-gray-400">System</p>
+      <button type="button" class="opg-nav-link opg-nav-parent w-full text-start{{ active_section in ['security','google','smtp'] ? ' opg-nav-parent-active' : '' }}"
+        x-on:click="toggleSettingsMenu" x-bind:aria-expanded="settingsMenuOpen"
+        aria-controls="opg-settings-submenu">
+        <svg viewBox="0 0 24 24" class="opg-icon" aria-hidden="true" focusable="false"><use href="{{ admin_assets.icons }}#opg-icon-settings"></use></svg>
+        <span class="min-w-0 flex-1">Settings</span>
+        <svg viewBox="0 0 24 24" class="opg-icon opg-nav-chevron" aria-hidden="true" focusable="false" x-bind:class="settingsMenuOpen ? 'is-expanded' : ''"><use href="{{ admin_assets.icons }}#opg-icon-chevron-down"></use></svg>
+      </button>
+      <div id="opg-settings-submenu" class="opg-nav-submenu" x-show="settingsMenuOpen" x-cloak>
+        <a class="opg-nav-sublink" href="/admin/settings/security"{% if active_section == 'security' %} aria-current="page"{% endif %}>Security</a>
+        <a class="opg-nav-sublink" href="/admin/settings/login/google"{% if active_section == 'google' %} aria-current="page"{% endif %}>Google SSO</a>
+        <a class="opg-nav-sublink" href="/admin/settings/smtp"{% if active_section == 'smtp' %} aria-current="page"{% endif %}>Email / SMTP</a>
+      </div>
     </nav>
 {% endblock %}
 

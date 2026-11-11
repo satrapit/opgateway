@@ -12,10 +12,12 @@ import { initializeFormSubmissionLock } from './form-submissions.js';
  */
 Alpine.data('adminShell', () => ({
   sidebarOpen: false,
+  settingsMenuOpen: false,
   themeLabel: 'System',
   lastActivator: null,
 
   init() {
+    this.settingsMenuOpen = this.$el?.dataset.settingsActive === '1';
     this.refreshThemeLabel();
     const media = window.matchMedia('(prefers-color-scheme: dark)');
     media.addEventListener?.('change', () => this.applyTheme());
@@ -52,6 +54,9 @@ Alpine.data('adminShell', () => ({
     });
   },
 
+  toggleSettingsMenu() {
+    this.settingsMenuOpen = !this.settingsMenuOpen;
+  },
   openSidebar(event) {
     this.lastActivator = event?.currentTarget ?? null;
     this.sidebarOpen = true;
