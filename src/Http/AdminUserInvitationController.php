@@ -8,24 +8,21 @@ use InvalidArgumentException;
 use OPGateway\Identity\AdminUserInvitation;
 use OPGateway\Identity\AdministratorAuthorization;
 use OPGateway\Identity\BrowserSession;
-use OPGateway\Identity\GuardedLoginService;
 use OPGateway\Identity\LoginAccountRepository;
 use OPGateway\Mail\PdoSmtpSettings;
 use OPGateway\View\TwigRenderer;
 use PDO;
 
-/** Dedicated user invitation page: admin role, CSRF, password recheck, SMTP. */
+/** Dedicated user invitation page: admin role, CSRF and SMTP. */
 final readonly class AdminUserInvitationController
 {
     public function __construct(
         private BrowserSession $session,
         private LoginAccountRepository $accounts,
         private AdministratorAuthorization $admins,
-        private GuardedLoginService $login,
         private AdminUserInvitation $invitation,
         private PdoSmtpSettings $smtp,
         private TwigRenderer $twig,
-        private PDO $pdo,
         private string $origin,
     ) {
     }
@@ -64,9 +61,8 @@ final readonly class AdminUserInvitationController
             return self::error(415);
         }
         $form = $body === null ? null : StrictForm::decode($body,
-            ['_csrf', 'email', 'current_password']);
-        if ($form === null || $form['current_password'] === ''
-            || strlen($form['current_password']) > 1024) {
+            ['_csrf', 'email', ]);
+        if ($form === null) {
             return self::error(400);
         }
         if (!$this->session->csrfValid($form['_csrf'])) {
@@ -74,14 +70,6 @@ final readonly class AdminUserInvitationController
         }
         if (!$this->smtp->configured()) {
             return self::error(503);
-        }
-        $stmt = $this->pdo->prepare('SELECT email FROM users WHERE id = ? LIMIT 1');
-        $stmt->execute([$administratorId]);
-        $adminEmail = $stmt->fetchColumn();
-        if (!is_string($adminEmail) || $this->login->authenticate(
-            $adminEmail, $form['current_password'], $sourceIp, $requestId,
-        ) !== $administratorId) {
-            return self::error(403);
         }
         try {
             $result = $this->invitation->invite(

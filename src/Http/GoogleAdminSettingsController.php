@@ -8,7 +8,6 @@ use InvalidArgumentException;
 use OPGateway\Google\PdoGoogleOAuthSettings;
 use OPGateway\Identity\AdministratorAuthorization;
 use OPGateway\Identity\BrowserSession;
-use OPGateway\Identity\GuardedLoginService;
 use OPGateway\Identity\LoginAccountRepository;
 use OPGateway\Security\PdoSecurityEventRecorder;
 use OPGateway\View\TwigRenderer;
@@ -22,7 +21,6 @@ final readonly class GoogleAdminSettingsController
         private BrowserSession $session,
         private LoginAccountRepository $accounts,
         private AdministratorAuthorization $admins,
-        private GuardedLoginService $login,
         private PdoGoogleOAuthSettings $settings,
         private TwigRenderer $twig,
         private PDO $pdo,
@@ -63,22 +61,12 @@ final readonly class GoogleAdminSettingsController
             return self::error(415);
         }
         $form = $body === null ? null : StrictForm::decode($body, [
-            '_csrf', 'client_id', 'client_secret', 'enabled', 'current_password',
+            '_csrf', 'client_id', 'client_secret', 'enabled',
         ]);
-        if ($form === null || strlen($form['current_password']) > 1024
-            || $form['current_password'] === ''
-            || !in_array($form['enabled'], ['0', '1'], true)) {
+        if ($form === null || !in_array($form['enabled'], ['0', '1'], true)) {
             return self::error(400);
         }
         if (!$this->session->csrfValid($form['_csrf'])) {
-            return self::error(403);
-        }
-        $stmt = $this->pdo->prepare('SELECT email FROM users WHERE id = ? LIMIT 1');
-        $stmt->execute([$id]);
-        $email = $stmt->fetchColumn();
-        if (!is_string($email) || $this->login->authenticate(
-            $email, $form['current_password'], $sourceIp, $requestId,
-        ) !== $id) {
             return self::error(403);
         }
         $this->pdo->beginTransaction();

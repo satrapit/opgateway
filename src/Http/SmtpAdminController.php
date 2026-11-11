@@ -6,7 +6,6 @@ namespace OPGateway\Http;
 
 use OPGateway\Identity\AdministratorAuthorization;
 use OPGateway\Identity\BrowserSession;
-use OPGateway\Identity\GuardedLoginService;
 use OPGateway\Identity\LoginAccountRepository;
 use OPGateway\Mail\PdoSmtpSettings;
 use OPGateway\Security\PdoSecurityEventRecorder;
@@ -16,7 +15,7 @@ use InvalidArgumentException;
 use PDO;
 
 /**
- * Administrator-only SMTP configuration, with mandatory password recheck.
+ * Administrator-only SMTP configuration, with administrator role and CSRF checks.
  * The SMTP password is encrypted in private MySQL and never rendered back.
  * The existing admin role is the project's top-level operator role.
  */
@@ -26,7 +25,6 @@ final readonly class SmtpAdminController
         private BrowserSession $session,
         private LoginAccountRepository $accounts,
         private AdministratorAuthorization $admins,
-        private GuardedLoginService $login,
         private PdoSmtpSettings $settings,
         private TwigRenderer $twig,
         private PDO $pdo,
@@ -66,27 +64,16 @@ final readonly class SmtpAdminController
         }
         $form = $body === null ? null : StrictForm::decode($body, [
             '_csrf', 'host', 'port', 'encryption', 'username', 'password',
-            'from_email', 'from_name', 'current_password',
+            'from_email', 'from_name',
         ]);
         if ($form === null || !$this->session->csrfValid($form['_csrf'])) {
             return self::error($form === null ? 400 : 403);
         }
-        if (strlen($form['password']) > 4096
-            || strlen($form['current_password']) < 1
-            || strlen($form['current_password']) > 1024) {
+        if (strlen($form['password']) > 4096) {
             return self::error(400);
         }
         if (!in_array($form['port'], ['465', '587'], true)) {
             return self::error(400);
-        }
-        $email = $this->pdo->prepare('SELECT email FROM users WHERE id = ? LIMIT 1');
-        $email->execute([$id]);
-        $accountEmail = $email->fetchColumn();
-        if (!is_string($accountEmail)
-            || $this->login->authenticate(
-                $accountEmail, $form['current_password'], $sourceIp, $requestId,
-            ) !== $id) {
-            return self::error(403);
         }
         // Password rotation and its safe audit event commit atomically.
         $this->pdo->beginTransaction();

@@ -7,7 +7,6 @@ namespace OPGateway\Http;
 use InvalidArgumentException;
 use OPGateway\Identity\AdministratorAuthorization;
 use OPGateway\Identity\BrowserSession;
-use OPGateway\Identity\GuardedLoginService;
 use OPGateway\Identity\LoginAccountRepository;
 use OPGateway\Security\PdoLoginCaptchaSettings;
 use OPGateway\Security\PdoSecurityEventRecorder;
@@ -15,14 +14,13 @@ use OPGateway\View\TwigRenderer;
 use PDO;
 use Throwable;
 
-/** Separately routed admin settings screens; writes require password and CSRF. */
+/** Separately routed admin settings screens; writes require administrator session and CSRF. */
 final readonly class AdminLoginSettingsController
 {
     public function __construct(
         private BrowserSession $session,
         private LoginAccountRepository $accounts,
         private AdministratorAuthorization $admins,
-        private GuardedLoginService $login,
         private PdoLoginCaptchaSettings $captcha,
         private TwigRenderer $twig,
         private PDO $pdo,
@@ -75,24 +73,14 @@ final readonly class AdminLoginSettingsController
             return self::error(415);
         }
         $form = $body === null ? null : StrictForm::decode($body, [
-            '_csrf', 'provider', 'site_key', 'secret', 'current_password',
+            '_csrf', 'provider', 'site_key', 'secret',
         ]);
-        if ($form === null || $form['current_password'] === ''
-            || strlen($form['current_password']) > 1024) {
+        if ($form === null) {
             return self::error(400);
         }
         if (!$this->session->csrfValid($form['_csrf'])) {
             return self::error(403);
         }
-        $stmt = $this->pdo->prepare('SELECT email FROM users WHERE id = ? LIMIT 1');
-        $stmt->execute([$userId]);
-        $email = $stmt->fetchColumn();
-        if (!is_string($email) || $this->login->authenticate(
-            $email, $form['current_password'], $sourceIp, $requestId,
-        ) !== $userId) {
-            return self::error(403);
-        }
-
         $this->pdo->beginTransaction();
         try {
             $this->captcha->save($form['provider'], $form['site_key'], $form['secret']);
