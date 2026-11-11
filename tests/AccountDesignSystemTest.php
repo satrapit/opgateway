@@ -91,7 +91,8 @@ final class AccountDesignSystemTest extends TestCase
         self::assertIsString($entry);
         self::assertIsString($renderer);
         self::assertIsString($ui);
-        self::assertStringContainsString("style-src 'self'; script-src 'self';", $entry);
+        self::assertStringContainsString("style-src 'self'; script-src 'self'", $entry);
+        self::assertStringContainsString("frame-src https://www.google.com/recaptcha/", $entry);
         self::assertStringContainsString('account|layouts|components', $renderer);
         self::assertStringNotContainsString('unsafe-inline', $entry);
         self::assertStringNotContainsString('style>', $ui);

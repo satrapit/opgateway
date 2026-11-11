@@ -77,6 +77,7 @@ final class AccountViewsTest extends TestCase
         $html = AccountViews::login(self::TOKEN, true);
         self::assertStringContainsString('action="/account/login"', $html);
         self::assertStringContainsString('name="_csrf"', $html);
-        self::assertStringContainsString('Incorrect email or password.', $html);
+        self::assertStringContainsString('Sign-in failed.', $html);
+        self::assertStringNotContainsString('Incorrect email or password.', $html);
     }
 }

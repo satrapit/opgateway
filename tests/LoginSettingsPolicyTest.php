@@ -53,9 +53,26 @@ final class LoginSettingsPolicyTest extends TestCase
                     {
                     }
 
+                    /** @var array<int|string,mixed> */
+                    private array $bound = [];
+
+                    public function bindValue(
+                        string|int $param, mixed $value, int $type = PDO::PARAM_STR,
+                    ): bool {
+                        $this->bound[$param] = $value;
+                        return true;
+                    }
+
                     public function execute(?array $params = null): bool
                     {
                         if (str_contains($this->query, 'INSERT INTO login_rate_limits')) {
+                            // A PDOStatement test double has no internal
+                            // driver, so bindValue must be implemented here.
+                            // Verify the production limiter binds a binary
+                            // SHA-256 bucket and integer time window.
+                            TestCase::assertIsString($this->bound[1] ?? null);
+                            TestCase::assertSame(32, strlen($this->bound[1]));
+                            TestCase::assertIsInt($this->bound[2] ?? null);
                             $this->db->attempts++;
                         } elseif (str_contains($this->query, "VALUES ('google.client_id'")) {
                             $this->db->settings['google.client_id'] = $params[0];
