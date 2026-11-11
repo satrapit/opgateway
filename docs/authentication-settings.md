@@ -2,8 +2,9 @@
 
 This feature is **unreleased** and is built on the Google OAuth feature
 branch. The only live hostname is https://opgateway.arsamnet.com.
-No new database migration or .env setting is required: use the existing
-`settings` table after schema migration 007 has been reviewed.
+No new .env setting is required. OAuth configuration uses the existing
+`settings` table. Google-first accounts additionally require reviewed
+schema migration 008 after migration 007.
 
 ## Independent Settings pages
 
@@ -30,9 +31,11 @@ obtained privately from Google Cloud Console. The fixed redirect URI is
 `https://opgateway.arsamnet.com/account/google/callback`. Store both keys
 through the admin page, never in Git or .env. The secret is encrypted under
 the `google:oauth` context using private `storage/app-secret.key`.
-Google SSO can be disabled without deleting its credentials. An existing
-password remains mandatory for account creation, linking and local fallback.
-Google subject IDs, not merely matching emails, identify linked users.
+Google SSO can be disabled without deleting its credentials. Continue with
+Google can create a verified pending account with no local password. Google
+subject IDs, not merely matching emails, identify linked users. An existing
+email collision requires a separate one-time mailbox confirmation before the
+subject is linked. Password recovery remains available when Google is disabled.
 Google SSO is available for approved account users, not an alternate
 administrator sign-in route.
 
@@ -87,7 +90,7 @@ or unauthenticated bypass to change settings.
 ## Verification before any single-domain release
 
 Run the PHP lint, targeted and full PHPUnit, 10 smoke checks, npm lint,
-7 frontend tests and Webpack build. Regenerate the production-only
+10 frontend tests and Webpack build. Regenerate the production-only
 Composer autoloader on Mac, review/commit the two generated classmap
 files and built CSS assets only (never development vendor dependencies).
 Test real admin/account login, offline challenge replay/expiry/abuse

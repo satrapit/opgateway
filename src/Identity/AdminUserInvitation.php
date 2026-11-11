@@ -22,7 +22,6 @@ final readonly class AdminUserInvitation
 {
     public function __construct(
         private PDO $pdo,
-        private PasswordHasher $hasher,
         private EmailVerificationService $verification,
         private InvitationMailer $mailer,
         private AdminActionLimiter $limiter,
@@ -79,14 +78,13 @@ SQL);
                 }
                 $userId = (int) $existing['id'];
             } else {
-                $unusablePassword = $this->hasher->hash(bin2hex(random_bytes(32)));
                 $create = $this->pdo->prepare(<<<'SQL'
 INSERT INTO users (
     email, password_hash, status, signup_source, created_at, updated_at
-) VALUES (?, ?, 'pending', 'admin_invite', UTC_TIMESTAMP(6), UTC_TIMESTAMP(6))
+) VALUES (?, NULL, 'pending', 'admin_invite', UTC_TIMESTAMP(6), UTC_TIMESTAMP(6))
 SQL);
                 try {
-                    $create->execute([$email, $unusablePassword]);
+                    $create->execute([$email]);
                 } catch (PDOException $exception) {
                     if ((string) $exception->getCode() === '23000') {
                         // A concurrent invite or existing user: never expose identity.

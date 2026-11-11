@@ -254,7 +254,7 @@ final class LoginSettingsPolicyTest extends TestCase
         ]);
         $accounts->method('isEligible')->willReturn(true);
         $accounts->method('currentSessionStamp')->willReturn(
-            \OPGateway\Identity\PasswordSessionStamp::fromHash($hash),
+            \OPGateway\Identity\AuthenticationSessionVersion::stamp(1),
         );
         $limiter = $this->createStub(LoginAttemptLimiter::class);
         $limiter->method('allow')->willReturn(true);

@@ -6,7 +6,6 @@ namespace OPGateway\Tests;
 
 use OPGateway\Identity\AdminUserInvitation;
 use OPGateway\Identity\EmailVerificationService;
-use OPGateway\Identity\PasswordHasher;
 use OPGateway\Identity\PdoEmailVerificationRepository;
 use OPGateway\Mail\InvitationMailer;
 use OPGateway\Security\AdminActionLimiter;
@@ -110,7 +109,7 @@ final class AdminUserInvitationTest extends TestCase
         $events->expects(self::once())->method('record')
             ->with('admin_user_invited', str_repeat('a', 32));
         $service = new AdminUserInvitation(
-            $db, new PasswordHasher(),
+            $db,
             new EmailVerificationService(new PdoEmailVerificationRepository($db)),
             $mailer, $limiter, $events,
         );
@@ -127,10 +126,11 @@ final class AdminUserInvitationTest extends TestCase
         ));
         self::assertCount(1, $insert);
         self::assertSame('newuser@example.test', $insert[0]['params'][0]);
-        self::assertTrue(password_get_info($insert[0]['params'][1])['algo'] !== null);
+        self::assertSame(['newuser@example.test'], $insert[0]['params']);
+        self::assertStringContainsString('password_hash, status', $insert[0]['sql']);
+        self::assertStringContainsString("VALUES (?, NULL, 'pending'", $insert[0]['sql']);
         self::assertStringContainsString("'admin_invite'", $insert[0]['sql']);
         self::assertStringNotContainsString('user_roles', $insert[0]['sql']);
-        self::assertStringNotContainsString('admin', $insert[0]['params'][1]);
         self::assertTrue($db->inTransaction() === false);
     }
 
@@ -142,7 +142,7 @@ final class AdminUserInvitationTest extends TestCase
         $mailer->expects(self::once())->method('sendInvitation');
         $limiter = $this->createStub(AdminActionLimiter::class);
         $limiter->method('allow')->willReturn(true);
-        $service = new AdminUserInvitation($db, new PasswordHasher(),
+        $service = new AdminUserInvitation($db,
             new EmailVerificationService(new PdoEmailVerificationRepository($db)),
             $mailer, $limiter, $this->createStub(SecurityEventRecorder::class));
         self::assertSame('accepted', $service->invite(4,

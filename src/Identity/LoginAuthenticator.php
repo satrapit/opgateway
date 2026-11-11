@@ -44,14 +44,21 @@ final readonly class LoginAuthenticator
         }
 
         $account = $this->accounts->findEligibleByEmail($email);
-        $hash = $account['password_hash'] ?? self::DUMMY_HASH;
+        $storedHash = $account['password_hash'] ?? null;
+        $hash = is_string($storedHash) && $storedHash !== ''
+            ? $storedHash : self::DUMMY_HASH;
         $valid = $this->hasher->verify($password, $hash);
 
-        if (!$valid || $account === null || $account['id'] < 1) {
+        if (!$valid || $account === null || $account['id'] < 1
+            || !is_string($storedHash) || $storedHash === '') {
             return null;
         }
 
-        return ['id' => $account['id'],
-            'stamp' => PasswordSessionStamp::fromHash($hash)];
+        $stamp = $account['session_stamp'] ?? $this->accounts->currentSessionStamp($account['id']);
+        if (!is_string($stamp) || preg_match('/^[0-9a-f]{64}$/D', $stamp) !== 1) {
+            return null;
+        }
+
+        return ['id' => $account['id'], 'stamp' => $stamp];
     }
 }

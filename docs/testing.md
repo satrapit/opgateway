@@ -20,11 +20,20 @@ composer install --no-dev --prefer-dist --optimize-autoloader
 git status --short
 ```
 
-**Last developer-verified Google OAuth baseline, before PR #7:**
-212 PHPUnit tests with 1604 assertions, 10/10 smoke tests and 7/7
-frontend tests; npm lint and Webpack build passed. These results do
-**not** validate the new settings/CAPTCHA code; rerun the full suite
-on PR #7 before release.
+The Google-first branch adds nullable-password, onboarding, collision,
+revocation, action-step-up and Account Security coverage. Do not copy a prior
+test count into release notes: record the fresh PHPUnit, 10 smoke checks and
+10 frontend tests from the exact reviewed commit.
+
+Local automated result on 2026-11-12 for this working tree: 252 PHPUnit tests
+with 1997 assertions, 10/10 smoke checks and 10/10 Node frontend tests; Composer
+validation, PHP lint, npm lint, production Webpack build and asset allowlist
+inspection completed successfully. The separate migration runner also passed
+on a disposable MySQL 8.0.46 container (1 test, 31 assertions), including the
+first seven migrations, seeded pre-008 account/hash/identity preservation,
+migration 008, idempotency, the advisory lock and exact schema postconditions.
+This is not a restored-backup rehearsal, real-browser,
+SMTP or Google-provider acceptance result; those release gates remain open.
 
 The smoke script probes real gateway admission (missing bearer and
 denied mutating route), health, IP helper and safe logging. It is not
@@ -32,9 +41,9 @@ a substitute for real DB, SMTP, Openprovider and browser integration.
 
 ## Isolated database and mail test
 
-Use only the existing local `opgateway` development DB or a disposable
-clone, never the production DB. Migration 004 must be completed first, then reviewed migration 005
-applied once, then migration 006 applied once. Verify 6 completed ledger entries and 13
+Use only an explicitly disposable empty database or restored backup clone,
+never a working or production database. On this branch, apply migrations 004
+through 008 in catalog order and verify 8 completed ledger entries and 15 final
 tables. Test admin SMTP UI, verified email signup, expired/replayed
 links, owner account, disabled client/IP, approvals, one-time key issue
 and revoke, denied wrong source IP and actual safe upstream read. Verify
@@ -63,27 +72,25 @@ and Back navigation restores the original label and state. Check icon-only
 logout buttons and reduced-motion mode. Run `npm test` for submission tests. Validate actual browser asset responses
 and strict `script-src 'self'` / `style-src 'self'` CSP with no inline CSS.
 
-## Browser session invalidation on password reset
+## Browser session invalidation on authentication-method change
 
-Admin and Account sessions created before this code change lack a password
-fingerprint and must sign in again. New sessions hold only a fingerprint of
-the stored hash verified at sign-in; each protected request compares against
-the current eligible user's stored password hash. Changing that hash through
-password recovery invalidates all previous browser sessions on their next
-protected request. Stale CSRF data is also discarded. API bearer keys remain
-independent and are not automatically revoked.
+Admin and Account sessions created before this code change lack the current
+authentication-session marker and must sign in again. New sessions hold only
+an opaque marker derived from `auth_session_version`; each protected request
+compares it with the current eligible user. Password set/change/reset and
+Google unlink increment the version, invalidating all previous browser sessions
+and their CSRF data. API bearer keys remain independent.
 
 Test successful recovery in one browser while another logged-in browser has
 an Account session and (separately) an Admin session. Confirm both old sessions
 are redirected to login and freshly signed-in sessions work. No migration.
 
-## Google OIDC browser flow — unreleased feature branch only
+## Google-first OIDC browser flow — unreleased feature branch only
 
-Google sign-in is NOT part of the `v0.1.0-alpha.4` production pilot. On the
-`feat/google-oidc-password-fallback` branch, run PHP lint, PHPUnit and smoke
-after a reviewed, backed-up manual migration 007 on the **local** database.
-A fresh install needs 7 migration entries and 14 final tables. Never deploy
-the OAuth source against production that is still at migration 006.
+Google sign-in is NOT part of the production pilot. On this branch, run PHP
+lint, PHPUnit and smoke after reviewed migrations 007 and 008 on a disposable
+**local backup copy**. A fresh install needs 8 migration entries and 15 final
+tables. Never deploy this source against production or run its migrations there.
 
 For the sole deployed hostname `opgateway.arsamnet.com`, first verify and
 deploy the compatibility-only pre-Google release (planned alpha.4.1 from
@@ -112,8 +119,9 @@ admin approval; sign in with password; confirm password to connect Google;
 consent with the Google account using the same verified email; sign out and
 sign back in using Google, then verify local password still works. Test
 unlinked accounts, email mismatch, duplicate subjects, expired/replayed
-state, invalid nonce/aud/signature/expiration, network outages, revoked
-local users, password reset mid-flow and unlink with wrong password.
+state, invalid nonce/aud/signature/expiration, missing/stale step-up `auth_time`,
+network outages, revoked local users, password reset mid-flow and unlink with
+wrong password.
 No automatic account linking by email. Inspect no-store, CSP, session
 cookies and no-referrer for the Google callback.
 

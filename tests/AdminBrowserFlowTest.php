@@ -44,7 +44,7 @@ final class AdminBrowserFlowTest extends TestCase
             'password_hash' => $verifiedHash,
         ]);
         $accounts->method('currentSessionStamp')->willReturn(
-            \OPGateway\Identity\PasswordSessionStamp::fromHash($verifiedHash),
+            \OPGateway\Identity\AuthenticationSessionVersion::stamp(1),
         );
         $admins = $this->createStub(AdministratorAuthorization::class);
         $admins->method('isAdministrator')->willReturn(true);

@@ -14,7 +14,7 @@ use RuntimeException;
 
 final class SchemaReadinessTest extends TestCase
 {
-    public function testCanonicalMigrationCatalogHasSevenOrderedVersions(): void
+    public function testCanonicalMigrationCatalogHasEightOrderedVersions(): void
     {
         $migrations = MigrationCatalog::all();
         self::assertSame([
@@ -25,6 +25,7 @@ final class SchemaReadinessTest extends TestCase
             '202611100002_unify_settings_storage',
             '202611100003_create_password_reset_tokens',
             '202611110001_create_google_identities',
+            '202611120001_enable_optional_passwords',
         ], array_map(static fn ($migration) => $migration->version(), $migrations));
 
         foreach ($migrations as $migration) {
@@ -72,24 +73,24 @@ final class SchemaReadinessTest extends TestCase
         };
     }
 
-    public function testSevenMigrationBaselineReady(): void
+    public function testEightMigrationBaselineReady(): void
     {
         $result = (new SchemaReadiness(self::connection(self::allMigrationRows())))
             ->inspect(MigrationCatalog::all());
         self::assertTrue($result['ready']);
-        self::assertCount(7, $result['completed']);
+        self::assertCount(8, $result['completed']);
         self::assertSame([], $result['missing']);
     }
 
-    public function testSixMigrationBaselineNotReadyForGoogleCode(): void
+    public function testSevenMigrationBaselineNotReadyForOptionalPasswordCode(): void
     {
         $rows = self::allMigrationRows();
         array_pop($rows);
         $result = (new SchemaReadiness(self::connection($rows)))
             ->inspect(MigrationCatalog::all());
         self::assertFalse($result['ready']);
-        self::assertCount(6, $result['completed']);
-        self::assertSame(['202611110001_create_google_identities'], $result['missing']);
+        self::assertCount(7, $result['completed']);
+        self::assertSame(['202611120001_enable_optional_passwords'], $result['missing']);
     }
 
     public function testGoogleMigrationWithAlteredChecksumIsRejected(): void

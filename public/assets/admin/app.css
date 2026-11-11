@@ -40,7 +40,6 @@
     --breakpoint-2xl: 96rem;
     --container-sm: 24rem;
     --container-md: 28rem;
-    --container-lg: 32rem;
     --container-xl: 36rem;
     --container-2xl: 42rem;
     --text-xs: 0.75rem;
@@ -260,9 +259,6 @@
   .mx-auto {
     margin-inline: auto;
   }
-  .my-6 {
-    margin-block: calc(var(--spacing) * 6);
-  }
   .mt-1 {
     margin-top: var(--spacing);
   }
@@ -371,9 +367,6 @@
   .max-w-48 {
     max-width: calc(var(--spacing) * 48);
   }
-  .max-w-lg {
-    max-width: var(--container-lg);
-  }
   .max-w-md {
     max-width: var(--container-md);
   }
@@ -433,6 +426,9 @@
   }
   .gap-5 {
     gap: calc(var(--spacing) * 5);
+  }
+  .gap-6 {
+    gap: calc(var(--spacing) * 6);
   }
   :where(.space-y-1 > :not(:last-child)) {
     --tw-space-y-reverse: 0;
@@ -806,8 +802,8 @@
     }
   }
   @media (width >= 64rem) {
-    .lg\:ms-\[18rem\] {
-      margin-inline-start: 18rem;
+    .lg\:ms-72 {
+      margin-inline-start: calc(var(--spacing) * 72);
     }
     .lg\:flex {
       display: flex;
@@ -829,6 +825,9 @@
     }
   }
   @media (width >= 80rem) {
+    .xl\:grid-cols-2 {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
     .xl\:grid-cols-5 {
       grid-template-columns: repeat(5, minmax(0, 1fr));
     }

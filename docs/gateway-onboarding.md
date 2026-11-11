@@ -1,7 +1,7 @@
 # Onboarding, settings and gateway release checklist
 
 > **Current main:** pre-Google `v0.1.0-alpha.4.1`. Google sign-in
-> remains under development in Draft PR #4; it requires migration 007
+> remains under development in Draft PR #9; it requires migration 007
 > and separate reviewed tests and release planning.
 
 ## Configuration: minimal by design
@@ -81,7 +81,13 @@ policies remain mandatory.
 
 The pre-Google `v0.1.0-alpha.4.1` requires six completed migration rows and
 accepts the exact completed Google migration 007 for code-only rollback.
-Google OAuth is not included in this release and is still in Draft PR #4.
+Google OAuth is not included in this release and is still in Draft PR #9.
 Keep the production database unchanged until the review, backup and
 single-domain rollout plan is completed. Never run migrations automatically
 on cPanel.
+
+The Google-first optional-password work adds manual migration 008 after 007.
+It must be rehearsed only on a disposable restored backup and reviewed with
+[its non-destructive rollback plan](google-first-password-rollback.md). This
+branch expects eight completed migrations and fifteen final tables; production
+must remain at seven until the new code and rollback build are approved.

@@ -2,13 +2,13 @@
 
 ## Connection
 
-The private `.env` supplies `DB_HOST`, `DB_PORT`, `DB_NAME`, `DB_USER` and `DB_PASSWORD`; `PdoConnectionFactory` uses PDO MySQL with native prepared statements. Never use a public database test script or commit secrets.
+The private `.env` supplies `DB_HOST`, `DB_PORT`, `DB_NAME`, `DB_USER` and `DB_PASSWORD`; `PdoConnectionFactory` uses PDO MySQL with native prepared statements. It explicitly selects `utf8mb4_unicode_ci`, matching the immutable migration/table contract even when MySQL 8 defaults to another `utf8mb4` collation. Never use a public database test script or commit secrets.
 
 The current shared host requires `DB_HOST=db`. Local macOS usually uses `DB_HOST=127.0.0.1` and `DB_PORT=3306`, assuming TCP MySQL is running and the configured user has grants. `/health` does not validate DB connectivity.
 
 ## New empty database only
 
-Import `database/sql/opgateway_full_schema.sql` **once** into a fresh empty database using phpMyAdmin. On the next feature branch, verify **13 final tables and 6 completed rows** in `schema_migrations`. It preserves all earlier migration statements and checksums. Migration 005
+Import `database/sql/opgateway_full_schema.sql` **once** into a fresh empty database using phpMyAdmin. On this unreleased branch, verify **15 final tables and 8 completed rows** in `schema_migrations`. It preserves all earlier migration statements and checksums. Migration 005
 migrates `smtp_settings` to generic key/value `settings` and then drops only
 the old SMTP table. **Never import into an existing populated database, re-run migrations or reset tables to fix a connection error.** The online app does not execute migrations.
 
@@ -19,7 +19,7 @@ For the currently deployed alpha.3 schema there is nothing to import. The featur
 A new table `google_identities` maps each existing user to a unique
 case-sensitive Google OIDC subject. Global settings `google.client_id` and
 encrypted `google.client_secret` use the existing `settings` table.
-All accounts retain a local password hash. No new .env keys are needed.
+Migration 007 itself does not change passwords. No new .env keys are needed.
 
 For existing databases with six completed migrations, back up first and
 execute ONLY `database/sql/upgrade_202611110001.sql` (007), once and only
@@ -27,6 +27,22 @@ after reviewing its content. Do not run migration 007 during alpha.4 tests.
 On a new empty database, this unreleased branch's full schema creates
 seven migration records and fourteen final tables. Until migration 007
 is completed, its account/admin handlers fail closed.
+
+## Google-first optional-password migration 008 — unreleased
+
+After a verified local backup and only after migration 007, review and execute
+`database/sql/upgrade_202611120001.sql` manually. It preserves every existing
+hash, makes `users.password_hash` nullable, adds
+`users.auth_session_version BIGINT UNSIGNED NOT NULL DEFAULT 1`, and creates
+`google_identity_confirmations` for hashed, expiring, one-time collision proof.
+It deletes no users and creates no dummy credentials. A fresh install has eight
+completed migration records and fifteen final tables.
+
+Do not deploy older seven-migration application code after 008: its readiness
+check correctly rejects the unexpected schema. Use the reviewed
+008-compatible code rollback described in
+[the migration and rollback plan](google-first-password-rollback.md), retaining
+nullable hashes and all Google-only users.
 
 ## First administrator — one-time manual SQL
 
@@ -108,7 +124,10 @@ Do not edit existing migration SQL or checksums. The internal migration runner u
 - Migration 006 (`202611100003_create_password_reset_tokens`) adds a single
   password reset token table. A local database already at 005 requires only
   `database/sql/upgrade_202611100003.sql` after a backup.
-- Readiness requires **six** completed migrations. Never deploy new PHP
+- Migration 007 adds the subject-unique Google identity mapping. Migration 008
+  adds optional passwords, session versions and confirmation tokens. Apply each
+  manual script once, in order, after backup and review.
+- Readiness for this branch requires **eight** completed migrations. Never deploy new PHP
   before upgrading the database. MySQL DDL may auto-commit: if execution
   fails partway, stop and inspect; do not simply rerun.
 - The original migrations and their checksums are never rewritten.

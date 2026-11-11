@@ -76,7 +76,7 @@ OAuth secrets in the .env file or Git. This UI is draft, not alpha.4.
 Invite an owner at `/admin/users/invite`. SMTP must be configured. The
 request requires an active administrator session and a valid CSRF
 token; there is no extra password confirmation. Existing account emails receive a generic result. The invite is
-stored as pending with an unusable random password hash and no role grant.
+stored as pending with a NULL optional password and no role grant.
 The user receives an email verification link; the administrator approves
 them on the Users page after verification. The user then sets a password
 using Forgot password. Resending an unverified admin invitation is

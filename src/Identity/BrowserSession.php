@@ -17,7 +17,8 @@ final class BrowserSession
     private const USER_KEY = 'opgateway_user_id';
     private const CSRF_KEY = 'opgateway_csrf';
     private const AUTH_AT_KEY = 'opgateway_auth_at';
-    private const STAMP_KEY = 'opgateway_password_stamp';
+    private const STAMP_KEY = 'opgateway_auth_session_stamp';
+    private const GOOGLE_GRANTS_KEY = 'opgateway_google_action_grants';
     private const MAX_AGE_SECONDS = 1800;
 
     /** Start a locked-down server-side session over an explicitly trusted HTTPS request. */
@@ -53,11 +54,11 @@ final class BrowserSession
         }
     }
 
-    /** Attach the fingerprint of the password hash actually verified at sign-in. */
-    public function authenticate(int $userId, string $verifiedPasswordStamp): void
+    /** Attach the server-controlled authentication version verified at sign-in. */
+    public function authenticate(int $userId, string $verifiedSessionStamp): void
     {
         $this->assertActive();
-        if ($userId < 1 || preg_match('/^[0-9a-f]{64}$/D', $verifiedPasswordStamp) !== 1
+        if ($userId < 1 || preg_match('/^[0-9a-f]{64}$/D', $verifiedSessionStamp) !== 1
             || !session_regenerate_id(true)) {
             throw new RuntimeException('Unable to establish authenticated session.');
         }
@@ -65,7 +66,7 @@ final class BrowserSession
         $_SESSION = [
             self::USER_KEY => $userId,
             self::AUTH_AT_KEY => time(),
-            self::STAMP_KEY => $verifiedPasswordStamp,
+            self::STAMP_KEY => $verifiedSessionStamp,
             self::CSRF_KEY => bin2hex(random_bytes(32)),
         ];
     }
@@ -85,7 +86,8 @@ final class BrowserSession
         }
 
         // This lookup also enforces active, verified, approved account state.
-        // Any password hash replacement rejects existing browser sessions.
+        // Disabling the user or changing an authentication method invalidates
+        // every session holding an older server-controlled version.
         $currentStamp = $accounts->currentSessionStamp($userId);
         if (!is_string($currentStamp) || strlen($currentStamp) !== 64
             || !hash_equals($oldStamp, $currentStamp)) {
@@ -94,6 +96,34 @@ final class BrowserSession
         }
 
         return $userId;
+    }
+
+    /** Record a short-lived, account- and action-bound Google verification. */
+    public function grantGoogleAction(int $userId, string $action): void
+    {
+        $this->assertActive();
+        if ($userId < 1 || !in_array($action, ['api_key_issue', 'provider_credentials'], true)) {
+            throw new RuntimeException('Invalid Google action verification.');
+        }
+        $_SESSION[self::GOOGLE_GRANTS_KEY][$action] = [
+            'user_id' => $userId,
+            'verified_at' => time(),
+        ];
+    }
+
+    /** Consume a Google verification once, no later than five minutes after it was issued. */
+    public function consumeGoogleAction(int $userId, string $action): bool
+    {
+        $this->assertActive();
+        $grant = $_SESSION[self::GOOGLE_GRANTS_KEY][$action] ?? null;
+        unset($_SESSION[self::GOOGLE_GRANTS_KEY][$action]);
+        if (!is_array($grant) || ($grant['user_id'] ?? null) !== $userId
+            || !is_int($grant['verified_at'] ?? null)
+            || $grant['verified_at'] > time()
+            || time() - $grant['verified_at'] > 300) {
+            return false;
+        }
+        return true;
     }
 
     /** Must only be rendered into an authenticated same-origin HTML form. */
@@ -155,7 +185,7 @@ final class BrowserSession
             || array_key_exists(self::AUTH_AT_KEY, $_SESSION)
             || array_key_exists(self::STAMP_KEY, $_SESSION);
         unset($_SESSION[self::USER_KEY], $_SESSION[self::AUTH_AT_KEY],
-            $_SESSION[self::STAMP_KEY]);
+            $_SESSION[self::STAMP_KEY], $_SESSION[self::GOOGLE_GRANTS_KEY]);
         if ($hadIdentity) {
             unset($_SESSION[self::CSRF_KEY]);
         }

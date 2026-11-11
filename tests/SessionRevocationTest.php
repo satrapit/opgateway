@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace OPGateway\Tests;
 
 use OPGateway\Identity\BrowserSession;
+use OPGateway\Identity\AuthenticationSessionVersion;
 use OPGateway\Identity\LoginAccountRepository;
-use OPGateway\Identity\PasswordSessionStamp;
 use OPGateway\Identity\PasswordHasher;
 use OPGateway\Identity\PasswordResetMailer;
 use OPGateway\Identity\PasswordResetService;
@@ -18,7 +18,7 @@ use PHPUnit\Framework\Attributes\PreserveGlobalState;
 use PHPUnit\Framework\Attributes\RunInSeparateProcess;
 use PHPUnit\Framework\TestCase;
 
-/** Changing the password hash denies previously authenticated browser access. */
+/** Changing the server-controlled authentication version revokes browser access. */
 final class SessionRevocationTest extends TestCase
 {
     #[RunInSeparateProcess]
@@ -27,6 +27,7 @@ final class SessionRevocationTest extends TestCase
     {
         $accounts = new class implements LoginAccountRepository {
             public string $hash = '';
+            public int $version = 1;
             public bool $eligible = true;
             public function findEligibleByEmail(string $email): ?array
             {
@@ -39,12 +40,12 @@ final class SessionRevocationTest extends TestCase
             public function currentSessionStamp(int $userId): ?string
             {
                 return $this->isEligible($userId)
-                    ? PasswordSessionStamp::fromHash($this->hash) : null;
+                    ? AuthenticationSessionVersion::stamp($this->version) : null;
             }
         };
 
         $accounts->hash = password_hash('first-password-123', PASSWORD_DEFAULT);
-        $oldStamp = PasswordSessionStamp::fromHash($accounts->hash);
+        $oldStamp = AuthenticationSessionVersion::stamp($accounts->version);
         $session = new BrowserSession();
         $session->start(true);
         $session->authenticate(17, $oldStamp);
@@ -52,14 +53,17 @@ final class SessionRevocationTest extends TestCase
         self::assertSame(17, $session->currentUserId($accounts));
 
         $accounts->hash = password_hash('second-password-123', PASSWORD_DEFAULT);
-        self::assertNotSame($oldStamp, PasswordSessionStamp::fromHash($accounts->hash));
+        // A hash change alone is not session authority; the transactional
+        // credential mutation also increments this server-side version.
+        $accounts->version++;
+        self::assertNotSame($oldStamp, AuthenticationSessionVersion::stamp($accounts->version));
         self::assertNull($session->currentUserId($accounts));
         self::assertFalse($session->csrfValid($csrf));
         self::assertArrayNotHasKey('opgateway_user_id', $_SESSION);
-        self::assertArrayNotHasKey('opgateway_password_stamp', $_SESSION);
+        self::assertArrayNotHasKey('opgateway_auth_session_stamp', $_SESSION);
         self::assertNull($session->currentUserId($accounts));
 
-        $session->authenticate(17, PasswordSessionStamp::fromHash($accounts->hash));
+        $session->authenticate(17, AuthenticationSessionVersion::stamp($accounts->version));
         self::assertSame(17, $session->currentUserId($accounts));
         $accounts->eligible = false;
         self::assertNull($session->currentUserId($accounts));
@@ -102,13 +106,13 @@ final class SessionRevocationTest extends TestCase
     public function testSuccessfulResetUpdatesHashAndInvalidatesOldStampAtomically(): void
     {
         $db = new class extends PDO {
-            public string $passwordHash;
+            public ?string $passwordHash = null;
             public bool $inTx = false;
             public bool $tokenConsumed = false;
+            public int $version = 1;
 
             public function __construct()
             {
-                $this->passwordHash = password_hash('previous-password-123', PASSWORD_DEFAULT);
             }
 
             public function beginTransaction(): bool
@@ -144,6 +148,7 @@ final class SessionRevocationTest extends TestCase
                     {
                         if (str_contains($this->sql, 'UPDATE users SET password_hash = ?')) {
                             $this->db->passwordHash = $params[0];
+                            $this->db->version++;
                         }
                         if (str_contains($this->sql, 'UPDATE password_reset_tokens SET consumed_at')) {
                             $this->db->tokenConsumed = true;
@@ -161,7 +166,7 @@ final class SessionRevocationTest extends TestCase
                 };
             }
         };
-        $oldStamp = PasswordSessionStamp::fromHash($db->passwordHash);
+        $oldStamp = AuthenticationSessionVersion::stamp($db->version);
         $mailer = new class implements PasswordResetMailer {
             public function sendPasswordReset(string $email, string $token, string $origin): void
             {
@@ -177,17 +182,16 @@ final class SessionRevocationTest extends TestCase
         self::assertTrue(password_verify('replacement-password-123', $db->passwordHash));
         self::assertTrue($db->tokenConsumed);
         self::assertFalse($db->inTx);
-        self::assertNotSame($oldStamp, PasswordSessionStamp::fromHash($db->passwordHash));
+        self::assertNotSame($oldStamp, AuthenticationSessionVersion::stamp($db->version));
     }
 
     public function testStoredHashStampLookupRequiresEligibleAccount(): void
     {
-        $hash = password_hash('sample-password-123', PASSWORD_DEFAULT);
-        $db = new class ($hash) extends PDO {
+        $db = new class (3) extends PDO {
             public string $sql = '';
             public array $params = [];
 
-            public function __construct(public string|false $hash)
+            public function __construct(public int|false $version)
             {
             }
 
@@ -205,31 +209,27 @@ final class SessionRevocationTest extends TestCase
                     }
                     public function fetchColumn(int $column = 0): mixed
                     {
-                        return $this->db->hash;
+                        return $this->db->version;
                     }
                 };
             }
         };
         $accounts = new PdoLoginAccountRepository($db);
-        self::assertSame(PasswordSessionStamp::fromHash($hash), $accounts->currentSessionStamp(17));
+        self::assertSame(AuthenticationSessionVersion::stamp(3), $accounts->currentSessionStamp(17));
         self::assertSame([17], $db->params);
         self::assertStringContainsString("status = 'active'", $db->sql);
         self::assertStringContainsString('email_verified_at IS NOT NULL', $db->sql);
         self::assertStringContainsString('approved_at IS NOT NULL', $db->sql);
-        $db->hash = false;
+        $db->version = false;
         self::assertNull($accounts->currentSessionStamp(17));
         self::assertNull($accounts->currentSessionStamp(0));
     }
 
-    public function testOpaqueStampChangesWhenStoredHashChanges(): void
+    public function testOpaqueStampChangesOnlyWhenServerVersionChanges(): void
     {
-        $hash = password_hash('sample-long-password', PASSWORD_DEFAULT);
-        $stamp = PasswordSessionStamp::fromHash($hash);
+        $stamp = AuthenticationSessionVersion::stamp(7);
         self::assertMatchesRegularExpression('/^[0-9a-f]{64}$/', $stamp);
-        self::assertNotSame($hash, $stamp);
-        self::assertSame($stamp, PasswordSessionStamp::fromHash($hash));
-        self::assertNotSame($stamp, PasswordSessionStamp::fromHash(
-            password_hash('sample-long-password', PASSWORD_DEFAULT),
-        ));
+        self::assertSame($stamp, AuthenticationSessionVersion::stamp(7));
+        self::assertNotSame($stamp, AuthenticationSessionVersion::stamp(8));
     }
 }

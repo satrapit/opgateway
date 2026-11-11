@@ -12,13 +12,15 @@ use InvalidArgumentException;
  */
 final class GoogleOidcIdTokenVerifier
 {
+    private const RECENT_AUTHENTICATION_SECONDS = 300;
+
     /**
      * @param array<string,string> $certificates Fixed-URL Google kid=>PEM data.
-     * @return array{sub:string,email:string}|null
+     * @return array{sub:string,email:string,email_verified:bool}|null
      */
     public function verify(
         string $token, string $clientId, string $expectedNonce,
-        array $certificates,
+        array $certificates, bool $requireRecentAuthentication = false,
     ): ?array {
         if (strlen($token) > 16000 || !PdoGoogleOAuthSettings::validClientId($clientId)
             || preg_match('/^[0-9a-f]{64}$/D', $expectedNonce) !== 1) {
@@ -70,7 +72,7 @@ final class GoogleOidcIdTokenVerifier
             || $claims['exp'] - $claims['iat'] > 7200
             || !is_string($claims['nonce'] ?? null)
             || !hash_equals($expectedNonce, $claims['nonce'])
-            || !in_array($claims['email_verified'] ?? null, [true, 'true'], true)
+            || ($claims['email_verified'] ?? null) !== true
             || !is_string($claims['email'] ?? null)
             || strlen($claims['email']) > 254
             || filter_var($claims['email'], FILTER_VALIDATE_EMAIL) === false
@@ -79,7 +81,17 @@ final class GoogleOidcIdTokenVerifier
             || preg_match('/^[\\x21-\\x7E]+$/D', $claims['sub']) !== 1) {
             return null;
         }
-        return ['sub' => $claims['sub'], 'email' => strtolower($claims['email'])];
+        if ($requireRecentAuthentication
+            && (!is_int($claims['auth_time'] ?? null)
+                || $claims['auth_time'] > $now + 60
+                || $claims['auth_time'] < $now - self::RECENT_AUTHENTICATION_SECONDS)) {
+            return null;
+        }
+        return [
+            'sub' => $claims['sub'],
+            'email' => strtolower($claims['email']),
+            'email_verified' => true,
+        ];
     }
 
     private static function decodeSegment(string $data): ?string

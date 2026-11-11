@@ -19,7 +19,7 @@ final readonly class PdoLoginAccountRepository implements LoginAccountRepository
     public function findEligibleByEmail(string $email): ?array
     {
         $statement = $this->pdo->prepare(<<<'SQL'
-SELECT id, password_hash
+SELECT id, password_hash, auth_session_version
 FROM users
 WHERE email = ?
   AND status = 'active'
@@ -33,7 +33,17 @@ SQL);
             return null;
         }
 
-        return ['id' => (int) $row['id'], 'password_hash' => (string) $row['password_hash']];
+        $hash = $row['password_hash'];
+        $version = (int) $row['auth_session_version'];
+        if (($hash !== null && !is_string($hash)) || $version < 1) {
+            return null;
+        }
+
+        return [
+            'id' => (int) $row['id'],
+            'password_hash' => $hash,
+            'session_stamp' => AuthenticationSessionVersion::stamp($version),
+        ];
     }
 
     public function isEligible(int $userId): bool
@@ -53,21 +63,21 @@ SQL);
         $statement->execute([$userId]);
         return $statement->fetchColumn() !== false;
     }
-    /** Reject ineligible accounts and provide a fingerprint of the current hash. */
+    /** Reject ineligible accounts and return the current revocation marker. */
     public function currentSessionStamp(int $userId): ?string
     {
         if ($userId < 1) {
             return null;
         }
         $statement = $this->pdo->prepare(<<<'SQL'
-SELECT password_hash FROM users
+SELECT auth_session_version FROM users
 WHERE id = ? AND status = 'active'
   AND email_verified_at IS NOT NULL AND approved_at IS NOT NULL
 LIMIT 1
 SQL);
         $statement->execute([$userId]);
-        $hash = $statement->fetchColumn();
-        return is_string($hash) && $hash !== ''
-            ? PasswordSessionStamp::fromHash($hash) : null;
+        $version = $statement->fetchColumn();
+        return (is_int($version) || is_string($version)) && (int) $version > 0
+            ? AuthenticationSessionVersion::stamp((int) $version) : null;
     }
 }

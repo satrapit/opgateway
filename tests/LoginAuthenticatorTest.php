@@ -34,7 +34,7 @@ final class LoginAuthenticatorTest extends TestCase
             public function currentSessionStamp(int $userId): ?string
             {
                 return $userId === 17
-                    ? \OPGateway\Identity\PasswordSessionStamp::fromHash($this->hash) : null;
+                    ? \OPGateway\Identity\AuthenticationSessionVersion::stamp(1) : null;
             }
         };
 

@@ -1,5 +1,11 @@
 {% extends 'layouts/account-auth.html.twig' %}
 {% block account_form %}
+  {% if google_available %}
+    <a href="/account/google/start" class="opg-primary-button mb-6 flex w-full items-center justify-center gap-3" rel="nofollow"><span aria-hidden="true" class="font-bold">G</span> Continue with Google</a>
+    <p class="mb-6 text-center text-xs text-gray-500 dark:text-gray-400">Create an account with a verified Google email. No local password is required.</p>
+    {% if password_registration_available %}<div class="mb-6 flex items-center gap-3 text-xs text-gray-500 dark:text-gray-400"><span class="h-px flex-1 bg-gray-200 dark:bg-gray-700"></span>or register with a password<span class="h-px flex-1 bg-gray-200 dark:bg-gray-700"></span></div>{% endif %}
+  {% endif %}
+  {% if password_registration_available %}
   <form method="post" action="/account/register" class="space-y-5" autocomplete="on">
     <input type="hidden" name="_csrf" value="{{ csrf_token }}">
     <div>
@@ -17,6 +23,8 @@
     </div>
     <button type="submit" class="opg-primary-button w-full">Create account</button>
   </form>
+  {% endif %}
+  {% if password_registration_available %}
   <section class="mt-8 border-t border-gray-200 pt-7 dark:border-gray-800" aria-labelledby="resend-title">
     <h2 id="resend-title" class="opg-section-title mb-2">Resend verification email</h2>
     <p class="opg-section-subtitle mb-4">Didn't receive your link? Request a new one.</p>
@@ -27,5 +35,6 @@
       <button type="submit" class="opg-secondary-button w-full">Resend verification</button>
     </form>
   </section>
+  {% endif %}
   <p class="mt-8 text-center text-sm text-gray-500 dark:text-gray-400">Already registered? <a class="font-semibold text-brand-600 hover:underline dark:text-brand-300" href="/account/login">Sign in</a></p>
 {% endblock %}

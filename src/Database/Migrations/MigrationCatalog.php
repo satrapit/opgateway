@@ -24,6 +24,7 @@ final class MigrationCatalog
             new UnifySettingsStorage(),
             new CreatePasswordResetTokens(),
             new CreateGoogleIdentities(),
+            new EnableOptionalPasswords(),
         ];
 
         $versions = array_map(static fn (Migration $migration): string => $migration->version(), $migrations);

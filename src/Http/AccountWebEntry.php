@@ -8,6 +8,7 @@ use OPGateway\Clients\ClientManagementService;
 use OPGateway\Google\PdoGoogleOAuthSettings;
 use OPGateway\Google\GoogleOidcClient;
 use OPGateway\Identity\PdoGoogleIdentityStore;
+use OPGateway\Identity\AccountSecurityService;
 use OPGateway\Clients\OwnerIntegrationService;
 use OPGateway\Database\Migrations\MigrationCatalog;
 use OPGateway\Identity\EmailVerificationService;
@@ -129,6 +130,7 @@ final readonly class AccountWebEntry
 
         $registration = null;
         $passwordReset = null;
+        $mailer = null;
         $integration = new OwnerIntegrationService(
             $pdo,
             new PdoProviderAccount($pdo, $vault),
@@ -147,7 +149,8 @@ final readonly class AccountWebEntry
         if ($smtp->configured() && class_exists(\PHPMailer\PHPMailer\PHPMailer::class)) {
             $mailer = new PhpMailerVerificationMailer($smtp);
             $passwordReset = new PasswordResetService(
-                $pdo, new PasswordHasher(), new PdoPasswordResetLimiter($pdo, $secret), $mailer,
+                $pdo, new PasswordHasher(), new PdoPasswordResetLimiter($pdo, $secret),
+                $mailer, $events,
             );
             $registration = new SelfServiceRegistration(
                 $pdo,
@@ -160,13 +163,14 @@ final readonly class AccountWebEntry
 
         $ownerOverview = new OwnerOverviewRepository($pdo);
         $googleSettings = new PdoGoogleOAuthSettings($pdo, $vault);
+        $googleIdentities = new PdoGoogleIdentityStore($pdo);
         $googleAvailable = $googleSettings->configured();
         $captchaSettings = new PdoLoginCaptchaSettings($pdo, $vault);
         $captcha = new LoginCaptcha($captchaSettings, $pdo, $secret, $origin, 'account');
         $adapter = new AccountBrowserAdapter(
             $session, $login, $accounts, $ownerOverview,
-            $credentials, $integration, $registration !== null,
-            $googleAvailable, $captcha,
+            $credentials, $integration, $registration !== null || $googleAvailable,
+            $googleAvailable, $captcha, $googleIdentities,
         );
 
         $body = null;
@@ -196,8 +200,12 @@ final readonly class AccountWebEntry
         } elseif (GoogleOidcBrowserController::route($path)) {
             $response = (new GoogleOidcBrowserController(
                 $session, $accounts, $login, $ownerOverview,
-                new PdoGoogleIdentityStore($pdo), $googleSettings,
-                new GoogleOidcClient(), $origin,
+                $googleIdentities, $googleSettings,
+                new GoogleOidcClient(), $origin, $mailer,
+                new AccountSecurityService(
+                    $pdo, new PasswordHasher(),
+                    new PdoCredentialActionLimiter($pdo, $secret), $events,
+                ), $events,
             ))->dispatch(
                 $method, $path,
                 isset($server['CONTENT_TYPE']) ? (string) $server['CONTENT_TYPE'] : null,
@@ -205,10 +213,10 @@ final readonly class AccountWebEntry
                 bin2hex(random_bytes(16)), (string) ($server['QUERY_STRING'] ?? ''),
             );
         } elseif (SelfServiceBrowserController::route($path)) {
-            if ($registration === null
-                && in_array($path, [
-                    '/account/register', '/account/verify', '/account/verify/resend',
-                ], true)) {
+            if ($registration === null && !($path === '/account/register'
+                && $method === 'GET' && $googleAvailable)
+                && in_array($path, ['/account/register', '/account/verify',
+                    '/account/verify/resend'], true)) {
                 return self::error(503);
             }
             if ($passwordReset === null && in_array($path, [
@@ -218,7 +226,7 @@ final readonly class AccountWebEntry
             }
             $response = (new SelfServiceBrowserController(
                 $session, $accounts, $registration, $integration, $origin,
-                $login, $ownerOverview, $passwordReset,
+                $login, $ownerOverview, $passwordReset, $googleAvailable,
             ))->dispatch(
                 $method, $path,
                 isset($server['CONTENT_TYPE']) ? (string) $server['CONTENT_TYPE'] : null,

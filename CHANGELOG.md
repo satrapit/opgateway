@@ -1,5 +1,23 @@
 # Changelog
 
+## Unreleased — Google-first onboarding and optional password (2026-11-12)
+
+- Let a verified Google identity create a passwordless pending account while
+  preserving approval, role, owner, client and exact-IP authorization checks.
+- Require one-time email confirmation before linking an unlinked existing
+  mailbox; never sign in or merge by email alone.
+- Add Account Security password set/change and Google link/unlink controls,
+  last-method protection, password recovery for Google-only accounts and
+  action-bound Google verification for API-key/provider credential changes.
+- Migration 008 makes `users.password_hash` nullable, backfills a non-null
+  authentication-session version and adds expiring Google confirmation tokens.
+  Migrations 001–007 and their checksums remain unchanged.
+- Replace password-hash session fingerprints with the server-controlled
+  revocation version and add metadata-only authentication-method audit codes.
+- No deployment, production migration, automatic migration or merge is part of
+  this change. Independent code review and automated gates passed locally;
+  restored-backup rehearsal and manual browser/Google/SMTP acceptance remain.
+
 ## Unreleased — Admin settings UX and compact image CAPTCHA (2026-11-11)
 
 - Remove the vertical border next to Settings submenu links and add

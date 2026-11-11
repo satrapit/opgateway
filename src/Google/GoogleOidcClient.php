@@ -13,12 +13,13 @@ final readonly class GoogleOidcClient implements GoogleOidcProvider
     private const CERTS_URL = 'https://www.googleapis.com/oauth2/v1/certs';
 
     /**
-     * @return array{sub:string,email:string}
+     * @return array{sub:string,email:string,email_verified:bool}
      * @throws RuntimeException On any provider, TLS or token validation failure.
      */
     public function exchange(
         string $code, string $clientId, string $clientSecret,
         string $origin, string $verifier, string $nonce,
+        bool $requireRecentAuthentication,
     ): array {
         if ($code === '' || strlen($code) > 2048 || str_contains($code, "\0")
             || $clientSecret === '' || strlen($clientSecret) > 4096
@@ -42,6 +43,7 @@ final readonly class GoogleOidcClient implements GoogleOidcProvider
         $certificates = self::request(self::CERTS_URL, null, 131072);
         $identity = (new GoogleOidcIdTokenVerifier())->verify(
             $idToken, $clientId, $nonce, $certificates,
+            $requireRecentAuthentication,
         );
         if ($identity === null) {
             throw new RuntimeException('Google identity verification failed.');

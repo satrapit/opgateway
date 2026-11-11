@@ -1,0 +1,15 @@
+{% extends 'layouts/account-auth.html.twig' %}
+{% block referrer_policy %}no-referrer{% endblock %}
+{% block account_form %}
+  {% if token %}
+    <div class="opg-alert mb-6" role="status">This request will connect the Google identity that completed the matching one-time authorization. It does not use email matching alone.</div>
+    <form method="post" action="/account/google/confirm" class="space-y-5">
+      <input type="hidden" name="_csrf" value="{{ csrf_token }}">
+      <input type="hidden" name="token" value="{{ token }}">
+      <button type="submit" class="opg-primary-button w-full">Confirm Google sign-in</button>
+    </form>
+  {% else %}
+    <div class="opg-alert opg-alert-error" role="alert">This confirmation link is invalid. Start Google sign-in again.</div>
+  {% endif %}
+  <p class="mt-8 text-center text-sm"><a class="font-semibold text-brand-600 hover:underline dark:text-brand-300" href="/account/login">Back to sign in</a></p>
+{% endblock %}

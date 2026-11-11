@@ -107,18 +107,37 @@ final class GoogleOidcPolicyTest extends TestCase
         ), '='));
         self::assertNull(GoogleOidcFlow::take($flow['state']));
 
+        $verify = GoogleOidcFlow::begin(
+            self::CLIENT_ID, 'https://opgateway.test', 'verify', 27,
+            'api_key_issue',
+        );
+        $verifyQuery = parse_url($verify['url'], PHP_URL_QUERY);
+        self::assertIsString($verifyQuery);
+        parse_str($verifyQuery, $verifyParams);
+        self::assertSame(
+            ['id_token' => ['auth_time' => ['essential' => true]]],
+            json_decode((string) ($verifyParams['claims'] ?? ''), true),
+        );
+        self::assertIsArray(GoogleOidcFlow::take($verify['state']));
+
         $link = GoogleOidcFlow::begin(
             self::CLIENT_ID, 'https://opgateway.test', 'link', 27,
         );
         self::assertNull(GoogleOidcFlow::take(str_repeat('0', 64)));
         // Incorrect state consumes the flow; it cannot be replayed.
         self::assertNull(GoogleOidcFlow::take($link['state']));
+
+        $expired = GoogleOidcFlow::begin(
+            self::CLIENT_ID, 'https://opgateway.test', 'login', null,
+        );
+        $_SESSION['opgateway_google_oidc']['created_at'] = time() - 301;
+        self::assertNull(GoogleOidcFlow::take($expired['state']));
         self::assertTrue(session_destroy());
     }
 
     public function testGoogleIdTokenRequiresGoogleSignatureAndValidatedClaims(): void
     {
-        $rsa = openssl_pkey_new([
+        $rsa = @openssl_pkey_new([
             'private_key_type' => OPENSSL_KEYTYPE_RSA, 'private_key_bits' => 2048,
         ]);
         self::assertNotFalse($rsa);
@@ -148,7 +167,8 @@ final class GoogleOidcPolicyTest extends TestCase
         $verifier = new GoogleOidcIdTokenVerifier();
         $certs = ['test-key' => $publicKey];
         self::assertSame(
-            ['sub' => '100000000000000000001', 'email' => 'user@example.com'],
+            ['sub' => '100000000000000000001', 'email' => 'user@example.com',
+                'email_verified' => true],
             $verifier->verify($make($claims), self::CLIENT_ID, $nonce, $certs),
         );
         self::assertNull($verifier->verify(
@@ -163,12 +183,31 @@ final class GoogleOidcPolicyTest extends TestCase
             self::CLIENT_ID, $nonce, $certs,
         ));
         self::assertNull($verifier->verify(
+            $make([...$claims, 'email_verified' => 'true']),
+            self::CLIENT_ID, $nonce, $certs,
+        ));
+        self::assertNull($verifier->verify(
             $make([...$claims, 'exp' => $now - 1]),
             self::CLIENT_ID, $nonce, $certs,
         ));
         self::assertNull($verifier->verify(
             $make([...$claims, 'iss' => 'https://evil.example']),
             self::CLIENT_ID, $nonce, $certs,
+        ));
+        self::assertNull($verifier->verify(
+            $make($claims), self::CLIENT_ID, $nonce, $certs, true,
+        ));
+        self::assertSame(
+            ['sub' => '100000000000000000001', 'email' => 'user@example.com',
+                'email_verified' => true],
+            $verifier->verify(
+                $make([...$claims, 'auth_time' => $now - 299]),
+                self::CLIENT_ID, $nonce, $certs, true,
+            ),
+        );
+        self::assertNull($verifier->verify(
+            $make([...$claims, 'auth_time' => $now - 301]),
+            self::CLIENT_ID, $nonce, $certs, true,
         ));
         self::assertNull($verifier->verify(
             $make($claims), self::CLIENT_ID, $nonce, ['other' => $publicKey],

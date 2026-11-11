@@ -4,7 +4,7 @@ Both administrator and owner portals use **one** server-rendered Twig 3
 design system styled with locally built TailAdmin Free/Tailwind CSS v4 and
 CSP-safe Alpine components. There is no alternate hand-written HTML
 renderer and no environment switch for choosing an interface. Owner login,
-registration, verification, authenticated dashboard, provider/client/IP
+registration, recovery, Account Security, authenticated dashboard, provider/client/IP
 forms and one-time API key display all use the same visual foundation.
 
 ## Structure
