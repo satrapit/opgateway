@@ -26,7 +26,7 @@ final class FullSchemaSqlTest extends TestCase
         }
         // Migration 004 creates a temporary SMTP table; migration 005
         // transfers its settings and removes that temporary table.
-        self::assertSame(14, substr_count($sql, 'CREATE TABLE '));
+        self::assertSame(15, substr_count($sql, 'CREATE TABLE '));
         self::assertSame(1, substr_count($sql, 'DROP TABLE smtp_settings;'));
         self::assertDoesNotMatchRegularExpression('/^\s*TRUNCATE\s+/mi', $sql);
     }

@@ -5,7 +5,7 @@
 -- STOP if any tables exist. No existing user data is dropped or truncated.
 -- Migration 005 only drops the temporary legacy smtp_settings table from 004.
 -- DDL can implicitly commit, so never rerun a failed import blindly.
--- Exactly 13 final tables and 6 completed migration records are expected.
+-- Exactly 14 final tables and 7 completed migration records are expected.
 -- Original migration DDL and checksums are preserved verbatim.
 -- No administrator, users, keys or whitelist entries are created.
 -- Migration 005 drops only the temporary legacy smtp_settings table created by 004.
@@ -241,6 +241,24 @@ CREATE TABLE password_reset_tokens (
 
 UPDATE schema_migrations SET status = 'completed', completed_at = UTC_TIMESTAMP(6)
 WHERE version = '202611100003_create_password_reset_tokens' AND checksum = '1559639668e3a95948159a0da3c6e114be68a20e936b641ae25fd7ab6e436c69' AND status = 'running';
+
+-- Migration 007: Google OIDC identity mapping
+INSERT INTO schema_migrations (version, checksum, status, started_at)
+VALUES ('202611110001_create_google_identities', '668039504a182a0dbb6c178897d901fbd5a1489b7bee31b424e1c70b1d2058c5', 'running', UTC_TIMESTAMP(6));
+
+CREATE TABLE google_identities (
+    user_id BIGINT UNSIGNED NOT NULL,
+    google_sub VARCHAR(255) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,
+    google_email VARCHAR(254) NOT NULL,
+    linked_at DATETIME(6) NOT NULL,
+    PRIMARY KEY (user_id),
+    UNIQUE KEY uq_google_identities_sub (google_sub),
+    CONSTRAINT fk_google_identities_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+UPDATE schema_migrations SET status = 'completed', completed_at = UTC_TIMESTAMP(6)
+WHERE version = '202611110001_create_google_identities'
+AND checksum = '668039504a182a0dbb6c178897d901fbd5a1489b7bee31b424e1c70b1d2058c5' AND status = 'running';
 
 -- Read-only checks after successful import:
 SELECT DATABASE() AS selected_database;

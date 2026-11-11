@@ -1,5 +1,15 @@
 # Changelog
 
+## Unreleased — Google sign-in with password fallback (in progress)
+
+- Migration 007 adds a one-to-one Google subject mapping with database
+  uniqueness; no account matching or login by email alone.
+- Google credentials are configured via existing global settings storage
+  with an encrypted client secret. Local password hashes remain in users.
+- This is separate from tagged alpha.4 and MUST NOT be deployed until
+  OAuth callback verification and local tests have been reviewed.
+
+
 ## Unreleased — Anonymous session CSRF preservation (2026-11-11)
 
 - Preserve login-form CSRF when an anonymous visitor follows a protected Account
