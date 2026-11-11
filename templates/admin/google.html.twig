@@ -23,11 +23,6 @@
        autocomplete="new-password" placeholder="{{ google.secret_set ? 'Leave blank to keep existing secret' : 'Required for first setup' }}"
        {% if not google.secret_set %}required{% endif %}>
     </div>
-    <div>
-      <label class="opg-label" for="google-current-password">Confirm your administrator password</label>
-      <input class="opg-input" id="google-current-password" type="password" name="current_password"
-       maxlength="1024" autocomplete="current-password" required>
-    </div>
     <button type="submit" class="opg-primary-button">Save Google settings</button>
   </form>
   <p class="mt-6 text-sm text-gray-500 dark:text-gray-400">Sign-in with email and password always remains enabled. Link Google only from an approved account.</p>

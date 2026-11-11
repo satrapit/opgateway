@@ -19,8 +19,8 @@
     {% if captcha.mode|default('') == 'offline' %}
       <div>
         <label class="opg-label" for="account-captcha">Enter the six characters shown</label>
-        <div class="mb-3 overflow-hidden rounded-lg border border-gray-200 bg-gray-100 dark:border-gray-700">
-          <img src="{{ captcha.image_url }}" width="300" height="106" alt="Image verification challenge with six characters" draggable="false" loading="eager">
+        <div class="opg-captcha-frame mb-3 overflow-hidden rounded-lg border border-gray-200 bg-gray-100 dark:border-gray-700">
+          <img class="opg-captcha-image" src="{{ captcha.image_url }}" width="300" height="106" alt="Image verification challenge with six characters" draggable="false" loading="eager">
         </div>
         <a href="/account/login" class="mb-3 inline-block text-sm text-brand-600 hover:underline dark:text-brand-300">Get a new image</a>
         <input type="hidden" name="captcha_id" value="{{ captcha.challenge_id }}">

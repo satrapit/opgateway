@@ -30,10 +30,6 @@
       <label class="opg-label" for="recaptcha-secret">reCAPTCHA secret key</label>
       <input class="opg-input" id="recaptcha-secret" name="secret" type="password" maxlength="200" autocomplete="new-password" placeholder="{{ captcha.secret_set ? 'Leave blank to keep the saved key' : 'Required for Google reCAPTCHA' }}">
     </div>
-    <div>
-      <label class="opg-label" for="captcha-confirm">Confirm administrator password</label>
-      <input class="opg-input" id="captcha-confirm" name="current_password" type="password" autocomplete="current-password" maxlength="1024" required>
-    </div>
     <button class="opg-primary-button" type="submit">Save CAPTCHA settings</button>
   </form>
   <p class="mt-6 text-sm text-gray-500 dark:text-gray-400">Offline image challenges can still be solved by capable bots. CAPTCHA is only one layer of protection. Rate limits remain active in both modes. Saving Google keys here does not change the Google SSO settings.</p>
