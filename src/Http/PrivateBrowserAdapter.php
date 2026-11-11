@@ -50,10 +50,7 @@ final readonly class PrivateBrowserAdapter
 
         if ($path === '/admin/login' && $method === 'GET') {
             return $this->pages === null ? self::error(404)
-                : self::html($this->pages->login(
-                    $this->session->csrfToken(), false,
-                    $this->captcha?->challenge() ?? [],
-                ));
+                : self::html($this->loginPage($this->session->csrfToken()));
         }
 
         if ($path === '/admin/login' && $method === 'POST') {
@@ -75,9 +72,7 @@ final readonly class PrivateBrowserAdapter
             if ($this->captcha !== null
                 && !$this->captcha->verify($form, $sourceIp)) {
                 return $this->pages === null ? self::error(403)
-                    : self::html($this->pages->login(
-                        $this->session->csrfToken(), true, $this->captcha->challenge(),
-                    ), 403);
+                    : self::html($this->loginPage($this->session->csrfToken(), true), 403);
             }
             $result = $this->auth->login(
                 $trustedHttps, $method, $contentType,
@@ -87,10 +82,8 @@ final readonly class PrivateBrowserAdapter
                 return self::redirect('/admin');
             }
             return $this->pages === null ? self::error(404)
-                : self::html($this->pages->login(
-                    $this->session->csrfToken(), true,
-                    $this->captcha?->challenge() ?? [],
-                ), $result['status']);
+                : self::html($this->loginPage($this->session->csrfToken(), true),
+                    $result['status']);
         }
 
         // One Twig renderer for every admin page; the role check is fresh.
@@ -215,6 +208,17 @@ final readonly class PrivateBrowserAdapter
 
         // Unknown paths and unsupported methods never reveal private state.
         return self::error(404);
+    }
+
+    /** Render the legacy two-argument contract for existing isolated flows. */
+    private function loginPage(string $csrf, bool $failed = false): string
+    {
+        if ($this->pages === null) {
+            throw new \LogicException('Admin page renderer unavailable.');
+        }
+        return $this->captcha === null
+            ? $this->pages->login($csrf, $failed)
+            : $this->pages->login($csrf, $failed, $this->captcha->challenge());
     }
 
     /** @return array{status:int,content_type:string,body:string} */
