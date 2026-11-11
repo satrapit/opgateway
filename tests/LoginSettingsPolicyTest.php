@@ -19,6 +19,7 @@ use OPGateway\Identity\LoginAuthenticator;
 use OPGateway\Identity\AdministratorAuthorization;
 use OPGateway\Identity\PasswordHasher;
 use OPGateway\Security\LoginCaptcha;
+use OPGateway\Security\OfflineCaptchaImage;
 use OPGateway\Security\PdoLoginCaptchaSettings;
 use OPGateway\Security\SealedSecret;
 use OPGateway\Security\LoginAttemptLimiter;
@@ -176,10 +177,13 @@ final class LoginSettingsPolicyTest extends TestCase
         $challenge = $captcha->challenge();
         self::assertSame('offline', $challenge['mode']);
         self::assertMatchesRegularExpression('/^[0-9a-f]{32}$/', $challenge['challenge_id']);
-        self::assertMatchesRegularExpression('/What is [0-9]+ \+ [0-9]+\?/',
-            $challenge['prompt']);
-        preg_match('/What is ([0-9]+) \+ ([0-9]+)\?/', $challenge['prompt'], $matches);
-        $answer = (string) ((int) $matches[1] + (int) $matches[2]);
+        self::assertSame('/account/captcha/image', $challenge['image_url']);
+        self::assertStringStartsWith("\x89PNG\r\n\x1a\n", $captcha->image());
+        self::assertNull($challenge['prompt'] ?? null);
+        $answer = 'ABC234';
+        $_SESSION['opgateway_login_captcha_account']['answer_hash'] =
+            hash_hmac('sha256', $answer,
+                str_repeat('x', 32) . $challenge['challenge_id']);
         $fields = ['captcha_id' => $challenge['challenge_id'], 'captcha_answer' => $answer];
         self::assertTrue($captcha->verify($fields, '192.0.2.7'));
         self::assertFalse($captcha->verify($fields, '192.0.2.7'),
@@ -187,7 +191,7 @@ final class LoginSettingsPolicyTest extends TestCase
 
         $bad = $captcha->challenge();
         self::assertFalse($captcha->verify([
-            'captcha_id' => $bad['challenge_id'], 'captcha_answer' => '99',
+            'captcha_id' => $bad['challenge_id'], 'captcha_answer' => 'BAD234',
         ], '192.0.2.7'));
         self::assertGreaterThanOrEqual(3, $db->attempts);
         self::assertTrue(session_destroy());
@@ -207,15 +211,17 @@ final class LoginSettingsPolicyTest extends TestCase
             'https://opgateway.arsamnet.com', 'admin');
         $a = $account->challenge();
         $b = $admin->challenge();
-        preg_match('/What is ([0-9]+) \+ ([0-9]+)\?/', $a['prompt'], $matches);
+        $_SESSION['opgateway_login_captcha_account']['answer_hash'] =
+            hash_hmac('sha256', 'ABC234', str_repeat('x', 32) . $a['challenge_id']);
+        $_SESSION['opgateway_login_captcha_admin']['answer_hash'] =
+            hash_hmac('sha256', 'DEF567', str_repeat('x', 32) . $b['challenge_id']);
         self::assertTrue($account->verify([
             'captcha_id' => $a['challenge_id'],
-            'captcha_answer' => (string) ((int) $matches[1] + (int) $matches[2]),
+            'captcha_answer' => 'ABC234',
         ], '192.0.2.8'));
-        preg_match('/What is ([0-9]+) \+ ([0-9]+)\?/', $b['prompt'], $matches);
         self::assertTrue($admin->verify([
             'captcha_id' => $b['challenge_id'],
-            'captcha_answer' => (string) ((int) $matches[1] + (int) $matches[2]),
+            'captcha_answer' => 'DEF567',
         ], '192.0.2.8'));
         self::assertTrue(session_destroy());
     }
@@ -226,13 +232,14 @@ final class LoginSettingsPolicyTest extends TestCase
         self::assertSame(1, preg_match(
             '/name="captcha_id" value="([0-9a-f]{32})"/', $html, $id,
         ));
-        self::assertSame(1, preg_match(
-            '/Verification: What is ([0-9]+) \+ ([0-9]+)\?/', $html, $numbers,
-        ));
-        return [
-            'captcha_id' => $id[1],
-            'captcha_answer' => (string) ((int) $numbers[1] + (int) $numbers[2]),
-        ];
+        self::assertStringContainsString('/captcha/image', $html);
+        // The only test setup hook is direct manipulation of this isolated
+        // PHP session. Production markup and session keep no raw answer.
+        $scope = str_contains($html, '/admin/captcha/image') ? 'admin' : 'account';
+        $solution = 'ABC234';
+        $_SESSION['opgateway_login_captcha_' . $scope]['answer_hash'] =
+            hash_hmac('sha256', $solution, str_repeat('x', 32) . $id[1]);
+        return ['captcha_id' => $id[1], 'captcha_answer' => $solution];
     }
 
     /**
@@ -287,7 +294,7 @@ final class LoginSettingsPolicyTest extends TestCase
         $fields = ['_csrf' => $csrf, 'email' => 'owner@example.com',
             'password' => 'example-password-123', ...$answer];
         self::assertSame(403, $send('POST', http_build_query([
-            ...$fields, 'captcha_answer' => '99',
+            ...$fields, 'captcha_answer' => 'BAD234',
         ]))['status']);
         // A failed challenge is consumed; use the new form returned by POST.
         $fresh = $send('GET');
@@ -335,45 +342,56 @@ final class LoginSettingsPolicyTest extends TestCase
         self::assertTrue(session_destroy());
     }
 
-    public function testSettingsAreRealSeparateRoutesAndPages(): void
+    public function testSettingsHaveTailAdminParentAndOnlyGroupedPages(): void
     {
         foreach ([
-            '/admin/settings',
-            '/admin/settings/login',
-            '/admin/settings/login/google',
-            '/admin/settings/login/captcha',
-        ] as $path) {
-            self::assertSame($path, BrowserGetPath::normalize('GET', $path . '/'));
+            '/admin/settings/security', '/admin/settings/login/google',
+            '/admin/settings/smtp', '/admin/users/invite',
+        ] as $page) {
+            self::assertSame($page, BrowserGetPath::normalize('GET', $page . '/'));
         }
         $twig = new TwigRenderer(dirname(__DIR__) . '/templates');
         $data = [
-            'active_section' => 'settings', 'section_title' => 'Settings',
+            'active_section' => 'security', 'section_title' => 'Security',
             'administrator_label' => 'Administrator', 'csrf_token' => str_repeat('a', 64),
             'captcha' => ['provider' => 'offline', 'site_key' => '', 'secret_set' => false],
-            'google' => ['client_id' => '', 'secret_set' => false, 'enabled' => true],
         ];
-        $settings = $twig->render('admin/settings.html.twig', $data);
-        self::assertStringContainsString('href="/admin/settings/login"', $settings);
-        self::assertStringContainsString('href="/admin/settings/smtp"', $settings);
-        $login = $twig->render('admin/login-settings.html.twig', $data);
-        self::assertStringContainsString('href="/admin/settings/login/google"', $login);
-        self::assertStringContainsString('href="/admin/settings/login/captcha"', $login);
-        $captcha = $twig->render('admin/captcha.html.twig', $data);
-        self::assertStringContainsString('name="provider" value="offline"', $captcha);
-        self::assertStringContainsString('name="provider" value="recaptcha"', $captcha);
-        self::assertStringContainsString('name="current_password"', $captcha);
+        $html = $twig->render('admin/captcha.html.twig', $data);
+        self::assertStringContainsString('name="provider" value="offline"', $html);
+        self::assertStringContainsString('name="provider" value="recaptcha"', $html);
+        self::assertStringContainsString('name="current_password"', $html);
+        self::assertStringContainsString('id="opg-settings-submenu"', $html);
+        self::assertStringContainsString('#opg-icon-settings', $html);
+        self::assertStringContainsString('href="/admin/settings/smtp"', $html);
+        self::assertStringNotContainsString('All settings', $html);
+    }
+
+    public function testCaptchaGeneratorProducesRandomizedPngWithoutPlaintext(): void
+    {
+        self::assertMatchesRegularExpression(
+            '/^[A-HJ-NP-Z2-9]{6}$/', OfflineCaptchaImage::randomAnswer(),
+        );
+        $first = OfflineCaptchaImage::render('ABC234');
+        $second = OfflineCaptchaImage::render('ABC234');
+        self::assertStringStartsWith("\x89PNG\r\n\x1a\n", $first);
+        self::assertSame(300, unpack('N', substr($first, 16, 4))[1]);
+        self::assertSame(106, unpack('N', substr($first, 20, 4))[1]);
+        self::assertNotSame($first, $second);
+        self::assertStringNotContainsString('ABC234', $first);
     }
 
     public function testLoginPagesRenderSelectedCaptchaWithoutRemovingPassword(): void
     {
         $token = str_repeat('a', 64);
         $offline = AccountViews::login($token, false, true, true, [
-            'mode' => 'offline', 'prompt' => 'What is 2 + 3?',
+            'mode' => 'offline', 'image_url' => '/account/captcha/image',
             'challenge_id' => str_repeat('b', 32),
         ]);
         self::assertStringContainsString('name="password"', $offline);
         self::assertStringContainsString('name="captcha_id"', $offline);
         self::assertStringContainsString('name="captcha_answer"', $offline);
+        self::assertStringContainsString('src="/account/captcha/image"', $offline);
+        self::assertStringNotContainsString('What is', $offline);
         self::assertStringContainsString('Continue with Google', $offline);
 
         $google = AccountViews::login($token, false, true, true, [
