@@ -72,6 +72,6 @@ final readonly class SealedSecret
 
     private static function validContext(string $context): bool
     {
-        return preg_match('/^(?:provider:[1-9][0-9]*|smtp:1|google:oauth)$/D', $context) === 1;
+        return preg_match('/^(?:provider:[1-9][0-9]*|smtp:1|google:oauth|captcha:recaptcha)$/D', $context) === 1;
     }
 }

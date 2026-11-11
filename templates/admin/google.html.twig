@@ -2,10 +2,17 @@
 {% block dashboard_content %}
 <section class="opg-panel p-6 sm:p-8" aria-labelledby="google-admin-title">
   <h2 id="google-admin-title" class="opg-section-title">Google sign-in settings</h2>
-  <p class="opg-section-subtitle">Create an OAuth Web application in Google Cloud Console. Configure the authorized redirect URI for each deployed hostname.</p>
+  <p class="opg-section-subtitle">Enter the credentials of your Google OAuth Web application. This sign-in option is for linked account users.</p>
   <div class="opg-alert mt-6" role="note">Authorized redirect URI: <code class="break-all">{{ redirect_uri }}</code></div>
-  <form method="post" action="/admin/settings/google" class="mt-6 grid max-w-xl gap-5" autocomplete="off">
+  <form method="post" action="/admin/settings/login/google" class="mt-6 grid max-w-xl gap-5" autocomplete="off">
     <input type="hidden" name="_csrf" value="{{ csrf_token }}">
+    <div>
+      <label class="opg-label" for="google-enabled">Google SSO</label>
+      <select id="google-enabled" class="opg-input" name="enabled">
+        <option value="1"{% if google.enabled %} selected{% endif %}>Enabled</option>
+        <option value="0"{% if not google.enabled %} selected{% endif %}>Disabled</option>
+      </select>
+    </div>
     <div>
       <label class="opg-label" for="google-client-id">Google OAuth Client ID</label>
       <input class="opg-input" id="google-client-id" name="client_id" maxlength="255" value="{{ google.client_id }}" required>

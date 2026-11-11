@@ -41,6 +41,7 @@ final readonly class PdoSecurityEventRecorder implements SecurityEventRecorder
         'credential_action_throttled',
         'smtp_settings_changed',
         'google_settings_changed',
+        'captcha_settings_changed',
         'owner_management_throttled',
         'owner_management_denied',
         'provider_credentials_saved',

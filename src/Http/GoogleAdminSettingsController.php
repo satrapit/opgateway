@@ -63,10 +63,11 @@ final readonly class GoogleAdminSettingsController
             return self::error(415);
         }
         $form = $body === null ? null : StrictForm::decode($body, [
-            '_csrf', 'client_id', 'client_secret', 'current_password',
+            '_csrf', 'client_id', 'client_secret', 'enabled', 'current_password',
         ]);
         if ($form === null || strlen($form['current_password']) > 1024
-            || $form['current_password'] === '') {
+            || $form['current_password'] === ''
+            || !in_array($form['enabled'], ['0', '1'], true)) {
             return self::error(400);
         }
         if (!$this->session->csrfValid($form['_csrf'])) {
@@ -82,7 +83,9 @@ final readonly class GoogleAdminSettingsController
         }
         $this->pdo->beginTransaction();
         try {
-            $this->settings->save($form['client_id'], $form['client_secret']);
+            $this->settings->save(
+                $form['client_id'], $form['client_secret'], $form['enabled'] === '1',
+            );
             (new PdoSecurityEventRecorder($this->pdo))->record(
                 'google_settings_changed', $requestId,
             );
@@ -99,7 +102,7 @@ final readonly class GoogleAdminSettingsController
             throw $exception;
         }
         $this->session->rotateCsrf();
-        return self::redirect('/admin/settings/google');
+        return self::redirect('/admin/settings/login/google');
     }
 
     /** @return array{status:int,content_type:string,body:string,location:string} */
