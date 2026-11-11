@@ -335,7 +335,7 @@ final class GoogleOidcBrowserFlowTest extends TestCase
 
     #[RunInSeparateProcess]
     #[PreserveGlobalState(false)]
-    public function testEmailCollisionRequiresOneTimeMailboxConfirmation(): void
+    public function testRollbackEmailCollisionDoesNotCreateOrJoinAnIdentity(): void
     {
         [$controller, $db, $session, $accounts, $provider, $mailer] = $this->harness();
         $start = $controller->dispatch('GET', '/account/google/start', null, null,
@@ -343,28 +343,13 @@ final class GoogleOidcBrowserFlowTest extends TestCase
         $state = self::state($start['location']);
         $response = $controller->dispatch('GET', '/account/google/callback', null, null,
             '192.0.2.3', str_repeat('a', 32), 'state=' . $state . '&code=test-code');
-        self::assertSame(200, $response['status']);
-        self::assertStringContainsString('Check your email', $response['body']);
-        self::assertSame('owner@example.com', $mailer->recipient);
-        self::assertMatchesRegularExpression('/^[0-9a-f]{64}$/', (string) $mailer->token);
+        self::assertSame(403, $response['status']);
+        self::assertStringContainsString('Google account not connected', $response['body']);
+        self::assertNull($mailer->recipient);
+        self::assertNull($mailer->token);
         self::assertNull($db->googleSub);
         self::assertNull($session->currentUserId($accounts));
         self::assertSame(1, $provider->calls);
-
-        $confirm = $controller->dispatch('POST', '/account/google/confirm',
-            'application/x-www-form-urlencoded', http_build_query([
-                '_csrf' => $session->csrfToken(), 'token' => $mailer->token,
-            ]), '192.0.2.3', str_repeat('c', 32), '');
-        self::assertSame(303, $confirm['status']);
-        self::assertSame('/account', $confirm['location']);
-        self::assertSame('google-sub-123', $db->googleSub);
-        self::assertSame(17, $session->currentUserId($accounts));
-
-        $replay = $controller->dispatch('POST', '/account/google/confirm',
-            'application/x-www-form-urlencoded', http_build_query([
-                '_csrf' => $session->csrfToken(), 'token' => $mailer->token,
-            ]), '192.0.2.3', str_repeat('d', 32), '');
-        self::assertSame(403, $replay['status']);
         self::assertTrue(session_destroy());
     }
 
@@ -387,7 +372,7 @@ final class GoogleOidcBrowserFlowTest extends TestCase
 
     #[RunInSeparateProcess]
     #[PreserveGlobalState(false)]
-    public function testFirstGoogleRegistrationCreatesNoPasswordAndWaitsForApproval(): void
+    public function testRollbackUnknownSubjectDoesNotCreateGoogleOnlyUser(): void
     {
         [$controller, $db, $session, $accounts] = $this->harness(false);
         $start = $controller->dispatch('GET', '/account/google/start', null, null,
@@ -396,10 +381,10 @@ final class GoogleOidcBrowserFlowTest extends TestCase
             '192.0.2.3', str_repeat('a', 32),
             'state=' . self::state($start['location']) . '&code=test-code');
         self::assertSame(403, $response['status']);
-        self::assertStringContainsString('Account awaiting approval', $response['body']);
-        self::assertTrue($db->userExists);
-        self::assertNull($db->passwordHash);
-        self::assertSame('google-sub-123', $db->googleSub);
+        self::assertStringContainsString('Google account not connected', $response['body']);
+        self::assertFalse($db->userExists);
+        self::assertIsString($db->passwordHash);
+        self::assertNull($db->googleSub);
         self::assertNull($session->currentUserId($accounts));
         self::assertTrue(session_destroy());
     }
@@ -452,7 +437,7 @@ final class GoogleOidcBrowserFlowTest extends TestCase
 
     #[RunInSeparateProcess]
     #[PreserveGlobalState(false)]
-    public function testConfirmationMailFailureCancelsIssuedToken(): void
+    public function testRollbackNeverIssuesCollisionConfirmation(): void
     {
         [$controller, $db, , , , $mailer] = $this->harness();
         $mailer->fail = true;
@@ -461,8 +446,9 @@ final class GoogleOidcBrowserFlowTest extends TestCase
         $response = $controller->dispatch('GET', '/account/google/callback', null, null,
             '192.0.2.3', str_repeat('b', 32),
             'state=' . self::state($start['location']) . '&code=test-code');
-        self::assertSame(503, $response['status']);
-        self::assertTrue($db->confirmation['consumed']);
+        self::assertSame(403, $response['status']);
+        self::assertNull($db->confirmation);
+        self::assertNull($mailer->recipient);
         self::assertNull($db->googleSub);
         self::assertTrue(session_destroy());
     }
@@ -471,16 +457,17 @@ final class GoogleOidcBrowserFlowTest extends TestCase
     #[PreserveGlobalState(false)]
     public function testSuspendedUserCannotConsumeMailboxConfirmation(): void
     {
-        [$controller, $db, $session, , , $mailer] = $this->harness();
-        $start = $controller->dispatch('GET', '/account/google/start', null, null,
-            '192.0.2.3', str_repeat('a', 32), '');
-        $controller->dispatch('GET', '/account/google/callback', null, null,
-            '192.0.2.3', str_repeat('b', 32),
-            'state=' . self::state($start['location']) . '&code=test-code');
+        [$controller, $db, $session] = $this->harness();
+        $token = str_repeat('a', 64);
+        $db->confirmation = [
+            'id' => 4, 'user_id' => 17, 'google_sub' => 'google-sub-123',
+            'google_email' => 'owner@example.com',
+            'token_hash' => hash('sha256', $token), 'consumed' => false,
+        ];
         $db->userStatus = 'disabled';
         $response = $controller->dispatch('POST', '/account/google/confirm',
             'application/x-www-form-urlencoded', http_build_query([
-                '_csrf' => $session->csrfToken(), 'token' => $mailer->token,
+                '_csrf' => $session->csrfToken(), 'token' => $token,
             ]), '192.0.2.3', str_repeat('c', 32), '');
         self::assertSame(403, $response['status']);
         self::assertNull($db->googleSub);
@@ -504,16 +491,17 @@ final class GoogleOidcBrowserFlowTest extends TestCase
     #[PreserveGlobalState(false)]
     public function testMailboxConfirmationRejectsAccountEmailChangedAfterIssuance(): void
     {
-        [$controller, $db, $session, , , $mailer] = $this->harness();
-        $start = $controller->dispatch('GET', '/account/google/start', null, null,
-            '192.0.2.3', str_repeat('a', 32), '');
-        $controller->dispatch('GET', '/account/google/callback', null, null,
-            '192.0.2.3', str_repeat('b', 32),
-            'state=' . self::state($start['location']) . '&code=test-code');
+        [$controller, $db, $session] = $this->harness();
+        $token = str_repeat('b', 64);
+        $db->confirmation = [
+            'id' => 4, 'user_id' => 17, 'google_sub' => 'google-sub-123',
+            'google_email' => 'owner@example.com',
+            'token_hash' => hash('sha256', $token), 'consumed' => false,
+        ];
         $db->userEmail = 'changed@example.com';
         $response = $controller->dispatch('POST', '/account/google/confirm',
             'application/x-www-form-urlencoded', http_build_query([
-                '_csrf' => $session->csrfToken(), 'token' => $mailer->token,
+                '_csrf' => $session->csrfToken(), 'token' => $token,
             ]), '192.0.2.3', str_repeat('c', 32), '');
         self::assertSame(403, $response['status']);
         self::assertNull($db->googleSub);

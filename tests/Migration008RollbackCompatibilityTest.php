@@ -126,4 +126,31 @@ final class Migration008RollbackCompatibilityTest extends TestCase
         );
         self::assertStringNotContainsString('password_hash IS NOT NULL', $source);
     }
+
+    public function testPreparedRollbackDeniesNewGoogleAccountsWithoutHidingLinkedLogin(): void
+    {
+        $controller = file_get_contents(
+            dirname(__DIR__) . '/src/Http/GoogleOidcBrowserController.php',
+        );
+        $entry = file_get_contents(dirname(__DIR__) . '/src/Http/AccountWebEntry.php');
+        self::assertIsString($controller);
+        self::assertIsString($entry);
+
+        self::assertStringContainsString(
+            '$this->identities->loginBySubject($google[\'sub\'])',
+            $controller,
+        );
+        self::assertStringNotContainsString(
+            '$this->identities->loginOrRegister(',
+            $controller,
+        );
+        self::assertStringNotContainsString(
+            '$registration !== null || $googleAvailable',
+            $entry,
+        );
+        self::assertStringContainsString(
+            '$googleAvailable, $captcha, $googleIdentities',
+            $entry,
+        );
+    }
 }
