@@ -32,8 +32,8 @@ full suite. The exact rollback snapshot must deny an unknown Google subject
 without creating or joining a user while continuing subject login for an
 already linked Google-only account.
 
-Local automated result on 2026-11-12 for this working tree: 252 PHPUnit tests
-with 1997 assertions, 10/10 smoke checks and 10/10 Node frontend tests; Composer
+Local automated result on 2026-11-12 for this working tree: 256 PHPUnit tests
+with 2012 assertions, 10/10 smoke checks and 10/10 Node frontend tests; Composer
 validation, PHP lint, npm lint, production Webpack build and asset allowlist
 inspection completed successfully. The separate migration runner also passed
 on a disposable MySQL 8.0.46 container (1 test, 31 assertions), including the

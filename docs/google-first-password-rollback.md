@@ -1,10 +1,12 @@
 # Migration 008 and rollback review plan
 
-Status: **unreleased; independent code review and empty-schema MySQL 8.0.46
-rehearsal completed 2026-11-12**. Restored-backup rehearsal and manual
-acceptance remain pending. This plan is not an authorization to touch
-production. OPGateway has one production hostname and no staging clone, so all
-release DDL rehearsal must use a disposable local copy of a verified backup.
+Status: **unreleased; independent code review, prepared code-only rollback and
+empty-schema MySQL 8.0.46 rehearsal completed 2026-11-12**. The executable
+rollback snapshot is commit `4859e24237968aa4fb7f5dcae8ded34ed8b5e241`.
+Restored-backup rehearsal and manual acceptance remain pending. This plan is
+not an authorization to touch production. OPGateway has one production
+hostname and no staging clone, so all release DDL rehearsal must use a
+disposable local copy of a verified backup.
 
 ## Migration invariants
 
@@ -83,7 +85,7 @@ users or generate placeholder passwords to make a rollback fit.
 
 The independent review confirmed checksum/full-schema parity, race and replay
 tests, nullable password behavior, session revocation, last-method protection,
-metadata-only events and a disposable empty-schema MySQL rehearsal. Before
-merge, reviewers must still confirm the restored-backup rehearsal, manual
-acceptance results and the prepared 008-compatible rollback commit. Until then:
-do not merge, deploy or run migration 008 on production.
+metadata-only events, a disposable empty-schema MySQL rehearsal and the
+prepared 008-compatible rollback commit. Before merge, reviewers must still
+confirm the restored-backup rehearsal and manual acceptance results. Until
+then: do not merge, deploy or run migration 008 on production.
