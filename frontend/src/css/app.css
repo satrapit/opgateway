@@ -329,12 +329,6 @@ html[data-theme="dark"] .opg-theme-icon[data-theme-icon="dark"] { display: inlin
   }
 }
 
-/* Nested Settings navigation uses native disclosure controls, without JS. */
-.opg-sidebar details > summary.opg-nav-link { cursor: pointer; list-style: none; }
-.opg-sidebar details > summary.opg-nav-link::-webkit-details-marker { display: none; }
-.opg-sidebar details[open] > summary.opg-nav-link { color: var(--color-brand-600); }
-.dark .opg-sidebar details[open] > summary.opg-nav-link { color: var(--color-brand-300); }
-
 /* TailAdmin-style parent with icon, active state, chevron and grouped links. */
 .opg-nav-parent-active { @apply bg-brand-50 text-brand-600 dark:bg-brand-500/15 dark:text-brand-300; }
 .opg-nav-chevron { margin-inline-start: auto; width: 1rem; height: 1rem; transition: transform .2s ease; }
