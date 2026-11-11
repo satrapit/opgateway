@@ -31,6 +31,15 @@ final class DatabaseConfigTest extends TestCase
         DatabaseConfig::fromEnvironment(['DB_HOST' => 'db']);
     }
 
+    public function testRejectsUnexpectedDirectConfigurationKey(): void
+    {
+        $this->expectException(InvalidArgumentException::class);
+        DatabaseConfig::fromEnvironment([
+            ...self::VALID,
+            'ADMIN_ALLOWED_IPS' => '203.0.113.10',
+        ]);
+    }
+
     public function testRejectsDsnInjection(): void
     {
         $this->expectException(InvalidArgumentException::class);
