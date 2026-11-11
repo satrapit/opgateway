@@ -79,9 +79,14 @@ final class OfflineCaptchaImage
         $w = self::WIDTH; $h = self::HEIGHT;
         $pixels = array_fill(0, $w * $h, 0);
         $background = random_int(231, 247);
+        // Per-pixel decorative noise does not need cryptographic entropy.
+        // Reserve random_int() for answers and challenge identifiers, and
+        // avoid tens of thousands of CSPRNG calls on every login page GET.
+        $noise = random_int(1, 0x7fffffff);
         for ($y = 0; $y < $h; $y++) {
             for ($x = 0; $x < $w; $x++) {
-                $v = max(215, min(255, $background + random_int(-9, 12)));
+                $noise = ($noise * 1103515245 + 12345) & 0x7fffffff;
+                $v = max(215, min(255, $background + ($noise % 22) - 9));
                 $pixels[$y * $w + $x] = ($v << 16) | (($v - 1) << 8) | $v;
             }
         }
