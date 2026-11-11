@@ -1,0 +1,17 @@
+{% extends 'layouts/admin.html.twig' %}
+{% block dashboard_content %}
+<section class="opg-panel p-6 sm:p-8" aria-labelledby="settings-title">
+  <h2 id="settings-title" class="opg-section-title">Settings</h2>
+  <p class="opg-section-subtitle">Choose a section to manage application settings.</p>
+  <div class="mt-6 grid gap-4 sm:grid-cols-2">
+    <a class="opg-panel block p-5" href="/admin/settings/login">
+      <h3 class="font-semibold text-gray-900 dark:text-white">Login settings</h3>
+      <p class="mt-2 text-sm text-gray-500 dark:text-gray-400">Password login, Google SSO and CAPTCHA.</p>
+    </a>
+    <a class="opg-panel block p-5" href="/admin/settings/smtp">
+      <h3 class="font-semibold text-gray-900 dark:text-white">Email / SMTP</h3>
+      <p class="mt-2 text-sm text-gray-500 dark:text-gray-400">Email delivery, verification and password recovery.</p>
+    </a>
+  </div>
+</section>
+{% endblock %}

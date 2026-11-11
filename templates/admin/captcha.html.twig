@@ -1,0 +1,41 @@
+{% extends 'layouts/admin.html.twig' %}
+{% block dashboard_content %}
+<section class="opg-panel p-6 sm:p-8" aria-labelledby="captcha-settings-title">
+  <div class="mb-6">
+    <h2 id="captcha-settings-title" class="opg-section-title">CAPTCHA</h2>
+    <p class="opg-section-subtitle">Choose how password sign-in forms verify challenges. The same setting applies to administrator and account sign-in.</p>
+  </div>
+  <form method="post" action="/admin/settings/login/captcha" class="grid max-w-xl gap-5" autocomplete="off">
+    <input type="hidden" name="_csrf" value="{{ csrf_token }}">
+    <fieldset>
+      <legend class="opg-label">Verification method</legend>
+      <div class="mt-2 grid gap-3">
+        <label class="opg-panel flex items-start gap-3 p-4">
+          <input type="radio" name="provider" value="offline"{% if captcha.provider == 'offline' %} checked{% endif %}>
+          <span><strong class="block text-gray-900 dark:text-white">Offline CAPTCHA</strong>
+          <span class="text-sm text-gray-500 dark:text-gray-400">Works without Google. Uses a short-lived one-time question and request limits.</span></span>
+        </label>
+        <label class="opg-panel flex items-start gap-3 p-4">
+          <input type="radio" name="provider" value="recaptcha"{% if captcha.provider == 'recaptcha' %} checked{% endif %}>
+          <span><strong class="block text-gray-900 dark:text-white">Google reCAPTCHA v2</strong>
+          <span class="text-sm text-gray-500 dark:text-gray-400">Checkbox challenge. Requires the reCAPTCHA site and secret keys.</span></span>
+        </label>
+      </div>
+    </fieldset>
+    <div>
+      <label class="opg-label" for="recaptcha-site-key">reCAPTCHA site key</label>
+      <input class="opg-input" id="recaptcha-site-key" name="site_key" value="{{ captcha.site_key }}" maxlength="200" autocomplete="off">
+    </div>
+    <div>
+      <label class="opg-label" for="recaptcha-secret">reCAPTCHA secret key</label>
+      <input class="opg-input" id="recaptcha-secret" name="secret" type="password" maxlength="200" autocomplete="new-password" placeholder="{{ captcha.secret_set ? 'Leave blank to keep the saved key' : 'Required for Google reCAPTCHA' }}">
+    </div>
+    <div>
+      <label class="opg-label" for="captcha-confirm">Confirm administrator password</label>
+      <input class="opg-input" id="captcha-confirm" name="current_password" type="password" autocomplete="current-password" maxlength="1024" required>
+    </div>
+    <button class="opg-primary-button" type="submit">Save CAPTCHA settings</button>
+  </form>
+  <p class="mt-6 text-sm text-gray-500 dark:text-gray-400">Offline questions are simpler than reCAPTCHA. Rate limits remain active in both modes. Saving Google keys here does not change the Google SSO settings.</p>
+</section>
+{% endblock %}
