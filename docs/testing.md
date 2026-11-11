@@ -129,3 +129,26 @@ no-store and all bundled assets are same-origin.
 
 Do not merge, deploy, or claim release readiness before
 fresh automated and end-to-end results are reviewed.
+
+
+## Independent login settings / CAPTCHA regression gate
+
+After checkout of \`feat/auth-settings-pages-captcha\` on Mac:
+run \`php scripts/lint.php\`, \`./vendor/bin/phpunit
+tests/LoginSettingsPolicyTest.php --display-phpunit-notices\`, full PHPUnit,
+smoke, \`npm ci && npm run lint && npm test && npm run build\`.
+Verify the Settings, Login overview, Google SSO, CAPTCHA and SMTP links
+are distinct real pages and nested disclosure navigation works on mobile.
+Verify current-password/CSRF errors never modify settings.
+
+Test Account and Admin password login in offline mode: wrong answer,
+expired challenge, wrong session/role, replay, invalid CSRF, rate limit
+and a real successful password login. Then configure the v2 checkbox
+site and secret keys through the separate CAPTCHA page. On HTTPS
+check the CSP allows the Google script/frame, the backend rejects
+missing/replayed/expired tokens and wrong hostname, and that provider
+failure fails closed. Ensure the Google OAuth Client credentials are
+separate, disabling SSO leaves local password login working, and Google
+account linking uses the verified same email with a current-password
+check. Review recovery instructions before selecting reCAPTCHA on
+the single production hostname.

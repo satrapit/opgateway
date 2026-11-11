@@ -15,7 +15,12 @@ CSRF and HMAC-keyed throttling.
 - `/admin/clients`: client activation/disable and IP requests.
 - `/admin/ips/pending`: approve exact IP addresses.
 - `/admin/ips/approved`: revoke approved IP access.
+- `/admin/settings`: main settings landing.
+- `/admin/settings/login`: login settings index.
+- `/admin/settings/login/google`: Google SSO Client ID/Secret and enable/disable.
+- `/admin/settings/login/captcha`: offline / Google reCAPTCHA v2 selection.
 - `/admin/settings/smtp`: database-backed SMTP configuration.
+- `/admin/settings/google`: legacy GET bookmark redirects to Google SSO page.
 - `POST /admin/review` and `POST /admin/provision`: role-checked,
   CSRF-protected, strictly validated, rate-limited transactional mutations.
 - `POST /admin/logout`: CSRF-protected sign-out.

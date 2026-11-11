@@ -29,7 +29,12 @@ table (`setting_key`, `setting_value`, `updated_at`), including encrypted
 `smtp.password`. The `admin` role manages SMTP; individual owner credentials
 remain separate in `provider_connections` for access control. The application has no `*_ENABLED` switches.
 Security policy is enforced by authentication/authorization, not runtime flags.
-See [configuration locations and .env cleanup](docs/configuration.md).
+Under development: separate `/admin/settings`, `/admin/settings/login`,
+`/admin/settings/login/google` and `/admin/settings/login/captcha` pages.
+Google SSO and password-login CAPTCHA are configured in MySQL by an
+authorized administrator with current-password confirmation.
+See [configuration locations and .env cleanup](docs/configuration.md)
+and [authentication settings](docs/authentication-settings.md).
 
 The canonical HTTPS host comes from the configured web-server
 `SERVER_NAME`, which must match `HTTP_HOST`. A unique AES-256-GCM

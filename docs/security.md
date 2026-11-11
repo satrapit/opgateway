@@ -11,7 +11,7 @@ Passwords used for browser authentication remain one-way hashed.
 Self-service email tokens are random, one-use and SHA-256 hashed in MySQL.
 Only self-service accounts are activated through email verification; old
 manual accounts retain administrative approval. Sessions are Secure,
-HttpOnly, SameSite=Strict, regenerated on authentication, and protected
+HttpOnly, SameSite=Lax, regenerated on authentication, and protected
 by CSRF and SQL-backed HMAC-isolated throttling.
 
 Admin review/provision requires the existing `admin` role, current

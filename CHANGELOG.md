@@ -1,5 +1,22 @@
 # Changelog
 
+## Unreleased — Admin login settings and CAPTCHA (2026-11-11)
+
+- Separate Settings, Login settings, Google SSO, CAPTCHA and Email/SMTP
+  pages with a nested navigation group; retain legacy Google GET bookmark.
+- Google SSO credentials and enable/disable remain in MySQL; local
+  password sign-in continues independently.
+- Admin-selectable login CAPTCHA: offline one-use question with a separate
+  IP throttle, or Google reCAPTCHA v2 checkbox with server-side siteverify,
+  checked response hostname, fixed TLS-validated endpoint and no fallback
+  to success on upstream failures.
+- CAPTCHA settings and secrets are database-backed (encrypted secret);
+  both admin and account password-login routes enforce the selected method.
+- No database migration, .env additions, remote assets in the offline mode
+  or new GitHub workflow. Must pass local tests and browser review before
+  merging or deploying; offline arithmetic is weaker against automation.
+
+
 ## Unreleased — Minimal .env contract audit (2026-11-11)
 
 - One authoritative five-key database configuration whitelist for both
