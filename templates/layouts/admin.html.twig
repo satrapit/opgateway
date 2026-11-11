@@ -16,7 +16,7 @@
         aria-controls="opg-settings-submenu">
         <svg viewBox="0 0 24 24" class="opg-icon" aria-hidden="true" focusable="false"><use href="{{ admin_assets.icons }}#opg-icon-settings"></use></svg>
         <span class="min-w-0 flex-1">Settings</span>
-        <svg viewBox="0 0 24 24" class="opg-icon opg-nav-chevron" aria-hidden="true" focusable="false" x-bind:class="settingsMenuOpen ? 'is-expanded' : ''"><use href="{{ admin_assets.icons }}#opg-icon-chevron-down"></use></svg>
+        <svg viewBox="0 0 24 24" class="opg-icon opg-nav-chevron" aria-hidden="true" focusable="false" x-bind:class="settingsChevronClass"><use href="{{ admin_assets.icons }}#opg-icon-chevron-down"></use></svg>
       </button>
       <div id="opg-settings-submenu" class="opg-nav-submenu" x-show="settingsMenuOpen" x-cloak>
         <a class="opg-nav-sublink" href="/admin/settings/security"{% if active_section == 'security' %} aria-current="page"{% endif %}>Security</a>

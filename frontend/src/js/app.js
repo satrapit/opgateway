@@ -57,6 +57,9 @@ Alpine.data('adminShell', () => ({
   toggleSettingsMenu() {
     this.settingsMenuOpen = !this.settingsMenuOpen;
   },
+  get settingsChevronClass() {
+    return this.settingsMenuOpen ? 'is-expanded' : '';
+  },
   openSidebar(event) {
     this.lastActivator = event?.currentTarget ?? null;
     this.sidebarOpen = true;
