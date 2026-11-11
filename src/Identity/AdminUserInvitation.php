@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace OPGateway\Identity;
 
-use OPGateway\Mail\VerificationMailer;
+use OPGateway\Mail\InvitationMailer;
 use OPGateway\Security\AdminActionLimiter;
 use OPGateway\Security\SecurityEventRecorder;
 use PDO;
@@ -24,7 +24,7 @@ final readonly class AdminUserInvitation
         private PDO $pdo,
         private PasswordHasher $hasher,
         private EmailVerificationService $verification,
-        private VerificationMailer $mailer,
+        private InvitationMailer $mailer,
         private AdminActionLimiter $limiter,
         private SecurityEventRecorder $events,
     ) {
@@ -108,7 +108,7 @@ SQL);
         }
 
         // Delivery never transmits an initial or stored password.
-        $this->mailer->sendVerification($email, $token, $origin);
+        $this->mailer->sendInvitation($email, $token, $origin);
         return 'accepted';
     }
 }

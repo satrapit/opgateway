@@ -10,7 +10,7 @@ use RuntimeException;
 use Throwable;
 
 /** SMTP verification and reset mail with peer TLS verification and no debug output. */
-final readonly class PhpMailerVerificationMailer implements VerificationMailer, PasswordResetMailer
+final readonly class PhpMailerVerificationMailer implements VerificationMailer, PasswordResetMailer, InvitationMailer
 {
     public function __construct(private PdoSmtpSettings $settings)
     {
@@ -22,6 +22,18 @@ final readonly class PhpMailerVerificationMailer implements VerificationMailer, 
         $this->send($email, 'Verify your OPGateway email address',
             "Verify your email using this one-time link:\n" . $appUrl . '/account/verify?token=' . $token
             . "\n\nThe link expires in 30 minutes.\nIf you did not register, ignore this message.");
+    }
+
+    public function sendInvitation(string $email, string $token, string $origin): void
+    {
+        $this->validateLink($email, $token, $origin);
+        $this->send($email, 'Your OPGateway invitation',
+            "An administrator invited you to OPGateway. Confirm your email:\n"
+            . $origin . '/account/verify?token=' . $token
+            . "\n\nThis link expires in 30 minutes. An administrator must approve"
+            . " your account after verification. Once approved, use"
+            . " Forgot password to set your own password.\n"
+            . "If you did not expect this invitation, ignore this message.");
     }
 
     public function sendPasswordReset(string $email, string $token, string $origin): void

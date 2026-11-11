@@ -8,7 +8,7 @@ use OPGateway\Identity\AdminUserInvitation;
 use OPGateway\Identity\EmailVerificationService;
 use OPGateway\Identity\PasswordHasher;
 use OPGateway\Identity\PdoEmailVerificationRepository;
-use OPGateway\Mail\VerificationMailer;
+use OPGateway\Mail\InvitationMailer;
 use OPGateway\Security\AdminActionLimiter;
 use OPGateway\Security\SecurityEventRecorder;
 use OPGateway\View\TwigRenderer;
@@ -93,10 +93,10 @@ final class AdminUserInvitationTest extends TestCase
     public function testCreatesPendingInviteWithoutPasswordDisclosureOrAdminRole(): void
     {
         $db = self::database();
-        $mailer = new class implements VerificationMailer {
+        $mailer = new class implements InvitationMailer {
             public ?string $recipient = null;
             public ?string $token = null;
-            public function sendVerification(
+            public function sendInvitation(
                 string $email, string $token, string $origin,
             ): void {
                 $this->recipient = $email;
@@ -138,8 +138,8 @@ final class AdminUserInvitationTest extends TestCase
     {
         $db = self::database();
         $db->existing = true;
-        $mailer = $this->createMock(VerificationMailer::class);
-        $mailer->expects(self::once())->method('sendVerification');
+        $mailer = $this->createMock(InvitationMailer::class);
+        $mailer->expects(self::once())->method('sendInvitation');
         $limiter = $this->createStub(AdminActionLimiter::class);
         $limiter->method('allow')->willReturn(true);
         $service = new AdminUserInvitation($db, new PasswordHasher(),
