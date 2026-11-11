@@ -53,8 +53,9 @@ final readonly class PdoGoogleOAuthSettings
             throw new InvalidArgumentException('Invalid Google OAuth credentials.');
         }
         $previous = $this->rows();
-        if ($secret === '' && !isset($previous['google.client_secret'])) {
-            throw new InvalidArgumentException('Initial Google setup requires a secret.');
+        if ($secret === '' && (!isset($previous['google.client_secret'])
+            || $clientId !== ($previous['google.client_id'] ?? null))) {
+            throw new InvalidArgumentException('Google client changes require a new secret.');
         }
         $cipher = $secret === '' ? $previous['google.client_secret']
             : $this->secrets->encrypt($secret, 'google:oauth');
