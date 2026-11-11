@@ -3,11 +3,10 @@
 PHP 8.3 / MySQL Openprovider gateway for cPanel shared hosting, with a
 shared TailAdmin/Twig design system for both admin and self-service account portals.
 
-> **Unreleased feature branch:** `main` / production remains at
-> v0.1.0-alpha.3. Do not deploy or merge this branch before live SMTP,
-> registration, IP, provider, security and browser integration testing.
-> The local database has migration 004; it needs migration 005 next. Production
-> must never be upgraded without a verified backup and deployment plan.
+> **Current main:** `v0.1.0-alpha.4.1` is the pre-Google,
+> rollback-compatible release. It requires six completed migrations and
+> permits the exact completed additive Google migration 007.
+> Google sign-in remains under development in separate Draft PR #4.
 
 ## One application, no feature-flag maze
 
@@ -30,6 +29,8 @@ table (`setting_key`, `setting_value`, `updated_at`), including encrypted
 `smtp.password`. The `admin` role manages SMTP; individual owner credentials
 remain separate in `provider_connections` for access control. The application has no `*_ENABLED` switches.
 Security policy is enforced by authentication/authorization, not runtime flags.
+See [configuration locations and safe .env cleanup](docs/configuration.md)
+before editing private production settings.
 
 The canonical HTTPS host comes from the configured web-server
 `SERVER_NAME`, which must match `HTTP_HOST`. A unique AES-256-GCM

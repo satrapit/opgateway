@@ -10,7 +10,8 @@ OPGateway runs on cPanel shared hosting. Private checkout:
 0600, outside public Document Root. Back it up separately; losing it
 breaks decryption of existing SMTP and owner provider credentials.
 Actual PHP HTTPS `SERVER_NAME` must be the canonical gateway hostname,
-matching `HTTP_HOST`.
+matching `HTTP_HOST`. See [configuration](configuration.md) for the
+five-key .env policy and locations of other settings.
 
 The `.cpanel.yml` allowlist copies only the public entrypoint and the
 reviewed precompiled admin assets. Never place private source, Composer
