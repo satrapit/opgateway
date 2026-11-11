@@ -25,6 +25,13 @@ revocation, action-step-up and Account Security coverage. Do not copy a prior
 test count into release notes: record the fresh PHPUnit, 10 smoke checks and
 10 frontend tests from the exact reviewed commit.
 
+For the prepared Migration 008 code-only rollback, run
+`tests/Migration008RollbackCompatibilityTest.php` together with the Google
+browser-flow, session-revocation and password-reset policy tests before the
+full suite. The exact rollback snapshot must deny an unknown Google subject
+without creating or joining a user while continuing subject login for an
+already linked Google-only account.
+
 Local automated result on 2026-11-12 for this working tree: 252 PHPUnit tests
 with 1997 assertions, 10/10 smoke checks and 10/10 Node frontend tests; Composer
 validation, PHP lint, npm lint, production Webpack build and asset allowlist

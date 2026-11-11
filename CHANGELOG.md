@@ -2,6 +2,9 @@
 
 ## Unreleased — Google-first onboarding and optional password (2026-11-12)
 
+- Add an explicit subject-only Google login path and focused Migration 008
+  regression coverage so a reviewed code-only rollback can retain existing
+  Google-only accounts without creating, joining or deleting users.
 - Let a verified Google identity create a passwordless pending account while
   preserving approval, role, owner, client and exact-IP authorization checks.
 - Require one-time email confirmation before linking an unlinked existing

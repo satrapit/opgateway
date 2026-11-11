@@ -63,6 +63,14 @@ reviewed revert, but it must not restore password-hash session fingerprints,
 require non-null hashes, delete Google identities or strand Google-only users.
 Unknown or incomplete migrations must continue to fail closed.
 
+The focused automated contract is
+`tests/Migration008RollbackCompatibilityTest.php`. It verifies that the
+rollback catalog still requires all eight migrations, an approved Google-only
+user can sign in by stable subject with the server-controlled session version,
+nullable passwords fail closed for password login, and password recovery still
+sets a password while revoking older sessions. A rollback snapshot must also
+prove that an unknown subject is denied without creating or joining an account.
+
 A database down-migration is not the normal rollback. Changing
 `password_hash` back to `NOT NULL` is prohibited while any Google-only user has a
 NULL hash. Dropping confirmation state during an incident can invalidate active

@@ -16,6 +16,30 @@ final readonly class PdoGoogleIdentityStore
     {
     }
 
+    /**
+     * Authenticate an already-linked Google subject without creating or
+     * joining any local account. This narrow path is retained for a code-only
+     * rollback after migration 008, including Google-only users.
+     *
+     * @return array{status:string,user_id?:int,session_stamp?:string}
+     */
+    public function loginBySubject(string $subject): array
+    {
+        if (!self::validSubject($subject)) {
+            return ['status' => 'denied'];
+        }
+
+        $query = $this->pdo->prepare(<<<'SQL'
+SELECT u.id, u.status, u.email_verified_at, u.approved_at, u.auth_session_version
+FROM google_identities g JOIN users u ON u.id = g.user_id
+WHERE g.google_sub = ? LIMIT 1
+SQL);
+        $query->execute([$subject]);
+        $row = $query->fetch(PDO::FETCH_ASSOC);
+
+        return is_array($row) ? self::loginResult($row) : ['status' => 'denied'];
+    }
+
     /** @return array{status:string,user_id?:int,session_stamp?:string} */
     public function loginOrRegister(string $subject, string $email): array
     {
