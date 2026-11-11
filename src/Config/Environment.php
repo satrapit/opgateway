@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace OPGateway\Config;
 
+use OPGateway\Database\DatabaseConfig;
 use RuntimeException;
 
 /**
@@ -29,7 +30,7 @@ final class Environment
                 throw new RuntimeException('Invalid configuration syntax.');
             }
             $name = $matches[1];
-            if (!in_array($name, ['DB_HOST', 'DB_PORT', 'DB_NAME', 'DB_USER', 'DB_PASSWORD'], true)) {
+            if (!in_array($name, DatabaseConfig::ENV_KEYS, true)) {
                 throw new RuntimeException('Only database connection keys are allowed.');
             }
             if (array_key_exists($name, $result)) {

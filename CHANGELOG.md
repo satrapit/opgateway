@@ -1,5 +1,17 @@
 # Changelog
 
+## Unreleased — Minimal .env contract audit (2026-11-11)
+
+- One authoritative five-key database configuration whitelist for both
+  the .env loader and direct database connection callers.
+- Reject obsolete keys without interpreting them as security switches.
+- Remove APP_KEY wording: application encryption uses the private
+  storage/app-secret.key file, never .env.
+- Clarify configuration storage, including exact-IP API allowlisting
+  and per-IP browser rate limiting. No schema or controller route changes.
+- Tests and documentation added; local PHP verification pending.
+
+
 ## Unreleased — Single-domain rollback bridge (2026-11-11)
 
 - Preserve six-migration alpha.4.1 behavior while recognizing the exact

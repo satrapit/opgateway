@@ -11,9 +11,10 @@ use RuntimeException;
  * Versioned AES-256-GCM secret envelopes tied to their intended record.
  *
  * Never use password_hash for upstream/SMTP credentials that must be
- * decrypted to perform an authorized server-to-server operation. APP_KEY
- * must be 32 random bytes encoded as exactly 64 hexadecimal characters.
- * Store only ciphertext outside the public Document Root.
+ * decrypted to perform an authorized server-to-server operation. The
+ * application key comes from private storage/app-secret.key, not .env.
+ * It must be 32 random bytes encoded as 64 hexadecimal characters.
+ * Store ciphertext in its designated private database tables, not Document Root.
  */
 final readonly class SealedSecret
 {
@@ -22,11 +23,11 @@ final readonly class SealedSecret
     public function __construct(string $hexKey)
     {
         if (preg_match('/^[0-9a-f]{64}$/iD', $hexKey) !== 1) {
-            throw new InvalidArgumentException('APP_KEY requires 32 random bytes.');
+            throw new InvalidArgumentException('Application encryption key must contain 32 random bytes.');
         }
         $key = hex2bin($hexKey);
         if (!is_string($key) || strlen($key) !== 32) {
-            throw new InvalidArgumentException('Invalid APP_KEY.');
+            throw new InvalidArgumentException('Invalid application encryption key.');
         }
         $this->key = $key;
     }

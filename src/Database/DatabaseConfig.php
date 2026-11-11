@@ -13,6 +13,11 @@ use InvalidArgumentException;
  */
 final readonly class DatabaseConfig
 {
+    /** The complete .env contract. All non-database options live elsewhere. */
+    public const ENV_KEYS = [
+        'DB_HOST', 'DB_PORT', 'DB_NAME', 'DB_USER', 'DB_PASSWORD',
+    ];
+
     private function __construct(
         public string $host,
         public int $port,
@@ -28,6 +33,13 @@ final readonly class DatabaseConfig
      */
     public static function fromEnvironment(array $environment): self
     {
+        // Also protect direct PHP callers that bypass Environment::load().
+        foreach (array_keys($environment) as $name) {
+            if (!in_array($name, self::ENV_KEYS, true)) {
+                throw new InvalidArgumentException('Unsupported database configuration key.');
+            }
+        }
+
         $host = trim($environment['DB_HOST'] ?? '');
         $database = trim($environment['DB_NAME'] ?? '');
         $username = trim($environment['DB_USER'] ?? '');
