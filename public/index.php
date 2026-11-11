@@ -87,7 +87,8 @@ header('X-Content-Type-Options: nosniff');
 header('X-Frame-Options: DENY');
 // Preserve browser Origin on same-origin form POST while suppressing
 // cross-origin referrer disclosures.
-header('Referrer-Policy: same-origin');
+header('Referrer-Policy: ' . ($path === '/account/google/callback'
+    ? 'no-referrer' : 'same-origin'));
 header('Content-Security-Policy: ' . ($response['csp']
     ?? "default-src 'none'; style-src 'unsafe-inline'; form-action 'self'; base-uri 'none'; frame-ancestors 'none'"));
 header('X-Request-ID: ' . $requestId);

@@ -53,3 +53,12 @@ requests. No destructive operations on real owner records.
 Release remains blocked until integrated browser/SMTP/database and provider
 tests pass. Production migrations 004–005 require a separate backup and
 coordinated deployment.
+
+## Google OAuth settings — unreleased
+
+At `/admin/settings/google`, the existing admin role may configure a
+Google OAuth Web Client ID, encrypted client secret, and confirm the current
+administrator password. The secret is never returned to the browser.
+Use the exact callback URI shown on the page in Google Cloud Console.
+The global key/value settings table stores the credentials; never store
+OAuth secrets in the .env file or Git. This UI is draft, not alpha.4.

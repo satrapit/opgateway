@@ -76,6 +76,36 @@ Test successful recovery in one browser while another logged-in browser has
 an Account session and (separately) an Admin session. Confirm both old sessions
 are redirected to login and freshly signed-in sessions work. No migration.
 
+## Google OIDC browser flow — unreleased feature branch only
+
+Google sign-in is NOT part of the `v0.1.0-alpha.4` production pilot. On the
+`feat/google-oidc-password-fallback` branch, run PHP lint, PHPUnit and smoke
+after a reviewed, backed-up manual migration 007 on the **local** database.
+A fresh install needs 7 migration entries and 14 final tables. Never deploy
+the OAuth source against production that is still at migration 006.
+
+In Google Cloud Console create an OAuth 2.0 **Web application**, register the
+redirect URI exactly as rendered by `/admin/settings/google` (production:
+`https://opgateway.arsamnet.com/account/google/callback`), and enter its
+client ID/secret only through the authenticated admin screen. No secrets
+belong in .env, Git or chat logs. Google may reject custom `.test` domains:
+use a registered HTTPS staging domain for live tests. Verify server outbound
+HTTPS access to `oauth2.googleapis.com` and `www.googleapis.com` without
+disabling TLS validation.
+
+Browser acceptance: register with local password, verify email and receive
+admin approval; sign in with password; confirm password to connect Google;
+consent with the Google account using the same verified email; sign out and
+sign back in using Google, then verify local password still works. Test
+unlinked accounts, email mismatch, duplicate subjects, expired/replayed
+state, invalid nonce/aud/signature/expiration, network outages, revoked
+local users, password reset mid-flow and unlink with wrong password.
+No automatic account linking by email. Inspect no-store, CSP, session
+cookies and no-referrer for the Google callback.
+
+Unit tests cannot substitute for real Google, MySQL and browser integration.
+Do not merge/deploy the feature before these checks pass.
+
 ## UI and release review
 
 Use real browsers at 320, 375, 390, 768, 1024 and 1440px. Verify

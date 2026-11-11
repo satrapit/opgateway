@@ -48,3 +48,15 @@ in the database. The application's encryption key is separate from the
 database at `storage/app-secret.key`, outside the public document root.
 
 See [onboarding](gateway-onboarding.md) for a local end-to-end checklist.
+
+## Google sign-in — unreleased
+
+Existing users create a local password-based account, verify email, and
+receive normal administrator approval. At `/account/google`, an approved
+signed-in user re-enters their password to link Google via consent. The
+verified Google `sub` is stored for subsequent sign-in; the app never
+stores Google access/refresh tokens. Matching email alone never logs in
+or links an account. Local password login and recovery remain available,
+and an owner can disconnect Google after password reauthentication.
+
+Requires administrator Google settings and migration 007. Not in alpha.4.

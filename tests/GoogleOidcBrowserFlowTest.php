@@ -26,7 +26,7 @@ use PHPUnit\Framework\TestCase;
 
 final class GoogleOidcBrowserFlowTest extends TestCase
 {
-    private const CLIENT_ID = '123456789012-abcdefghijk.apps.googleusercontent.com';
+    public const CLIENT_ID = '123456789012-abcdefghijk.apps.googleusercontent.com';
 
     /**
      * Fake database protects real MySQL while enforcing the expected

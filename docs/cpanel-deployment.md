@@ -17,6 +17,13 @@ reviewed precompiled admin assets. Never place private source, Composer
 vendor, key, `.env`, templates or logs in Document Root. No server-side
 Composer, npm, database migration, cron or GitHub workflow runs.
 
+## Production pilot release boundary
+
+`v0.1.0-alpha.4` is the pilot snapshot at commit
+`ffa90e0d40bb7ece1867f935bde40f0ca88b3869`: six migrations and 13
+final tables. Subsequent Google OIDC development lives separately and must
+NOT be deployed during this pilot.
+
 ## Controlled rollout
 
 1. **Do not deploy the draft PR yet.** On a disposable database, validate

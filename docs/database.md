@@ -14,6 +14,20 @@ the old SMTP table. **Never import into an existing populated database, re-run m
 
 For the currently deployed alpha.3 schema there is nothing to import. The feature branch requires 004, 005 and 006 in order. The local development database already completed 005: apply only 006 after a verified backup. Backup before any intentional database operation.
 
+## Google sign-in migration 007 — unreleased
+
+A new table `google_identities` maps each existing user to a unique
+case-sensitive Google OIDC subject. Global settings `google.client_id` and
+encrypted `google.client_secret` use the existing `settings` table.
+All accounts retain a local password hash. No new .env keys are needed.
+
+For existing databases with six completed migrations, back up first and
+execute ONLY `database/sql/upgrade_202611110001.sql` (007), once and only
+after reviewing its content. Do not run migration 007 during alpha.4 tests.
+On a new empty database, this unreleased branch's full schema creates
+seven migration records and fourteen final tables. Until migration 007
+is completed, its account/admin handlers fail closed.
+
 ## First administrator — one-time manual SQL
 
 **Only for a fresh instance with no administrator.** Confirm the selected database, take a backup and check:

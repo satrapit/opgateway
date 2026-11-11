@@ -3,11 +3,12 @@
 PHP 8.3 / MySQL Openprovider gateway for cPanel shared hosting, with a
 shared TailAdmin/Twig design system for both admin and self-service account portals.
 
-> **Unreleased feature branch:** `main` / production remains at
-> v0.1.0-alpha.3. Do not deploy or merge this branch before live SMTP,
-> registration, IP, provider, security and browser integration testing.
-> The local database has migration 004; it needs migration 005 next. Production
-> must never be upgraded without a verified backup and deployment plan.
+> **Release boundary:** `main` commit `ffa90e0` is the proposed
+> `v0.1.0-alpha.4` production pilot. The developer Mac verified 195/195 PHP
+> tests and 10/10 smoke tests; manual production DB migrations 004–006 and
+> real integration checks remain required.
+> Google sign-in is a separate development feature requiring migration 007
+> and is NOT included in this release.
 
 ## One application, no feature-flag maze
 
@@ -42,10 +43,11 @@ backed up**; never save this key in MySQL, Git or the public directory.
 1. Run `composer install` on PHP 8.3 with MySQL extensions.
 2. Copy `.env.example` to private `.env` and provide **local** DB credentials.
    If upgrading a local checkout, remove retired non-DB entries from .env.
-3. For an empty DB import `database/sql/opgateway_full_schema.sql` once.
-   For an existing alpha.3 DB, apply 004 then 005 in order after backup.
-   For the current local DB already at 004, run **only** reviewed
-   `database/sql/upgrade_202611100002.sql` (005).
+3. For an empty database on the Google development branch, import the
+   complete schema once (7 migration records), but only after confirming it
+   has no existing data. For an existing alpha.3 database, alpha.4 requires
+   applying 004, 005 and 006 in order after a verified backup. The Google
+   feature requires migration 007 in addition, tested locally first.
 4. On first run create an admin using the existing reviewed SQL in
    [database documentation](docs/database.md), if none exists.
 5. Use HTTPS at a correctly configured canonical virtual host.
