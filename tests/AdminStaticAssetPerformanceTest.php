@@ -45,11 +45,39 @@ final class AdminStaticAssetPerformanceTest extends TestCase
         $root = dirname(__DIR__);
         $sprite = file_get_contents($root . '/frontend/src/icons.svg');
         self::assertIsString($sprite);
-        self::assertSame(20, substr_count($sprite, '<symbol id="opg-icon-'));
-        self::assertStringNotContainsString('<script', $sprite);
-        foreach (['menu', 'x', 'moon', 'sun', 'monitor', 'log-out',
-            'ellipsis-vertical', 'eye', 'shield-alert', 'shield-x', 'ban', 'plus'] as $icon) {
-            self::assertStringContainsString('id="opg-icon-' . $icon . '"', $sprite);
+        preg_match_all('/<symbol\s+id="(opg-icon-[a-z0-9-]+)"/', $sprite, $defined);
+        $symbolIds = $defined[1];
+        self::assertNotEmpty($symbolIds);
+        self::assertCount(count(array_unique($symbolIds)), $symbolIds,
+            'The SVG sprite must not contain duplicate symbol IDs.');
+        self::assertStringNotContainsString('<script', strtolower($sprite));
+
+        // Match the real icons referenced by all Twig views instead of
+        // maintaining a brittle hard-coded sprite size as navigation grows.
+        $references = [];
+        $views = new \RecursiveIteratorIterator(
+            new \RecursiveDirectoryIterator(
+                $root . '/templates', \FilesystemIterator::SKIP_DOTS,
+            ),
+        );
+        foreach ($views as $file) {
+            if (!$file->isFile() || !str_ends_with($file->getFilename(), '.twig')) {
+                continue;
+            }
+            $twig = file_get_contents($file->getPathname());
+            self::assertIsString($twig);
+            preg_match_all('/#(opg-icon-[a-z0-9-]+)/', $twig, $used);
+            array_push($references, ...$used[1]);
+        }
+        $references = array_values(array_unique($references));
+        self::assertNotEmpty($references);
+        foreach ($references as $id) {
+            self::assertContains($id, $symbolIds,
+                sprintf('A Twig view references missing SVG symbol "%s".', $id));
+        }
+        foreach (['settings', 'chevron-down', 'user-plus'] as $icon) {
+            self::assertContains('opg-icon-' . $icon, $references,
+                'New navigation and user-management icons must be used.');
         }
     }
 
