@@ -253,7 +253,6 @@ final readonly class AdministrativeWebEntry
             );
             $response = (new AdminLoginSettingsController(
                 $session, $accounts, $admins, $login, $captchaSettings,
-                new PdoGoogleOAuthSettings($pdo, $vault),
                 new TwigRenderer(dirname(__DIR__, 2) . '/templates'), $pdo,
             ))->handle(
                 $method, $path,

@@ -12,8 +12,8 @@
       <div class="mt-2 grid gap-3">
         <label class="opg-panel flex items-start gap-3 p-4">
           <input type="radio" name="provider" value="offline"{% if captcha.provider == 'offline' %} checked{% endif %}>
-          <span><strong class="block text-gray-900 dark:text-white">Offline CAPTCHA</strong>
-          <span class="text-sm text-gray-500 dark:text-gray-400">Works without Google. Uses a short-lived one-time question and request limits.</span></span>
+          <span><strong class="block text-gray-900 dark:text-white">Offline image CAPTCHA</strong>
+          <span class="text-sm text-gray-500 dark:text-gray-400">A generated distorted image with a one-time six-character response. Works without Google.</span></span>
         </label>
         <label class="opg-panel flex items-start gap-3 p-4">
           <input type="radio" name="provider" value="recaptcha"{% if captcha.provider == 'recaptcha' %} checked{% endif %}>
@@ -36,6 +36,6 @@
     </div>
     <button class="opg-primary-button" type="submit">Save CAPTCHA settings</button>
   </form>
-  <p class="mt-6 text-sm text-gray-500 dark:text-gray-400">Offline questions are simpler than reCAPTCHA. Rate limits remain active in both modes. Saving Google keys here does not change the Google SSO settings.</p>
+  <p class="mt-6 text-sm text-gray-500 dark:text-gray-400">Offline image challenges can still be solved by capable bots. CAPTCHA is only one layer of protection. Rate limits remain active in both modes. Saving Google keys here does not change the Google SSO settings.</p>
 </section>
 {% endblock %}

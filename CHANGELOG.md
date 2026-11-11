@@ -1,5 +1,25 @@
 # Changelog
 
+## Unreleased — Admin workflows, navigation and image CAPTCHA (2026-11-11)
+
+- Replace nested native Details navigation with TailAdmin-style Settings
+  parent button, bundled gear/chevron icons and one-level grouped pages.
+  Remove All Settings / intermediate Overview pages; preserve GET
+  redirects from old settings URLs.
+- Add administrator user invitation with email verification, manual
+  approval and personal password setup; no emailed password, role grant
+  or password disclosure.
+- Add full-page create-client and request-IP workflows reusing audited
+  provisioning rules; preserve mobile-first record actions.
+- Replace easily guessed arithmetic challenge with random six-character
+  distorted/noisy self-hosted PNG. Keyed answer digest lives only in a
+  three-minute session record; image is served through a no-store local
+  endpoint and never exposes the solution in markup.
+- No new migration or .env keys. PHP zlib support and real browser
+  accessibility/security checks are production release gates.
+- **Pending local full PHPUnit, smoke and frontend build verification.**
+
+
 ## Unreleased — Admin login settings and CAPTCHA (2026-11-11)
 
 - Separate Settings, Login settings, Google SSO, CAPTCHA and Email/SMTP

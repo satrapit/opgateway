@@ -9,14 +9,14 @@ No new database migration or .env setting is required: use the existing
 
 | Path | Purpose |
 |---|---|
-| `/admin/settings` | Settings index |
-| `/admin/settings/login` | Overview of password login, SSO and CAPTCHA |
+| `/admin/settings/security` | CAPTCHA provider, image challenge and optional reCAPTCHA keys |
 | `/admin/settings/login/google` | Google OAuth Web Client ID, secret and enable/disable |
-| `/admin/settings/login/captcha` | CAPTCHA provider, site key and secret |
 | `/admin/settings/smtp` | SMTP, email verification and password recovery |
 
-The sidebar uses native nested Settings / Login settings disclosures and
-full page navigation. Admin authentication and role are rechecked on each
+The sidebar has a TailAdmin-style Settings parent button with bundled
+Lucide icon, collapsible submenu, chevron and active-link styling. Each
+link navigates to one dedicated settings category; there is no All
+settings landing page. Admin authentication and role are rechecked on each
 request. POST changes use CSRF and current-password verification, and
 successful writes use the existing metadata-only security audit table.
 The old `GET /admin/settings/google` redirects to the Google SSO page;
@@ -39,11 +39,16 @@ administrator sign-in route.
 
 The login settings support exactly two alternatives:
 
-- **Offline** (default when no `login.captcha_provider` setting exists):
-  a short arithmetic question, one-use, session-bound, valid for three
-  minutes and separately limited per source IP to 30 submissions per
-  15 minutes. It has **no external HTTP/JS dependency**, but it is less
-  resistant to automated solvers than a mature CAPTCHA service.
+- **Offline image** (default when no `login.captcha_provider` setting exists):
+  a six-character random alphanumeric image rendered to PNG on the
+  server, with per-character rotation, randomized lines, noise and pixel
+  displacement. It is bound to the session, one-use and valid for three
+  minutes; CAPTCHA submissions are separately limited per source IP
+  (30 per 15 minutes). The server stores only a keyed answer digest and
+  short-lived image bytes, not the plaintext answer. PNG generation
+  needs the PHP zlib extension, not GD, external HTTP or JavaScript.
+  No visual CAPTCHA can guarantee resistance against modern OCR and
+  vision systems; account/password throttles remain essential.
 - **Google reCAPTCHA v2 checkbox**: provide a matching reCAPTCHA v2
   **site key** and **secret key** from the Google reCAPTCHA administration
   console, which are **not** the Google OAuth Client ID/Secret.

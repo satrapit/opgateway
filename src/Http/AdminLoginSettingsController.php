@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace OPGateway\Http;
 
 use InvalidArgumentException;
-use OPGateway\Google\PdoGoogleOAuthSettings;
 use OPGateway\Identity\AdministratorAuthorization;
 use OPGateway\Identity\BrowserSession;
 use OPGateway\Identity\GuardedLoginService;
@@ -25,7 +24,6 @@ final readonly class AdminLoginSettingsController
         private AdministratorAuthorization $admins,
         private GuardedLoginService $login,
         private PdoLoginCaptchaSettings $captcha,
-        private PdoGoogleOAuthSettings $google,
         private TwigRenderer $twig,
         private PDO $pdo,
     ) {
@@ -46,11 +44,7 @@ final readonly class AdminLoginSettingsController
 
         if ($method === 'GET') {
             [$file, $active, $title] = match ($path) {
-                '/admin/settings' => ['admin/settings.html.twig', 'settings', 'Settings'],
-                '/admin/settings/login' => [
-                    'admin/login-settings.html.twig', 'login_settings', 'Login settings',
-                ],
-                '/admin/settings/security', '/admin/settings/login/captcha' => [
+                '/admin/settings/security' => [
                     'admin/captcha.html.twig', 'security', 'Security',
                 ],
                 default => [null, '', ''],
@@ -67,7 +61,6 @@ final readonly class AdminLoginSettingsController
                     'administrator_label' => 'Administrator',
                     'csrf_token' => $this->session->csrfToken(),
                     'captcha' => $this->captcha->summary(),
-                    'google' => $this->google->summary(),
                 ]),
             ];
         }

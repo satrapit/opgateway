@@ -142,7 +142,8 @@ Verify the Settings, Login overview, Google SSO, CAPTCHA and SMTP links
 are distinct real pages and nested disclosure navigation works on mobile.
 Verify current-password/CSRF errors never modify settings.
 
-Test Account and Admin password login in offline mode: wrong answer,
+Test Account and Admin password login with raster offline CAPTCHA: correct
+binary PNG, no plaintext response in HTML/session, wrong answer,
 expired challenge, wrong session/role, replay, invalid CSRF, rate limit
 and a real successful password login. Then configure the v2 checkbox
 site and secret keys through the separate CAPTCHA page. On HTTPS
