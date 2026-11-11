@@ -153,7 +153,7 @@ final class AdminUserInvitationTest extends TestCase
                 str_contains($call['sql'], 'INSERT INTO users')));
     }
 
-    public function testInviteUserViewRequiresEmailAndCurrentAdminPassword(): void
+    public function testInviteUserViewRequiresEmailAndCsrfWithoutPasswordReentry(): void
     {
         $twig = new TwigRenderer(dirname(__DIR__) . '/templates');
         $html = $twig->render('admin/invite-user.html.twig', [
@@ -165,7 +165,8 @@ final class AdminUserInvitationTest extends TestCase
         ]);
         self::assertStringContainsString('action="/admin/users/invite"', $html);
         self::assertStringContainsString('name="email"', $html);
-        self::assertStringContainsString('name="current_password"', $html);
+        self::assertStringContainsString('name="_csrf"', $html);
+        self::assertStringNotContainsString('name="current_password"', $html);
         self::assertStringContainsString('Forgot password', $html);
         self::assertStringNotContainsString('name="role"', $html);
     }

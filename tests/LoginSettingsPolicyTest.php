@@ -359,11 +359,57 @@ final class LoginSettingsPolicyTest extends TestCase
         $html = $twig->render('admin/captcha.html.twig', $data);
         self::assertStringContainsString('name="provider" value="offline"', $html);
         self::assertStringContainsString('name="provider" value="recaptcha"', $html);
-        self::assertStringContainsString('name="current_password"', $html);
+        self::assertStringNotContainsString('name="current_password"', $html);
         self::assertStringContainsString('id="opg-settings-submenu"', $html);
         self::assertStringContainsString('#opg-icon-settings', $html);
         self::assertStringContainsString('href="/admin/settings/smtp"', $html);
         self::assertStringNotContainsString('All settings', $html);
+    }
+
+    public function testAdminSettingsUseSessionCsrfInsteadOfRepeatedPassword(): void
+    {
+        $twig = new TwigRenderer(dirname(__DIR__) . '/templates');
+        $base = [
+            'administrator_label' => 'Administrator',
+            'section_title' => 'Settings',
+            'csrf_token' => str_repeat('a', 64),
+        ];
+        foreach ([
+            ['admin/captcha.html.twig', [
+                'active_section' => 'security',
+                'captcha' => ['provider' => 'offline', 'site_key' => '',
+                    'secret_set' => false],
+            ]],
+            ['admin/google.html.twig', [
+                'active_section' => 'google',
+                'google' => ['client_id' => '', 'enabled' => true,
+                    'secret_set' => false],
+                'redirect_uri' => 'https://opgateway.arsamnet.com/account/google/callback',
+            ]],
+            ['admin/smtp.html.twig', [
+                'active_section' => 'smtp',
+                'smtp' => ['host' => '', 'port' => 587, 'encryption' => 'starttls',
+                    'username' => '', 'from_email' => '', 'from_name' => '',
+                    'password_set' => false],
+            ]],
+        ] as [$path, $vars]) {
+            $html = $twig->render($path, [...$base, ...$vars]);
+            self::assertStringContainsString('name="_csrf"', $html, $path);
+            self::assertStringNotContainsString('name="current_password"', $html, $path);
+        }
+
+        foreach ([
+            'AdminLoginSettingsController.php',
+            'GoogleAdminSettingsController.php',
+            'SmtpAdminController.php',
+            'AdminUserInvitationController.php',
+        ] as $filename) {
+            $source = file_get_contents(dirname(__DIR__) . '/src/Http/' . $filename);
+            self::assertIsString($source);
+            self::assertStringContainsString('->csrfValid(', $source);
+            self::assertStringContainsString('->isAdministrator(', $source);
+            self::assertStringNotContainsString('current_password', $source);
+        }
     }
 
     public function testCaptchaGeneratorProducesRandomizedPngWithoutPlaintext(): void
@@ -376,6 +422,8 @@ final class LoginSettingsPolicyTest extends TestCase
         self::assertStringStartsWith("\x89PNG\r\n\x1a\n", $first);
         self::assertSame(300, unpack('N', substr($first, 16, 4))[1]);
         self::assertSame(106, unpack('N', substr($first, 20, 4))[1]);
+        self::assertSame(0, ord($first[25]), 'PNG should be compact grayscale');
+        self::assertLessThan(45000, strlen($first));
         self::assertNotSame($first, $second);
         self::assertStringNotContainsString('ABC234', $first);
     }
