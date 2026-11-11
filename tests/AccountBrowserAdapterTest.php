@@ -70,6 +70,8 @@ final class AccountBrowserAdapterTest extends TestCase
         $post = static fn (array $fields): string => http_build_query($fields);
 
         self::assertSame(303, $send('GET', '/account')['status']);
+        self::assertTrue($session->csrfValid($csrf),
+            'Anonymous account redirect must not invalidate the login form token.');
         self::assertSame(200, $send('GET', '/account/login')['status']);
         self::assertSame(403, $send('POST', '/account/login', $formType, $post([
             '_csrf' => str_repeat('0', 64), 'email' => 'owner@example.com',

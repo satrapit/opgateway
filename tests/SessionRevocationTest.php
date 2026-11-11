@@ -68,6 +68,23 @@ final class SessionRevocationTest extends TestCase
 
     #[RunInSeparateProcess]
     #[PreserveGlobalState(false)]
+    public function testAnonymousProtectedPagePreservesLoginCsrf(): void
+    {
+        $session = new BrowserSession();
+        $session->start(true);
+        $csrf = $session->csrfToken();
+        $accounts = $this->createMock(LoginAccountRepository::class);
+        $accounts->expects(self::never())->method('currentSessionStamp');
+
+        self::assertNull($session->currentUserId($accounts));
+        self::assertTrue($session->csrfValid($csrf));
+        self::assertNull($session->currentUserId($accounts));
+        self::assertSame($csrf, $session->csrfToken());
+        self::assertTrue(session_destroy());
+    }
+
+    #[RunInSeparateProcess]
+    #[PreserveGlobalState(false)]
     public function testLegacySessionWithoutPasswordStampFailsClosed(): void
     {
         $session = new BrowserSession();

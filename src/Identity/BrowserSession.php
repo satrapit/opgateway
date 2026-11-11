@@ -145,8 +145,17 @@ final class BrowserSession
 
     private function clearIdentity(): void
     {
+        // An anonymous visitor may already have a CSRF token for the login
+        // form. Do not discard it when a protected GET redirects to login.
+        // Only a former authenticated session loses its CSRF on revocation.
+        $hadIdentity = array_key_exists(self::USER_KEY, $_SESSION)
+            || array_key_exists(self::AUTH_AT_KEY, $_SESSION)
+            || array_key_exists(self::STAMP_KEY, $_SESSION);
         unset($_SESSION[self::USER_KEY], $_SESSION[self::AUTH_AT_KEY],
-            $_SESSION[self::STAMP_KEY], $_SESSION[self::CSRF_KEY]);
+            $_SESSION[self::STAMP_KEY]);
+        if ($hadIdentity) {
+            unset($_SESSION[self::CSRF_KEY]);
+        }
     }
 
     private function assertActive(): void

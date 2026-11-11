@@ -1,5 +1,13 @@
 # Changelog
 
+## Unreleased — Anonymous session CSRF preservation (2026-11-11)
+
+- Preserve login-form CSRF when an anonymous visitor follows a protected Account
+  URL and is redirected to sign in. Only invalidate CSRF when rejecting a
+  previously authenticated session.
+- Add regression coverage for anonymous navigation and recovery-related
+  session invalidation. No migrations or frontend changes.
+
 ## Unreleased — Browser session revocation on password recovery (2026-11-11)
 
 - Bind authenticated Account and Admin sessions to a fingerprint of the exact
