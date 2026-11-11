@@ -18,9 +18,13 @@
     {% endif %}
     {% if captcha.mode|default('') == 'offline' %}
       <div>
-        <label class="opg-label" for="account-captcha">Verification: {{ captcha.prompt }}</label>
+        <label class="opg-label" for="account-captcha">Enter the six characters shown</label>
+        <div class="mb-3 overflow-hidden rounded-lg border border-gray-200 bg-gray-100 dark:border-gray-700">
+          <img src="{{ captcha.image_url }}" width="300" height="106" alt="Image verification challenge with six characters" draggable="false" loading="eager">
+        </div>
+        <a href="/account/login" class="mb-3 inline-block text-sm text-brand-600 hover:underline dark:text-brand-300">Get a new image</a>
         <input type="hidden" name="captcha_id" value="{{ captcha.challenge_id }}">
-        <input class="opg-input" id="account-captcha" name="captcha_answer" inputmode="numeric" pattern="[0-9]{1,2}" maxlength="2" autocomplete="off" required>
+        <input class="opg-input" id="account-captcha" name="captcha_answer" inputmode="text" pattern="[A-Za-z2-9]{6}" minlength="6" maxlength="6" autocapitalize="characters" spellcheck="false" autocomplete="off" required>
       </div>
     {% elseif captcha.mode|default('') == 'recaptcha' %}
       <div class="g-recaptcha" data-sitekey="{{ captcha.site_key }}"></div>

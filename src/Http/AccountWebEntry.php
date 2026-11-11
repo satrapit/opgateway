@@ -188,7 +188,12 @@ final readonly class AccountWebEntry
             }
         }
 
-        if (GoogleOidcBrowserController::route($path)) {
+        if ($path === '/account/captcha/image') {
+            $image = $method === 'GET' ? $captcha->image() : null;
+            $response = $image === null ? self::error(404) : [
+                'status' => 200, 'content_type' => 'image/png', 'body' => $image,
+            ];
+        } elseif (GoogleOidcBrowserController::route($path)) {
             $response = (new GoogleOidcBrowserController(
                 $session, $accounts, $login, $ownerOverview,
                 new PdoGoogleIdentityStore($pdo), $googleSettings,

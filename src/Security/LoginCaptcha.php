@@ -44,7 +44,7 @@ final readonly class LoginCaptcha
             : ['captcha_id', 'captcha_answer'];
     }
 
-    /** @return array{mode:string,prompt?:string,challenge_id?:string,site_key?:string} */
+    /** @return array{mode:string,image_url?:string,challenge_id?:string,site_key?:string} */
     public function challenge(): array
     {
         self::assertSession();
@@ -56,19 +56,38 @@ final readonly class LoginCaptcha
             }
             return ['mode' => 'recaptcha', 'site_key' => $settings['site_key']];
         }
-        $a = random_int(2, 19);
-        $b = random_int(2, 19);
+        $answer = OfflineCaptchaImage::randomAnswer();
+        $png = OfflineCaptchaImage::render($answer);
         $id = bin2hex(random_bytes(16));
         $_SESSION[$this->sessionKey()] = [
             'id' => $id,
-            'answer' => $a + $b,
+            'answer_hash' => hash_hmac(
+                'sha256', $answer, $this->limiterKey . $id,
+            ),
+            'image' => $png,
             'issued_at' => time(),
         ];
         return [
             'mode' => 'offline',
-            'prompt' => "What is $a + $b?",
             'challenge_id' => $id,
+            'image_url' => '/' . $this->scope . '/captcha/image',
         ];
+    }
+
+    /** Read-only, session-bound binary image, never the solution. */
+    public function image(): ?string
+    {
+        self::assertSession();
+        if ($this->settings->summary()['provider'] !== 'offline') {
+            return null;
+        }
+        $pending = $_SESSION[$this->sessionKey()] ?? null;
+        return is_array($pending)
+            && is_string($pending['image'] ?? null)
+            && is_int($pending['issued_at'] ?? null)
+            && $pending['issued_at'] <= time()
+            && time() - $pending['issued_at'] <= self::CHALLENGE_TTL
+            ? $pending['image'] : null;
     }
 
     /** @param array<string,string> $fields */
@@ -88,16 +107,23 @@ final readonly class LoginCaptcha
             unset($_SESSION[$this->sessionKey()]);
             if (!is_array($pending)
                 || !is_string($pending['id'] ?? null)
-                || !is_int($pending['answer'] ?? null)
+                || !is_string($pending['answer_hash'] ?? null)
+                || preg_match('/^[a-f0-9]{64}$/D', $pending['answer_hash']) !== 1
                 || !is_int($pending['issued_at'] ?? null)
                 || $pending['issued_at'] > time()
                 || time() - $pending['issued_at'] > self::CHALLENGE_TTL
                 || !is_string($fields['captcha_id'] ?? null)
                 || !hash_equals($pending['id'], $fields['captcha_id'])
-                || preg_match('/^[0-9]{1,2}$/D', $fields['captcha_answer'] ?? '') !== 1) {
+                || preg_match('/^[A-Z2-9]{6}$/D',
+                    strtoupper(trim($fields['captcha_answer'] ?? '')),
+                ) !== 1) {
                 return false;
             }
-            return hash_equals((string) $pending['answer'], $fields['captcha_answer']);
+            return hash_equals(
+                $pending['answer_hash'],
+                hash_hmac('sha256', strtoupper(trim($fields['captcha_answer'])),
+                    $this->limiterKey . $pending['id']),
+            );
         }
 
         unset($_SESSION[$this->sessionKey()]);

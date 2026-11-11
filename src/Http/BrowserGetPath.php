@@ -19,12 +19,12 @@ final class BrowserGetPath
 
         $canonical = substr($path, 0, -1);
         return in_array($canonical, [
-            '/admin', '/admin/login', '/admin/users', '/admin/owners',
+            '/admin', '/admin/login', '/admin/captcha/image', '/admin/users', '/admin/owners',
             '/admin/clients', '/admin/ips/pending', '/admin/ips/approved',
             '/admin/settings', '/admin/settings/security', '/admin/settings/login',
             '/admin/settings/login/google', '/admin/settings/login/captcha',
             '/admin/settings/smtp', '/admin/settings/google',
-            '/account', '/account/login', '/account/register',
+            '/account', '/account/login', '/account/captcha/image', '/account/register',
             '/account/verify', '/account/forgot-password', '/account/reset-password',
             '/account/provider', '/account/clients', '/account/keys', '/account/ips',
             '/account/google', '/account/google/start', '/account/google/callback',

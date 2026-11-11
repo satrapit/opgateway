@@ -178,7 +178,12 @@ final readonly class AdministrativeWebEntry
             }
         }
 
-        if (in_array($path, [
+        if ($path === '/admin/captcha/image') {
+            $image = $method === 'GET' ? $captcha->image() : null;
+            $response = $image === null ? self::error(404) : [
+                'status' => 200, 'content_type' => 'image/png', 'body' => $image,
+            ];
+        } elseif (in_array($path, [
             '/admin/settings', '/admin/settings/login',
             '/admin/settings/login/captcha', '/admin/settings/google',
         ], true) && $method === 'GET') {
