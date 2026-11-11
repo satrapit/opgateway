@@ -9,8 +9,8 @@ use OPGateway\Database\Migrations\MigrationRunner;
 use OPGateway\Database\Migrations\SchemaReadiness;
 use PDO;
 use PDOStatement;
-use RuntimeException;
 use PHPUnit\Framework\TestCase;
+use RuntimeException;
 
 final class SchemaReadinessTest extends TestCase
 {
@@ -30,7 +30,8 @@ final class SchemaReadinessTest extends TestCase
         foreach ($migrations as $migration) {
             self::assertMatchesRegularExpression('/^[0-9a-f]{64}$/', MigrationRunner::checksum($migration));
         }
-    } 
+    }
+
     /** @return list<array{version:string,checksum:string,status:string}> */
     private static function allMigrationRows(): array
     {
