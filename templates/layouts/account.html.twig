@@ -8,6 +8,8 @@
       <a class="opg-nav-link" href="/account/clients"{% if active_section == 'clients' %} aria-current="page"{% endif %}><svg viewBox="0 0 24 24" class="opg-icon" aria-hidden="true" focusable="false"><use href="{{ admin_assets.icons }}#opg-icon-users"></use></svg> API clients</a>
       <a class="opg-nav-link" href="/account/keys"{% if active_section == 'keys' %} aria-current="page"{% endif %}><svg viewBox="0 0 24 24" class="opg-icon" aria-hidden="true" focusable="false"><use href="{{ admin_assets.icons }}#opg-icon-shield-check"></use></svg> API keys</a>
       <a class="opg-nav-link" href="/account/ips"{% if active_section == 'ips' %} aria-current="page"{% endif %}><svg viewBox="0 0 24 24" class="opg-icon" aria-hidden="true" focusable="false"><use href="{{ admin_assets.icons }}#opg-icon-clock"></use></svg> Allowed IPs</a>
+      <p class="px-3 pb-2 pt-6 text-xs font-semibold uppercase tracking-widest text-gray-400">Account settings</p>
+      <a class="opg-nav-link" href="/account/google"{% if active_section == 'google' %} aria-current="page"{% endif %}>Google sign-in</a>
     </nav>
 {% endblock %}
 {% block sidebar_note %}Your account and API access{% endblock %}

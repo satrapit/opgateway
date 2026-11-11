@@ -5,6 +5,9 @@ declare(strict_types=1);
 namespace OPGateway\Http;
 
 use OPGateway\Clients\ClientManagementService;
+use OPGateway\Google\PdoGoogleOAuthSettings;
+use OPGateway\Google\GoogleOidcClient;
+use OPGateway\Identity\PdoGoogleIdentityStore;
 use OPGateway\Clients\OwnerIntegrationService;
 use OPGateway\Database\Migrations\MigrationCatalog;
 use OPGateway\Identity\EmailVerificationService;
@@ -154,9 +157,12 @@ final readonly class AccountWebEntry
         }
 
         $ownerOverview = new OwnerOverviewRepository($pdo);
+        $googleSettings = new PdoGoogleOAuthSettings($pdo, $vault);
+        $googleAvailable = $googleSettings->configured();
         $adapter = new AccountBrowserAdapter(
             $session, $login, $accounts, $ownerOverview,
             $credentials, $integration, $registration !== null,
+            $googleAvailable,
         );
 
         $body = null;
@@ -178,7 +184,18 @@ final readonly class AccountWebEntry
             }
         }
 
-        if (SelfServiceBrowserController::route($path)) {
+        if (GoogleOidcBrowserController::route($path)) {
+            $response = (new GoogleOidcBrowserController(
+                $session, $accounts, $login, $ownerOverview,
+                new PdoGoogleIdentityStore($pdo), $googleSettings,
+                new GoogleOidcClient(), $origin,
+            ))->dispatch(
+                $method, $path,
+                isset($server['CONTENT_TYPE']) ? (string) $server['CONTENT_TYPE'] : null,
+                $body, (string) ($server['REMOTE_ADDR'] ?? ''),
+                bin2hex(random_bytes(16)), (string) ($server['QUERY_STRING'] ?? ''),
+            );
+        } elseif (SelfServiceBrowserController::route($path)) {
             if ($registration === null
                 && in_array($path, [
                     '/account/register', '/account/verify', '/account/verify/resend',

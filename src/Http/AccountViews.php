@@ -16,7 +16,10 @@ use OPGateway\View\TwigRenderer;
  */
 final class AccountViews
 {
-    public static function login(string $csrfToken, bool $failed = false, bool $allowRegistration = false): string
+    public static function login(
+        string $csrfToken, bool $failed = false, bool $allowRegistration = false,
+        bool $googleAvailable = false,
+    ): string
     {
         self::validateCsrf($csrfToken);
         return self::render('account/login.html.twig', [
@@ -26,6 +29,7 @@ final class AccountViews
             'csrf_token' => $csrfToken,
             'show_error' => $failed,
             'allow_registration' => $allowRegistration,
+            'google_available' => $googleAvailable,
         ]);
     }
 
@@ -178,6 +182,31 @@ final class AccountViews
             'integration_enabled' => $integrationEnabled,
             'provider' => $provider,
         ]);
+    }
+
+    /** Account sign-in methods; local password login is always retained. */
+    public static function google(
+        string $csrfToken, string $email, bool $googleAvailable, ?string $linkedEmail,
+    ): string {
+        self::validateCsrf($csrfToken);
+        return self::render('account/google.html.twig', [
+            'active_section' => 'google',
+            'section_title' => 'Google sign-in',
+            'csrf_token' => $csrfToken,
+            'workspace_home' => '/account',
+            'workspace_name' => 'Account',
+            'workspace_footer' => 'OPGateway · Account',
+            'logout_path' => '/account/logout',
+            'user_label' => $email,
+            'google_available' => $googleAvailable,
+            'linked_email' => $linkedEmail,
+        ]);
+    }
+
+    public static function googleStatus(string $title, string $message): string
+    {
+        return self::status($title, 'Google sign-in', $message,
+            '/account/login', 'Back to sign in');
     }
 
     /** An issued bearer key is shown on exactly one POST response, never a GET. */

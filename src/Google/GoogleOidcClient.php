@@ -7,7 +7,7 @@ namespace OPGateway\Google;
 use RuntimeException;
 
 /** Network-only OIDC authorization-code exchange with fixed Google hosts. */
-final readonly class GoogleOidcClient
+final readonly class GoogleOidcClient implements GoogleOidcProvider
 {
     private const TOKEN_URL = 'https://oauth2.googleapis.com/token';
     private const CERTS_URL = 'https://www.googleapis.com/oauth2/v1/certs';

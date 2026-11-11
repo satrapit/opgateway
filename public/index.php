@@ -68,8 +68,18 @@ try {
 
 http_response_code($response['status']);
 if (isset($response['location'])) {
-    // Route handlers allow only fixed internal paths.
-    header('Location: ' . $response['location'], true, $response['status']);
+    // Google authorization is the sole external redirect; its URL is built
+    // from a fixed Google endpoint and validated client data by the server.
+    $location = $response['location'];
+    if (preg_match('~^/(?:account|admin)(?:/|$)~D', $location) !== 1
+        && !str_starts_with($location,
+            'https://accounts.google.com/o/oauth2/v2/auth?')) {
+        http_response_code(503);
+        header('Content-Type: application/json; charset=utf-8');
+        echo '{"error":"service_unavailable"}';
+        exit;
+    }
+    header('Location: ' . $location, true, $response['status']);
 }
 header('Content-Type: ' . $response['content_type']);
 header('Cache-Control: no-store, private');

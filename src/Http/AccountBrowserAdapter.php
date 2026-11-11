@@ -28,6 +28,7 @@ final readonly class AccountBrowserAdapter
         private ?OwnerCredentialManager $credentials = null,
         private ?OwnerIntegrationService $integration = null,
         private bool $registrationAvailable = false,
+        private bool $googleAvailable = false,
     ) {
     }
 
@@ -48,7 +49,10 @@ final readonly class AccountBrowserAdapter
         }
 
         if ($path === '/account/login' && $method === 'GET') {
-            return self::html(AccountViews::login($this->session->csrfToken(), false, $this->registrationAvailable));
+            return self::html(AccountViews::login(
+                $this->session->csrfToken(), false,
+                $this->registrationAvailable, $this->googleAvailable,
+            ));
         }
 
         if ($path === '/account/login' && $method === 'POST') {
@@ -68,7 +72,10 @@ final readonly class AccountBrowserAdapter
                 $form['email'], $form['password'], $sourceIp, $requestId,
             );
             if ($identity === null) {
-                return self::html(AccountViews::login($this->session->csrfToken(), true, $this->registrationAvailable), 401);
+                return self::html(AccountViews::login(
+                    $this->session->csrfToken(), true,
+                    $this->registrationAvailable, $this->googleAvailable,
+                ), 401);
             }
             $this->session->authenticate($identity['id'], $identity['stamp']);
             return self::redirect('/account');

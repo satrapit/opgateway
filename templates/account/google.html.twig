@@ -1,0 +1,26 @@
+{% extends 'layouts/account.html.twig' %}
+{% block dashboard_content %}
+<section class="opg-panel p-6 sm:p-8" aria-labelledby="google-account-title">
+  <h2 id="google-account-title" class="opg-section-title">Google sign-in</h2>
+  <p class="opg-section-subtitle">You can keep signing in with your email and password, even if Google is unavailable.</p>
+  {% if not google_available %}
+    <div class="opg-alert mt-6" role="status">Google sign-in has not been configured by the administrator.</div>
+  {% elseif linked_email %}
+    <p class="mt-6 text-sm text-gray-700 dark:text-gray-300">Connected Google account: <strong>{{ linked_email }}</strong></p>
+    <form method="post" action="/account/google/unlink" class="mt-6 grid max-w-lg gap-4">
+      <input type="hidden" name="_csrf" value="{{ csrf_token }}">
+      <label class="opg-label" for="google-unlink-password">Confirm your account password to disconnect Google</label>
+      <input class="opg-input" id="google-unlink-password" type="password" name="current_password" autocomplete="current-password" maxlength="1024" required>
+      <button class="opg-danger-button" type="submit">Disconnect Google</button>
+    </form>
+  {% else %}
+    <p class="mt-6 text-sm text-gray-600 dark:text-gray-300">Connect a Google account that uses the same verified email address as this OPGateway account.</p>
+    <form method="post" action="/account/google/link" class="mt-6 grid max-w-lg gap-4">
+      <input type="hidden" name="_csrf" value="{{ csrf_token }}">
+      <label class="opg-label" for="google-link-password">Confirm your account password</label>
+      <input class="opg-input" id="google-link-password" type="password" name="current_password" autocomplete="current-password" maxlength="1024" required>
+      <button class="opg-primary-button" type="submit">Connect Google account</button>
+    </form>
+  {% endif %}
+</section>
+{% endblock %}
