@@ -9,6 +9,8 @@ use OPGateway\Identity\AdministratorAuthorization;
 use OPGateway\Mail\PdoSmtpSettings;
 use OPGateway\Google\PdoGoogleOAuthSettings;
 use OPGateway\Security\SealedSecret;
+use OPGateway\Security\PdoLoginCaptchaSettings;
+use OPGateway\Security\LoginCaptcha;
 use OPGateway\Security\RuntimeSecrets;
 use OPGateway\Database\Migrations\SchemaReadiness;
 use OPGateway\Database\PdoConnectionFactory;
@@ -97,6 +99,7 @@ final readonly class AdministrativeWebEntry
         }
         try {
             $key = RuntimeSecrets::limiterKey(dirname(__DIR__, 2));
+            $vault = new SealedSecret(RuntimeSecrets::key(dirname(__DIR__, 2)));
         } catch (Throwable $exception) {
             DiagnosticLog::record('admin.secret_unavailable', 503, $exception);
             return self::error(503);
@@ -144,20 +147,21 @@ final readonly class AdministrativeWebEntry
             }
         }
 
+        $captchaSettings = new PdoLoginCaptchaSettings($pdo, $vault);
+        $captcha = new LoginCaptcha(
+            $captchaSettings, $pdo, $key,
+            CanonicalOrigin::fromServer($server) ?? '', 'admin',
+        );
         $pages = new TwigAdminPageRenderer(
             new TwigRenderer(dirname(__DIR__, 2) . '/templates'),
         );
 
         $adapter = new PrivateBrowserAdapter(
             $session, $auth, $accounts, $admins,
-            new AdminOverviewRepository($pdo), $review, $pages,
+            new AdminOverviewRepository($pdo), $review, $pages, $captcha,
         );
 
-        if (in_array($path, ['/admin/settings/smtp', '/admin/settings/google'], true)) {
-            $vault = new SealedSecret(RuntimeSecrets::key(dirname(__DIR__, 2)));
-        }
-
-        $body = null;
+         $body = null;
         if ($method === 'POST') {
             $stream = fopen('php://input', 'rb');
             if ($stream === false) {
@@ -175,6 +179,31 @@ final readonly class AdministrativeWebEntry
         }
 
         if ($path === '/admin/settings/google') {
+            // Keep the previous bookmark working without accepting legacy POSTs.
+            $response = $method === 'GET'
+                ? ['status' => 303, 'content_type' => 'text/plain; charset=utf-8',
+                    'body' => '', 'location' => '/admin/settings/login/google']
+                : self::error(404);
+        } elseif (in_array($path, [
+            '/admin/settings', '/admin/settings/login',
+            '/admin/settings/login/captcha',
+        ], true)) {
+            $login = new GuardedLoginService(
+                new LoginAuthenticator($accounts, new PasswordHasher()),
+                new PdoLoginAttemptLimiter($pdo, $key),
+                new PdoSecurityEventRecorder($pdo),
+            );
+            $response = (new AdminLoginSettingsController(
+                $session, $accounts, $admins, $login, $captchaSettings,
+                new PdoGoogleOAuthSettings($pdo, $vault),
+                new TwigRenderer(dirname(__DIR__, 2) . '/templates'), $pdo,
+            ))->handle(
+                $method, $path,
+                isset($server['CONTENT_TYPE']) ? (string) $server['CONTENT_TYPE'] : null,
+                $body, (string) ($server['REMOTE_ADDR'] ?? ''),
+                bin2hex(random_bytes(16)),
+            );
+        } elseif ($path === '/admin/settings/login/google') {
             $login = new GuardedLoginService(
                 new LoginAuthenticator($accounts, new PasswordHasher()),
                 new PdoLoginAttemptLimiter($pdo, $key),
@@ -217,8 +246,14 @@ final readonly class AdministrativeWebEntry
 
         // Admin HTML uses only the locally bundled Twig assets.
         if (str_starts_with($response['content_type'], 'text/html')) {
-            $response['csp'] = "default-src 'none'; style-src 'self'; script-src 'self'; "
-                . "img-src 'self' data:; font-src 'self'; form-action 'self'; "
+            $recaptcha = $path === '/admin/login'
+                && $captchaSettings->summary()['provider'] === 'recaptcha';
+            $response['csp'] = "default-src 'none'; style-src 'self'; script-src 'self'"
+                . ($recaptcha ? " https://www.google.com/recaptcha/ https://www.gstatic.com/recaptcha/" : "")
+                . "; img-src 'self' data:"
+                . ($recaptcha ? " https://www.google.com https://www.gstatic.com" : "")
+                . "; font-src 'self'; form-action 'self'; "
+                . ($recaptcha ? "frame-src https://www.google.com/recaptcha/ https://recaptcha.google.com/recaptcha/; " : "")
                 . "base-uri 'none'; frame-ancestors 'none'; object-src 'none'";
         }
         return $response;

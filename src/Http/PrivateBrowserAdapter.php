@@ -70,6 +70,9 @@ final readonly class PrivateBrowserAdapter
                         $this->session->csrfToken(), true, $this->captcha->challenge(),
                     ), 403);
             }
+            if (!$this->session->csrfValid($form['_csrf'])) {
+                return self::error(403);
+            }
             $result = $this->auth->login(
                 $trustedHttps, $method, $contentType,
                 $sourceIp, $requestId, $form['_csrf'], $form['email'], $form['password'],

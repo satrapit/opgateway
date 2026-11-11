@@ -22,6 +22,8 @@ use OPGateway\Mail\PhpMailerVerificationMailer;
 use OPGateway\Provider\PdoProviderAccount;
 use OPGateway\Security\PdoSignupLimiter;
 use OPGateway\Security\SealedSecret;
+use OPGateway\Security\PdoLoginCaptchaSettings;
+use OPGateway\Security\LoginCaptcha;
 use OPGateway\Security\RuntimeSecrets;
 use OPGateway\Database\Migrations\SchemaReadiness;
 use OPGateway\Database\PdoConnectionFactory;
@@ -159,10 +161,12 @@ final readonly class AccountWebEntry
         $ownerOverview = new OwnerOverviewRepository($pdo);
         $googleSettings = new PdoGoogleOAuthSettings($pdo, $vault);
         $googleAvailable = $googleSettings->configured();
+        $captchaSettings = new PdoLoginCaptchaSettings($pdo, $vault);
+        $captcha = new LoginCaptcha($captchaSettings, $pdo, $secret, $origin, 'account');
         $adapter = new AccountBrowserAdapter(
             $session, $login, $accounts, $ownerOverview,
             $credentials, $integration, $registration !== null,
-            $googleAvailable,
+            $googleAvailable, $captcha,
         );
 
         $body = null;
@@ -228,8 +232,14 @@ final readonly class AccountWebEntry
         // The shared locally bundled TailAdmin/Twig UI uses the same strict
         // Content Security Policy for account and administrator HTML.
         if (str_starts_with($response['content_type'], 'text/html')) {
-            $response['csp'] = "default-src 'none'; style-src 'self'; script-src 'self'; "
-                . "img-src 'self' data:; font-src 'self'; form-action 'self'; "
+            $recaptcha = $path === '/account/login'
+                && $captchaSettings->summary()['provider'] === 'recaptcha';
+            $response['csp'] = "default-src 'none'; style-src 'self'; script-src 'self'"
+                . ($recaptcha ? " https://www.google.com/recaptcha/ https://www.gstatic.com/recaptcha/" : "")
+                . "; img-src 'self' data:"
+                . ($recaptcha ? " https://www.google.com https://www.gstatic.com" : "")
+                . "; font-src 'self'; form-action 'self'; "
+                . ($recaptcha ? "frame-src https://www.google.com/recaptcha/ https://recaptcha.google.com/recaptcha/; " : "")
                 . "base-uri 'none'; frame-ancestors 'none'; object-src 'none'";
         }
         return $response;
