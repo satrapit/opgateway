@@ -161,7 +161,7 @@ final readonly class AdministrativeWebEntry
             new AdminOverviewRepository($pdo), $review, $pages, $captcha,
         );
 
-         $body = null;
+        $body = null;
         if ($method === 'POST') {
             $stream = fopen('php://input', 'rb');
             if ($stream === false) {
@@ -253,6 +253,7 @@ final readonly class AdministrativeWebEntry
                 . "; img-src 'self' data:"
                 . ($recaptcha ? " https://www.google.com https://www.gstatic.com" : "")
                 . "; font-src 'self'; form-action 'self'; "
+                . ($recaptcha ? "connect-src https://www.google.com/recaptcha/; " : "")
                 . ($recaptcha ? "frame-src https://www.google.com/recaptcha/ https://recaptcha.google.com/recaptcha/; " : "")
                 . "base-uri 'none'; frame-ancestors 'none'; object-src 'none'";
         }

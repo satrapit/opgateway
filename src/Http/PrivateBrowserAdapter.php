@@ -63,15 +63,21 @@ final readonly class PrivateBrowserAdapter
             if ($form === null || strlen($form['email']) > 254 || strlen($form['password']) > 1024) {
                 return self::error(400);
             }
+            if ($contentType === null || preg_match(
+                '~^application/x-www-form-urlencoded(?:\s*;\s*charset=utf-8)?$~iD',
+                $contentType,
+            ) !== 1) {
+                return self::error(415);
+            }
+            if (!$this->session->csrfValid($form['_csrf'])) {
+                return self::error(403);
+            }
             if ($this->captcha !== null
                 && !$this->captcha->verify($form, $sourceIp)) {
                 return $this->pages === null ? self::error(403)
                     : self::html($this->pages->login(
                         $this->session->csrfToken(), true, $this->captcha->challenge(),
                     ), 403);
-            }
-            if (!$this->session->csrfValid($form['_csrf'])) {
-                return self::error(403);
             }
             $result = $this->auth->login(
                 $trustedHttps, $method, $contentType,
