@@ -47,4 +47,19 @@
     </div>
   </form>
 </section>
+<section class="opg-panel p-6 sm:p-8 mt-6" aria-labelledby="gmail-actions-title">
+  <h2 id="gmail-actions-title" class="text-xl font-semibold text-gray-900 dark:text-white">Gmail inbox verification</h2>
+  <p class="mt-2 text-sm text-gray-500 dark:text-gray-400">Optional one-click Verify Email action in Gmail for new account verification and invitations. Google must approve the sender before Gmail displays it. The standard verification link remains available.</p>
+  <form method="post" action="/admin/settings/smtp/gmail-actions" class="mt-5 space-y-4">
+    <input type="hidden" name="_csrf" value="{{ csrf_token }}">
+    <div>
+      <label class="opg-label" for="gmail-actions-enabled">Gmail action markup</label>
+      <select class="opg-input" id="gmail-actions-enabled" name="enabled">
+        <option value="0"{% if not gmail_actions_enabled %} selected{% endif %}>Disabled (default)</option>
+        <option value="1"{% if gmail_actions_enabled %} selected{% endif %}>Enabled</option>
+      </select>
+    </div>
+    <button type="submit" class="opg-primary-button">Save Gmail action setting</button>
+  </form>
+</section>
 {% endblock %}
