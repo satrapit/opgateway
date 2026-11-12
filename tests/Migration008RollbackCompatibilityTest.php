@@ -17,15 +17,16 @@ use PHPUnit\Framework\TestCase;
 /** Regression contract for a code-only rollback on a migration-008 database. */
 final class Migration008RollbackCompatibilityTest extends TestCase
 {
-    public function testRollbackCatalogStillRequiresAllEightMigrations(): void
+    public function testCurrentCatalogRetainsEightAndAddsNinthMigration(): void
     {
         $versions = array_map(
             static fn ($migration): string => $migration->version(),
             MigrationCatalog::all(),
         );
 
-        self::assertCount(8, $versions);
+        self::assertCount(9, $versions);
         self::assertSame('202611120001_enable_optional_passwords', $versions[7]);
+        self::assertSame('202611120002_add_user_names', $versions[8]);
     }
 
     public function testLinkedGoogleOnlyUserAuthenticatesBySubjectAndSessionVersion(): void
