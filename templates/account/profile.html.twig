@@ -4,7 +4,7 @@
   <p class="mb-2 text-sm font-semibold text-brand-600 dark:text-brand-300">Account details</p>
   <h2 id="profile-heading" class="text-2xl font-semibold text-gray-900 dark:text-white">Complete your profile</h2>
   <p class="mt-3 mb-7 text-sm leading-6 text-gray-600 dark:text-gray-300">Enter your first and last name to enable account actions. You can update them later.</p>
-  {% if profile_error|default(false) %}<div class="opg-alert opg-alert-error mb-5" role="alert">Enter a valid first and last name (up to 100 bytes each).</div>{% endif %}
+  {% if profile_error|default(false) %}<div class="opg-alert opg-alert-error mb-5" role="alert">Enter a valid first and last name (up to 100 characters each).</div>{% endif %}
   <form method="post" action="/account/profile" class="space-y-5">
     <input type="hidden" name="_csrf" value="{{ csrf_token }}">
     <div><label class="opg-label" for="profile-first">First name</label>
