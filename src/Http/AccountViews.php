@@ -168,6 +168,7 @@ final class AccountViews
         bool $integrationEnabled = false, array $provider = [], string $section = 'overview',
         bool $googleStepUp = false,
         bool $profileComplete = true,
+        string $displayName = '',
     ): string {
         self::validateCsrf($csrfToken);
         $sections = [
@@ -188,7 +189,7 @@ final class AccountViews
             'workspace_name' => 'Account',
             'workspace_footer' => 'OPGateway · Account',
             'logout_path' => '/account/logout',
-            'user_label' => $overview['email'],
+            'user_label' => $displayName !== '' ? $displayName : $overview['email'],
             'overview' => $overview,
             'keys_enabled' => $keysEnabled,
             'integration_enabled' => $integrationEnabled,
