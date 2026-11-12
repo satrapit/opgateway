@@ -221,6 +221,7 @@ final class AccountViews
     public static function security(
         string $csrfToken, string $email, bool $hasPassword,
         bool $googleAvailable, ?string $linkedEmail,
+        bool $profileComplete = true,
     ): string {
         self::validateCsrf($csrfToken);
         return self::render('account/google.html.twig', [
@@ -235,6 +236,7 @@ final class AccountViews
             'google_available' => $googleAvailable,
             'linked_email' => $linkedEmail,
             'has_password' => $hasPassword,
+            'profile_complete' => $profileComplete,
         ]);
     }
 
