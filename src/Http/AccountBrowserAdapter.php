@@ -154,7 +154,10 @@ final readonly class AccountBrowserAdapter
             if ($data === null) {
                 return self::error(403);
             }
-            $profileComplete = $this->profiles?->complete($userId) ?? true;
+            $profile = $this->profiles?->forUser($userId);
+            $profileComplete = $profile['complete'] ?? true;
+            $displayName = $profileComplete && $profile !== null
+                ? trim($profile['first_name'] . ' ' . $profile['last_name']) : '';
             if ($path === '/account' && !$profileComplete) {
                 return self::redirect('/account/profile');
             }
@@ -164,7 +167,7 @@ final readonly class AccountBrowserAdapter
                 $sections[$path],
                 $this->googleAvailable
                     && $this->googleIdentities?->linked($userId) !== null,
-                $profileComplete,
+                $profileComplete, $displayName,
             ));
         }
 
