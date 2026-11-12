@@ -324,6 +324,8 @@ final readonly class GoogleOidcBrowserController
             $result = $this->identities->loginOrRegister(
                 $google['sub'], $google['email'],
                 (bool) ($google['email_authoritative'] ?? false),
+                is_string($google['given_name'] ?? null) ? $google['given_name'] : null,
+                is_string($google['family_name'] ?? null) ? $google['family_name'] : null,
             );
         } catch (Throwable) {
             $this->record('google_login_denied', $requestId);
