@@ -13,6 +13,7 @@ use OPGateway\Identity\BrowserSession;
 use OPGateway\Identity\GuardedLoginService;
 use OPGateway\Identity\LoginAccountRepository;
 use OPGateway\Identity\PdoGoogleIdentityStore;
+use OPGateway\Identity\PdoUserProfile;
 use OPGateway\Mail\GoogleIdentityConfirmationMailer;
 use OPGateway\Mail\SmtpConfigurationException;
 use OPGateway\Observability\DiagnosticLog;
@@ -36,6 +37,7 @@ final readonly class GoogleOidcBrowserController
         private ?GoogleIdentityConfirmationMailer $confirmationMailer = null,
         private ?AccountSecurityService $accountSecurity = null,
         private ?SecurityEventRecorder $events = null,
+        private ?PdoUserProfile $profiles = null,
     ) {
     }
 
@@ -106,6 +108,7 @@ final readonly class GoogleOidcBrowserController
         return self::html(AccountViews::security(
             $this->session->csrfToken(), $email, $security['has_password'],
             $this->settings->configured(), $linked['email'] ?? null,
+            $this->profiles?->complete($userId) ?? true,
         ));
     }
 
