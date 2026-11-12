@@ -202,6 +202,12 @@ final class GoogleOidcPolicyTest extends TestCase
                 self::CLIENT_ID, $nonce, $certs,
             ),
         );
+        $named = $verifier->verify(
+            $make([...$claims, 'given_name' => 'Majid', 'family_name' => 'Barkhordari']),
+            self::CLIENT_ID, $nonce, $certs,
+        );
+        self::assertSame('Majid', $named['given_name'] ?? null);
+        self::assertSame('Barkhordari', $named['family_name'] ?? null);
         self::assertNull($verifier->verify(
             $make([...$claims, 'hd' => 'not a domain']),
             self::CLIENT_ID, $nonce, $certs,
