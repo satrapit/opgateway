@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace OPGateway\Google;
 
 use InvalidArgumentException;
+use OPGateway\Identity\PdoUserProfile;
 
 /**
  * Verify Google-signed RS256 ID tokens using PEM certificates obtained over
@@ -100,7 +101,15 @@ final class GoogleOidcIdTokenVerifier
         $authoritative = $emailDomain === 'gmail.com'
             || ($hostedDomain !== null && hash_equals($emailDomain, $hostedDomain));
 
+        $names = [];
+        foreach (['given_name', 'family_name'] as $claim) {
+            if (is_string($claims[$claim] ?? null)
+                && ($clean = PdoUserProfile::cleanName($claims[$claim])) !== null) {
+                $names[$claim] = $clean;
+            }
+        }
         return [
+            ...$names,
             'sub' => $claims['sub'],
             'email' => $email,
             'email_verified' => true,
