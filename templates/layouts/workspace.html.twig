@@ -44,6 +44,9 @@
       </div>
     </header>
     <main id="main-content" class="mx-auto w-full min-w-0 max-w-screen-2xl px-4 py-6 sm:px-6 lg:px-8 lg:py-8">
+      {% if profile_complete is defined and not profile_complete %}
+      <div class="opg-alert mb-6" role="status">Complete your profile to use account features. <a class="font-semibold underline" href="/account/profile">Add first and last name</a></div>
+      {% endif %}
       {% block dashboard_content %}{% endblock %}
       <footer class="pb-5 pt-8 text-center text-xs text-gray-500 dark:text-gray-400">{{ workspace_footer|default('OPGateway · Security-sensitive administrator workspace') }}</footer>
     </main>
