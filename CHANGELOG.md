@@ -1,3 +1,10 @@
+## Unreleased — Gmail inbox email verification actions
+
+- Add optional Gmail `ConfirmAction` markup to signup and invitation emails, retaining ordinary verification links and plain-text alternatives.
+- Provide a one-use POST handler for Gmail inbox confirmation, using existing 30-minute hashed verification tokens.
+- Add an administrator toggle in SMTP settings, default disabled, with no database migration.
+- Document Gmail sender registration and add focused PHP regression tests.
+
 ## Unreleased — shared user profiles and recovery CAPTCHA
 
 - Require the configured offline or Google CAPTCHA on password recovery requests.
