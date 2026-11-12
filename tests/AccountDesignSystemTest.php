@@ -80,6 +80,21 @@ final class AccountDesignSystemTest extends TestCase
         self::assertStringContainsString('select-all break-all', $page);
         self::assertStringNotContainsString('?key=', $page);
         self::assertStringNotContainsString('localStorage', $page);
+
+        $authorization = 'https://accounts.google.com/o/oauth2/v2/auth?client_id=test&state=abc';
+        $continuation = AccountViews::googleContinuation($authorization);
+        self::assertStringContainsString('<meta http-equiv="refresh"', $continuation);
+        self::assertStringContainsString('Continue to Google', $continuation);
+        self::assertStringContainsString('client_id=test&amp;state=abc', $continuation);
+        self::assertStringContainsString('<meta name="referrer" content="no-referrer">',
+            $continuation);
+        self::assertStringNotContainsString('<form', $continuation);
+    }
+
+    public function testGoogleContinuationRejectsNonGoogleDestinations(): void
+    {
+        $this->expectException(\InvalidArgumentException::class);
+        AccountViews::googleContinuation('https://example.com/o/oauth2/v2/auth?state=abc');
     }
 
     public function testOwnerHtmlCspAndSharedRendererAreConfiguredWithoutFeatureFlags(): void

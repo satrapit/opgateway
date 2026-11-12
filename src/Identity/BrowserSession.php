@@ -19,6 +19,7 @@ final class BrowserSession
     private const AUTH_AT_KEY = 'opgateway_auth_at';
     private const STAMP_KEY = 'opgateway_auth_session_stamp';
     private const GOOGLE_GRANTS_KEY = 'opgateway_google_action_grants';
+    private const GOOGLE_LINK_KEY = 'opgateway_google_link_grant';
     private const MAX_AGE_SECONDS = 1800;
 
     /** Start a locked-down server-side session over an explicitly trusted HTTPS request. */
@@ -126,6 +127,34 @@ final class BrowserSession
         return true;
     }
 
+    /** Authorize one same-origin continuation after password-confirmed linking. */
+    public function grantGoogleLink(int $userId): void
+    {
+        $this->assertActive();
+        if ($userId < 1) {
+            throw new RuntimeException('Invalid Google link continuation.');
+        }
+        $_SESSION[self::GOOGLE_LINK_KEY] = [
+            'user_id' => $userId,
+            'granted_at' => time(),
+        ];
+    }
+
+    /** Consume the link continuation once and within five minutes. */
+    public function consumeGoogleLink(int $userId): bool
+    {
+        $this->assertActive();
+        $grant = $_SESSION[self::GOOGLE_LINK_KEY] ?? null;
+        unset($_SESSION[self::GOOGLE_LINK_KEY]);
+        if (!is_array($grant) || ($grant['user_id'] ?? null) !== $userId
+            || !is_int($grant['granted_at'] ?? null)
+            || $grant['granted_at'] > time()
+            || time() - $grant['granted_at'] > 300) {
+            return false;
+        }
+        return true;
+    }
+
     /** Must only be rendered into an authenticated same-origin HTML form. */
     public function csrfToken(): string
     {
@@ -185,7 +214,8 @@ final class BrowserSession
             || array_key_exists(self::AUTH_AT_KEY, $_SESSION)
             || array_key_exists(self::STAMP_KEY, $_SESSION);
         unset($_SESSION[self::USER_KEY], $_SESSION[self::AUTH_AT_KEY],
-            $_SESSION[self::STAMP_KEY], $_SESSION[self::GOOGLE_GRANTS_KEY]);
+            $_SESSION[self::STAMP_KEY], $_SESSION[self::GOOGLE_GRANTS_KEY],
+            $_SESSION[self::GOOGLE_LINK_KEY]);
         if ($hadIdentity) {
             unset($_SESSION[self::CSRF_KEY]);
         }

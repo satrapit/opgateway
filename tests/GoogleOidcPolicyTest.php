@@ -55,6 +55,7 @@ final class GoogleOidcPolicyTest extends TestCase
         self::assertStringContainsString('action="/account/google/unlink"', $linked);
         self::assertStringNotContainsString('action="/account/google/link"', $linked);
         self::assertTrue(GoogleOidcBrowserController::route('/account/google/callback'));
+        self::assertTrue(GoogleOidcBrowserController::route('/account/google/continue'));
         self::assertFalse(GoogleOidcBrowserController::route('/account/google/unlisted'));
     }
 
@@ -126,6 +127,12 @@ final class GoogleOidcPolicyTest extends TestCase
         self::assertNull(GoogleOidcFlow::take(str_repeat('0', 64)));
         // Incorrect state consumes the flow; it cannot be replayed.
         self::assertNull(GoogleOidcFlow::take($link['state']));
+
+        $session->grantGoogleLink(27);
+        self::assertFalse($session->consumeGoogleLink(28));
+        $session->grantGoogleLink(27);
+        self::assertTrue($session->consumeGoogleLink(27));
+        self::assertFalse($session->consumeGoogleLink(27));
 
         $expired = GoogleOidcFlow::begin(
             self::CLIENT_ID, 'https://opgateway.test', 'login', null,

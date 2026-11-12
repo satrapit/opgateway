@@ -1,0 +1,9 @@
+{% extends 'layouts/account-auth.html.twig' %}
+{% block referrer_policy %}no-referrer{% endblock %}
+{% block head_meta %}<meta http-equiv="refresh" content="0;url={{ authorization_url }}">{% endblock %}
+{% block account_form %}
+  <div class="opg-alert mb-6" role="status">Continuing to Google for secure account verification.</div>
+  <p class="text-sm leading-6 text-gray-600 dark:text-gray-300">If you are not redirected automatically, use the link below.</p>
+  <a class="opg-primary-button mt-6 w-full" href="{{ authorization_url }}" rel="external nofollow">Continue to Google</a>
+  <p class="mt-8 text-center text-sm"><a class="font-semibold text-brand-600 hover:underline dark:text-brand-300" href="/account/security">Cancel and return to Account Security</a></p>
+{% endblock %}

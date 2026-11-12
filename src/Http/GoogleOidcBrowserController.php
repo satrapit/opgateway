@@ -14,6 +14,8 @@ use OPGateway\Identity\GuardedLoginService;
 use OPGateway\Identity\LoginAccountRepository;
 use OPGateway\Identity\PdoGoogleIdentityStore;
 use OPGateway\Mail\GoogleIdentityConfirmationMailer;
+use OPGateway\Mail\SmtpConfigurationException;
+use OPGateway\Observability\DiagnosticLog;
 use OPGateway\Security\SecurityEventRecorder;
 use PDOException;
 use RuntimeException;
@@ -42,7 +44,7 @@ final readonly class GoogleOidcBrowserController
         return in_array($path, [
             '/account/security', '/account/security/password',
             '/account/google', '/account/google/start', '/account/google/callback',
-            '/account/google/confirm', '/account/google/link',
+            '/account/google/confirm', '/account/google/continue', '/account/google/link',
             '/account/google/unlink', '/account/google/verify',
         ], true);
     }
@@ -69,6 +71,9 @@ final readonly class GoogleOidcBrowserController
         }
         if ($path === '/account/google/callback' && $method === 'GET') {
             return $this->callback($rawQuery, $requestId);
+        }
+        if ($path === '/account/google/continue' && $method === 'GET') {
+            return $this->continueLink();
         }
         if ($path === '/account/google/confirm') {
             return $this->confirmation($method, $contentType, $body, $rawQuery, $requestId);
@@ -211,7 +216,27 @@ final readonly class GoogleOidcBrowserController
         if ($this->identities->linked($userId) !== null) {
             return self::error(409);
         }
-        return $this->begin('link', $userId, null);
+        $this->session->grantGoogleLink($userId);
+        return self::redirect('/account/google/continue');
+    }
+
+    /** Break the form-submission redirect chain before leaving the origin. */
+    private function continueLink(): array
+    {
+        $userId = $this->session->currentUserId($this->accounts);
+        if ($userId === null || !$this->session->consumeGoogleLink($userId)
+            || $this->identities->linked($userId) !== null) {
+            return self::error(403);
+        }
+        if (!$this->settings->configured()) {
+            return self::googleError('Google sign-in unavailable',
+                'Use your account password or password recovery instead.', 503);
+        }
+        $flow = GoogleOidcFlow::begin(
+            $this->settings->summary()['client_id'], $this->origin,
+            'link', $userId, null,
+        );
+        return self::html(AccountViews::googleContinuation($flow['url']));
     }
 
     /** @return array{status:int,content_type:string,body:string,location?:string} */
@@ -323,6 +348,9 @@ final readonly class GoogleOidcBrowserController
         }
         if ($result['status'] === 'confirmation_required') {
             if ($this->confirmationMailer === null) {
+                DiagnosticLog::record(
+                    'account.google_confirmation_configuration_failed', 503,
+                );
                 return self::googleError('Email confirmation unavailable',
                     'The existing account could not be confirmed. Try again later.', 503);
             }
@@ -331,20 +359,36 @@ final readonly class GoogleOidcBrowserController
                     (int) $result['user_id'], $google['sub'], $google['email'],
                     $pending['transaction_id'],
                 );
+            } catch (Throwable $error) {
+                DiagnosticLog::record(
+                    'account.google_confirmation_token_creation_failed', 503, $error,
+                );
+                return self::googleError('Email confirmation unavailable',
+                    'The existing account could not be confirmed. Try again later.', 503);
+            }
+            try {
                 $this->confirmationMailer->sendGoogleIdentityConfirmation(
                     $google['email'], $token, $this->origin,
                 );
-            } catch (Throwable) {
-                if (isset($token)) {
-                    $this->identities->cancelConfirmation($token);
-                }
+            } catch (SmtpConfigurationException $error) {
+                $this->cancelConfirmation($token);
+                DiagnosticLog::record(
+                    'account.google_confirmation_configuration_failed', 503, $error,
+                );
+                return self::googleError('Email confirmation unavailable',
+                    'The existing account could not be confirmed. Try again later.', 503);
+            } catch (Throwable $error) {
+                $this->cancelConfirmation($token);
+                DiagnosticLog::record(
+                    'account.google_confirmation_delivery_failed', 503, $error,
+                );
                 return self::googleError('Email confirmation unavailable',
                     'The existing account could not be confirmed. Try again later.', 503);
             }
             try {
                 $this->record('google_confirmation_sent', $requestId);
             } catch (Throwable $error) {
-                $this->identities->cancelConfirmation($token);
+                $this->cancelConfirmation($token);
                 throw $error;
             }
             return self::googleError('Check your email',
@@ -389,6 +433,17 @@ final readonly class GoogleOidcBrowserController
         }
         return self::googleError('Confirmation unavailable',
             'The confirmation link is invalid, expired, or already used.', 403);
+    }
+
+    private function cancelConfirmation(string $token): void
+    {
+        try {
+            $this->identities->cancelConfirmation($token);
+        } catch (Throwable $error) {
+            DiagnosticLog::record(
+                'account.google_confirmation_cancellation_failed', 503, $error,
+            );
+        }
     }
 
     private function record(string $event, string $requestId): void

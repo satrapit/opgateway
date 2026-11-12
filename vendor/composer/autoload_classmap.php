@@ -87,6 +87,8 @@ return array(
     'OPGateway\\Mail\\PdoSmtpSettings' => $baseDir . '/src/Mail/PdoSmtpSettings.php',
     'OPGateway\\Mail\\PhpMailerVerificationMailer' => $baseDir . '/src/Mail/PhpMailerVerificationMailer.php',
     'OPGateway\\Mail\\SmtpConfiguration' => $baseDir . '/src/Mail/SmtpConfiguration.php',
+    'OPGateway\\Mail\\SmtpConfigurationException' => $baseDir . '/src/Mail/SmtpConfigurationException.php',
+    'OPGateway\\Mail\\SmtpDeliveryException' => $baseDir . '/src/Mail/SmtpDeliveryException.php',
     'OPGateway\\Mail\\VerificationMailer' => $baseDir . '/src/Mail/VerificationMailer.php',
     'OPGateway\\Observability\\DatabaseFailure' => $baseDir . '/src/Observability/DatabaseFailure.php',
     'OPGateway\\Observability\\DiagnosticLog' => $baseDir . '/src/Observability/DiagnosticLog.php',

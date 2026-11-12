@@ -98,3 +98,8 @@ The Google-first branch supports first registration without a local password,
 one-time mailbox confirmation for collisions with existing accounts, and a
 separate Account Security page. It is unreleased and must not be deployed or
 merged until migration 008 and its rollback plan receive independent review.
+
+Google account connection leaves the password-confirmation POST through a
+one-use same-origin continuation document. The document then navigates to the
+fixed Google authorization origin and retains a visible link as an accessible
+fallback, so the strict `form-action 'self'` policy remains unchanged.

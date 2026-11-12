@@ -129,6 +129,14 @@ unlinked accounts, email mismatch, duplicate subjects, expired/replayed
 state, invalid nonce/aud/signature/expiration, missing/stale step-up `auth_time`,
 network outages, revoked local users, password reset mid-flow and unlink with
 wrong password.
+Confirm that the link POST first returns to `/account/google/continue`, the
+strict CSP still contains `form-action 'self'`, automatic navigation reaches
+Google in Chromium, and the visible Continue to Google link works with
+JavaScript disabled and by keyboard. Replay or direct access to the
+continuation route must fail before creating a new OAuth flow. For an existing
+unlinked mailbox, test missing/corrupt SMTP settings, token-storage failure and
+transport failure separately; each must return a generic response, cancel any
+issued token when possible and write only its dedicated metadata event.
 No automatic account linking by email. Inspect no-store, CSP, session
 cookies and no-referrer for the Google callback.
 
