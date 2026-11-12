@@ -226,7 +226,7 @@ final readonly class AccountWebEntry
             }
             $response = (new SelfServiceBrowserController(
                 $session, $accounts, $registration, $integration, $origin,
-                $login, $ownerOverview, $passwordReset, $googleAvailable,
+                $login, $ownerOverview, $passwordReset, $googleAvailable, $captcha,
             ))->dispatch(
                 $method, $path,
                 isset($server['CONTENT_TYPE']) ? (string) $server['CONTENT_TYPE'] : null,
@@ -245,7 +245,7 @@ final readonly class AccountWebEntry
         // The shared locally bundled TailAdmin/Twig UI uses the same strict
         // Content Security Policy for account and administrator HTML.
         if (str_starts_with($response['content_type'], 'text/html')) {
-            $recaptcha = $path === '/account/login'
+            $recaptcha = in_array($path, ['/account/login', '/account/forgot-password'], true)
                 && $captchaSettings->summary()['provider'] === 'recaptcha';
             $response['csp'] = "default-src 'none'; style-src 'self'; script-src 'self'"
                 . ($recaptcha ? " https://www.google.com/recaptcha/ https://www.gstatic.com/recaptcha/" : "")
