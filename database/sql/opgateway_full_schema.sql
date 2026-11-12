@@ -5,7 +5,7 @@
 -- STOP if any tables exist. No existing user data is dropped or truncated.
 -- Migration 005 only drops the temporary legacy smtp_settings table from 004.
 -- DDL can implicitly commit, so never rerun a failed import blindly.
--- Exactly 15 final tables and 8 completed migration records are expected.
+-- Exactly 15 final tables and 9 completed migration records are expected.
 -- Original migration DDL and checksums are preserved verbatim.
 -- No administrator, users, keys or whitelist entries are created.
 -- Migration 005 drops only the temporary legacy smtp_settings table created by 004.
@@ -288,6 +288,18 @@ CREATE TABLE google_identity_confirmations (
 UPDATE schema_migrations SET status = 'completed', completed_at = UTC_TIMESTAMP(6)
 WHERE version = '202611120001_enable_optional_passwords'
 AND checksum = '4f84d88b1db880865fff7879c71cd61c04dcfb9d81155eaa718b6a8fb95db760' AND status = 'running';
+
+-- Migration 009: first and last name on the existing shared users table
+INSERT INTO schema_migrations (version, checksum, status, started_at)
+VALUES ('202611120002_add_user_names', 'd9b28111c0cd22504273e78012e2f817e4780cba29f8e03bd334530a13c77ce6', 'running', UTC_TIMESTAMP(6));
+
+ALTER TABLE users
+ADD first_name VARCHAR(100) NULL,
+ADD last_name VARCHAR(100) NULL;
+
+UPDATE schema_migrations SET status = 'completed', completed_at = UTC_TIMESTAMP(6)
+WHERE version = '202611120002_add_user_names'
+AND checksum = 'd9b28111c0cd22504273e78012e2f817e4780cba29f8e03bd334530a13c77ce6' AND status = 'running';
 
 -- Read-only checks after successful import:
 SELECT DATABASE() AS selected_database;

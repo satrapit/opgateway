@@ -1,3 +1,10 @@
+## Unreleased — shared user profiles and recovery CAPTCHA
+
+- Require the configured offline or Google CAPTCHA on password recovery requests.
+- Add nullable first and last name to the existing `users` table, preserving all administrator roles; manual migration 009 is required before deploying the new code.
+- Prefill first and last name from verified signed Google profile claims when available; otherwise require completion inside the account panel.
+- Add an account profile form, completion reminder and server-side mutation gate; existing user and administrator records are preserved.
+
 # Changelog
 
 ## Unreleased — simplified Google onboarding and email verification (2026-11-12)

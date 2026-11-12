@@ -8,7 +8,7 @@ The current shared host requires `DB_HOST=db`. Local macOS usually uses `DB_HOST
 
 ## New empty database only
 
-Import `database/sql/opgateway_full_schema.sql` **once** into a fresh empty database using phpMyAdmin. On this unreleased branch, verify **15 final tables and 8 completed rows** in `schema_migrations`. It preserves all earlier migration statements and checksums. Migration 005
+Import `database/sql/opgateway_full_schema.sql` **once** into a fresh empty database using phpMyAdmin. On this unreleased branch, verify **15 final tables and 9 completed rows** in `schema_migrations`. It preserves all earlier migration statements and checksums. Migration 005
 migrates `smtp_settings` to generic key/value `settings` and then drops only
 the old SMTP table. **Never import into an existing populated database, re-run migrations or reset tables to fix a connection error.** The online app does not execute migrations.
 
@@ -127,7 +127,12 @@ Do not edit existing migration SQL or checksums. The internal migration runner u
 - Migration 007 adds the subject-unique Google identity mapping. Migration 008
   adds optional passwords, session versions and confirmation tokens. Apply each
   manual script once, in order, after backup and review.
-- Readiness for this branch requires **eight** completed migrations. Never deploy new PHP
+- Readiness for this branch requires **nine** completed migrations. Never deploy new PHP
   before upgrading the database. MySQL DDL may auto-commit: if execution
   fails partway, stop and inspect; do not simply rerun.
 - The original migrations and their checksums are never rewritten.
+
+
+## Migration 009 — shared user names
+
+The existing `users` table remains the only identity table for owners and administrators. Apply reviewed `database/sql/upgrade_202611120002.sql` only to the existing eight-migration database, after a verified backup, before deploying profile-gated code. Adds nullable first and last name fields; does not modify existing records or roles.

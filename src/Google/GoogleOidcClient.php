@@ -13,7 +13,7 @@ final readonly class GoogleOidcClient implements GoogleOidcProvider
     private const CERTS_URL = 'https://www.googleapis.com/oauth2/v1/certs';
 
     /**
-     * @return array{sub:string,email:string,email_verified:bool,email_authoritative:bool}
+     * @return array{sub:string,email:string,email_verified:bool,email_authoritative:bool,given_name?:string,family_name?:string}
      * @throws RuntimeException On any provider, TLS or token validation failure.
      */
     public function exchange(

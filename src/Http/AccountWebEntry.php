@@ -8,6 +8,7 @@ use OPGateway\Clients\ClientManagementService;
 use OPGateway\Google\PdoGoogleOAuthSettings;
 use OPGateway\Google\GoogleOidcClient;
 use OPGateway\Identity\PdoGoogleIdentityStore;
+use OPGateway\Identity\PdoUserProfile;
 use OPGateway\Identity\AccountSecurityService;
 use OPGateway\Clients\OwnerIntegrationService;
 use OPGateway\Database\Migrations\MigrationCatalog;
@@ -164,13 +165,14 @@ final readonly class AccountWebEntry
         $ownerOverview = new OwnerOverviewRepository($pdo);
         $googleSettings = new PdoGoogleOAuthSettings($pdo, $vault);
         $googleIdentities = new PdoGoogleIdentityStore($pdo);
+        $profiles = new PdoUserProfile($pdo);
         $googleAvailable = $googleSettings->configured();
         $captchaSettings = new PdoLoginCaptchaSettings($pdo, $vault);
         $captcha = new LoginCaptcha($captchaSettings, $pdo, $secret, $origin, 'account');
         $adapter = new AccountBrowserAdapter(
             $session, $login, $accounts, $ownerOverview,
             $credentials, $integration, $registration !== null || $googleAvailable,
-            $googleAvailable, $captcha, $googleIdentities,
+            $googleAvailable, $captcha, $googleIdentities, $profiles,
         );
 
         $body = null;
@@ -192,7 +194,23 @@ final readonly class AccountWebEntry
             }
         }
 
-        if ($path === '/account/captcha/image') {
+        // A verified account may browse, but cannot mutate API access or security
+        // settings before providing both names. Authentication, recovery,
+        // profile completion and logout remain available.
+        $profileExempt = [
+            '/account/profile', '/account/login', '/account/logout',
+            '/account/register', '/account/verify', '/account/verify/resend',
+            '/account/forgot-password', '/account/reset-password',
+        ];
+        if ($method === 'POST' && str_starts_with($path, '/account/')
+            && !in_array($path, $profileExempt, true)
+            && ($actorId = $session->currentUserId($accounts)) !== null
+            && !$profiles->complete($actorId)) {
+            $response = [
+                'status' => 303, 'content_type' => 'text/plain; charset=utf-8',
+                'body' => '', 'location' => '/account/profile',
+            ];
+        } elseif ($path === '/account/captcha/image') {
             $image = $method === 'GET' ? $captcha->image() : null;
             $response = $image === null ? self::error(404) : [
                 'status' => 200, 'content_type' => 'image/png', 'body' => $image,
@@ -205,7 +223,7 @@ final readonly class AccountWebEntry
                 new AccountSecurityService(
                     $pdo, new PasswordHasher(),
                     new PdoCredentialActionLimiter($pdo, $secret), $events,
-                ), $events,
+                ), $events, $profiles,
             ))->dispatch(
                 $method, $path,
                 isset($server['CONTENT_TYPE']) ? (string) $server['CONTENT_TYPE'] : null,
@@ -226,7 +244,7 @@ final readonly class AccountWebEntry
             }
             $response = (new SelfServiceBrowserController(
                 $session, $accounts, $registration, $integration, $origin,
-                $login, $ownerOverview, $passwordReset, $googleAvailable,
+                $login, $ownerOverview, $passwordReset, $googleAvailable, $captcha,
             ))->dispatch(
                 $method, $path,
                 isset($server['CONTENT_TYPE']) ? (string) $server['CONTENT_TYPE'] : null,
@@ -245,7 +263,7 @@ final readonly class AccountWebEntry
         // The shared locally bundled TailAdmin/Twig UI uses the same strict
         // Content Security Policy for account and administrator HTML.
         if (str_starts_with($response['content_type'], 'text/html')) {
-            $recaptcha = $path === '/account/login'
+            $recaptcha = in_array($path, ['/account/login', '/account/forgot-password'], true)
                 && $captchaSettings->summary()['provider'] === 'recaptcha';
             $response['csp'] = "default-src 'none'; style-src 'self'; script-src 'self'"
                 . ($recaptcha ? " https://www.google.com/recaptcha/ https://www.gstatic.com/recaptcha/" : "")

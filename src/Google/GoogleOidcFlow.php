@@ -46,7 +46,7 @@ final class GoogleOidcFlow
             'client_id' => $clientId,
             'redirect_uri' => $origin . '/account/google/callback',
             'response_type' => 'code',
-            'scope' => 'openid email',
+            'scope' => 'openid email profile',
             'state' => $state,
             'nonce' => $nonce,
             'code_challenge' => self::base64Url(hash('sha256', $verifier, true)),

@@ -13,6 +13,7 @@ use OPGateway\Identity\BrowserSession;
 use OPGateway\Identity\GuardedLoginService;
 use OPGateway\Identity\LoginAccountRepository;
 use OPGateway\Identity\PdoGoogleIdentityStore;
+use OPGateway\Identity\PdoUserProfile;
 use OPGateway\Mail\GoogleIdentityConfirmationMailer;
 use OPGateway\Mail\SmtpConfigurationException;
 use OPGateway\Observability\DiagnosticLog;
@@ -36,6 +37,7 @@ final readonly class GoogleOidcBrowserController
         private ?GoogleIdentityConfirmationMailer $confirmationMailer = null,
         private ?AccountSecurityService $accountSecurity = null,
         private ?SecurityEventRecorder $events = null,
+        private ?PdoUserProfile $profiles = null,
     ) {
     }
 
@@ -106,6 +108,7 @@ final readonly class GoogleOidcBrowserController
         return self::html(AccountViews::security(
             $this->session->csrfToken(), $email, $security['has_password'],
             $this->settings->configured(), $linked['email'] ?? null,
+            $this->profiles?->complete($userId) ?? true,
         ));
     }
 
@@ -324,6 +327,8 @@ final readonly class GoogleOidcBrowserController
             $result = $this->identities->loginOrRegister(
                 $google['sub'], $google['email'],
                 (bool) ($google['email_authoritative'] ?? false),
+                is_string($google['given_name'] ?? null) ? $google['given_name'] : null,
+                is_string($google['family_name'] ?? null) ? $google['family_name'] : null,
             );
         } catch (Throwable) {
             $this->record('google_login_denied', $requestId);

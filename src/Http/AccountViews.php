@@ -52,7 +52,7 @@ final class AccountViews
         ]);
     }
 
-    public static function forgotPassword(string $csrfToken): string
+    public static function forgotPassword(string $csrfToken, array $captcha = [], bool $failed = false): string
     {
         self::validateCsrf($csrfToken);
         return self::render('account/forgot-password.html.twig', [
@@ -60,6 +60,8 @@ final class AccountViews
             'page_eyebrow' => 'Account recovery',
             'page_description' => 'Enter your email to receive a reset link.',
             'csrf_token' => $csrfToken,
+            'captcha' => $captcha,
+            'show_error' => $failed,
         ]);
     }
 
@@ -165,6 +167,8 @@ final class AccountViews
         string $csrfToken, array $overview, bool $keysEnabled,
         bool $integrationEnabled = false, array $provider = [], string $section = 'overview',
         bool $googleStepUp = false,
+        bool $profileComplete = true,
+        string $displayName = '',
     ): string {
         self::validateCsrf($csrfToken);
         $sections = [
@@ -185,12 +189,32 @@ final class AccountViews
             'workspace_name' => 'Account',
             'workspace_footer' => 'OPGateway · Account',
             'logout_path' => '/account/logout',
-            'user_label' => $overview['email'],
+            'user_label' => $displayName !== '' ? $displayName : $overview['email'],
             'overview' => $overview,
             'keys_enabled' => $keysEnabled,
             'integration_enabled' => $integrationEnabled,
             'provider' => $provider,
             'google_step_up' => $googleStepUp,
+            'profile_complete' => $profileComplete,
+        ]);
+    }
+
+    /** @param array{first_name:string,last_name:string,complete:bool} $profile */
+    public static function profile(string $csrfToken, array $profile, bool $error = false): string
+    {
+        self::validateCsrf($csrfToken);
+        return self::render('account/profile.html.twig', [
+            'section_title' => 'My profile',
+            'active_section' => 'profile',
+            'csrf_token' => $csrfToken,
+            'workspace_home' => '/account',
+            'workspace_name' => 'Account',
+            'workspace_footer' => 'OPGateway · Account',
+            'logout_path' => '/account/logout',
+            'user_label' => 'My profile',
+            'profile' => $profile,
+            'profile_complete' => $profile['complete'],
+            'profile_error' => $error,
         ]);
     }
 
@@ -198,6 +222,7 @@ final class AccountViews
     public static function security(
         string $csrfToken, string $email, bool $hasPassword,
         bool $googleAvailable, ?string $linkedEmail,
+        bool $profileComplete = true,
     ): string {
         self::validateCsrf($csrfToken);
         return self::render('account/google.html.twig', [
@@ -212,6 +237,7 @@ final class AccountViews
             'google_available' => $googleAvailable,
             'linked_email' => $linkedEmail,
             'has_password' => $hasPassword,
+            'profile_complete' => $profileComplete,
         ]);
     }
 

@@ -11,6 +11,7 @@ use OPGateway\Identity\GuardedLoginService;
 use OPGateway\Identity\SelfServiceRegistration;
 use OPGateway\Identity\PasswordResetService;
 use InvalidArgumentException;
+use OPGateway\Security\LoginCaptcha;
 
 /**
  * Public onboarding and authenticated owner connection management.
@@ -29,6 +30,7 @@ final readonly class SelfServiceBrowserController
         private ?OwnerOverviewProvider $overview = null,
         private ?PasswordResetService $passwordReset = null,
         private bool $googleAvailable = false,
+        private ?LoginCaptcha $captcha = null,
     ) {
     }
 
@@ -52,7 +54,9 @@ final readonly class SelfServiceBrowserController
             }
             if ($method === 'GET') {
                 if ($path === '/account/forgot-password') {
-                    return self::html(AccountViews::forgotPassword($this->session->csrfToken()));
+                    return self::html(AccountViews::forgotPassword(
+                        $this->session->csrfToken(), $this->captcha?->challenge() ?? [],
+                    ));
                 }
                 $token = preg_match('/^token=([0-9a-fA-F]{64})$/D', $rawQuery, $matches) === 1
                     ? $matches[1] : '';
@@ -70,13 +74,18 @@ final readonly class SelfServiceBrowserController
                 return self::error(415);
             }
             $fields = $path === '/account/forgot-password'
-                ? ['_csrf', 'email']
+                ? ['_csrf', 'email', ...($this->captcha?->fields() ?? [])]
                 : ['_csrf', 'token', 'password', 'password_confirmation'];
             $form = $body === null ? null : StrictForm::decode($body, $fields);
             if ($form === null || !$this->session->csrfValid($form['_csrf'])) {
                 return self::error($form === null ? 400 : 403);
             }
             if ($path === '/account/forgot-password') {
+                if ($this->captcha !== null && !$this->captcha->verify($form, $sourceIp)) {
+                    return self::html(AccountViews::forgotPassword(
+                        $this->session->csrfToken(), $this->captcha->challenge(), true,
+                    ), 403);
+                }
                 $result = $this->passwordReset->request($form['email'], $sourceIp, $this->origin);
                 return $result === 'limited'
                     ? self::html(AccountViews::resetRequestLimited(), 429)

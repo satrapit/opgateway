@@ -29,6 +29,17 @@ final class PasswordResetPolicyTest extends TestCase
         $forgot = AccountViews::forgotPassword(self::CSRF);
         self::assertStringContainsString('action="/account/forgot-password"', $forgot);
         self::assertStringContainsString('name="_csrf"', $forgot);
+        $offline = AccountViews::forgotPassword(self::CSRF, [
+            'mode' => 'offline', 'image_url' => '/account/captcha/image',
+            'challenge_id' => str_repeat('a', 32),
+        ]);
+        self::assertStringContainsString('name="captcha_id"', $offline);
+        self::assertStringContainsString('name="captcha_answer"', $offline);
+        self::assertStringContainsString('/account/captcha/image', $offline);
+        $google = AccountViews::forgotPassword(self::CSRF, [
+            'mode' => 'recaptcha', 'site_key' => 'test-public-key',
+        ]);
+        self::assertStringContainsString('g-recaptcha', $google);
         $reset = AccountViews::resetPasswordForm(self::CSRF, str_repeat('a', 64));
         self::assertStringContainsString('action="/account/reset-password"', $reset);
         self::assertStringContainsString('name="password_confirmation"', $reset);

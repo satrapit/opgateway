@@ -94,7 +94,7 @@ final class GoogleOidcPolicyTest extends TestCase
         parse_str($query, $params);
         self::assertSame('code', $params['response_type']);
         self::assertSame('S256', $params['code_challenge_method']);
-        self::assertSame('openid email', $params['scope']);
+        self::assertSame('openid email profile', $params['scope']);
         self::assertSame('https://opgateway.test/account/google/callback',
             $params['redirect_uri']);
         self::assertSame($flow['state'], $params['state']);
@@ -202,6 +202,12 @@ final class GoogleOidcPolicyTest extends TestCase
                 self::CLIENT_ID, $nonce, $certs,
             ),
         );
+        $named = $verifier->verify(
+            $make([...$claims, 'given_name' => 'Majid', 'family_name' => 'Barkhordari']),
+            self::CLIENT_ID, $nonce, $certs,
+        );
+        self::assertSame('Majid', $named['given_name'] ?? null);
+        self::assertSame('Barkhordari', $named['family_name'] ?? null);
         self::assertNull($verifier->verify(
             $make([...$claims, 'hd' => 'not a domain']),
             self::CLIENT_ID, $nonce, $certs,

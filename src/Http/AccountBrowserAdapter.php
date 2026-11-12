@@ -11,6 +11,8 @@ use OPGateway\Clients\OwnerIntegrationService;
 use OPGateway\Security\OwnerCredentialManager;
 use OPGateway\Security\LoginCaptcha;
 use OPGateway\Identity\PdoGoogleIdentityStore;
+use OPGateway\Identity\PdoUserProfile;
+use InvalidArgumentException;
 
 /**
  * HTTPS-only account surface. Only an approved owner can see their clients.
@@ -33,6 +35,7 @@ final readonly class AccountBrowserAdapter
         private bool $googleAvailable = false,
         private ?LoginCaptcha $captcha = null,
         private ?PdoGoogleIdentityStore $googleIdentities = null,
+        private ?PdoUserProfile $profiles = null,
     ) {
     }
 
@@ -98,6 +101,43 @@ final readonly class AccountBrowserAdapter
             return self::redirect('/account');
         }
 
+        if ($path === '/account/profile' && in_array($method, ['GET', 'POST'], true)) {
+            $userId = $this->session->currentUserId($this->accounts);
+            if ($userId === null) {
+                return self::redirect('/account/login');
+            }
+            $profile = $this->profiles?->forUser($userId);
+            if ($profile === null) {
+                return self::error(403);
+            }
+            if ($method === 'POST') {
+                if (!self::isForm($contentType)) {
+                    return self::error(415);
+                }
+                $form = $body === null ? null : StrictForm::decode(
+                    $body, ['_csrf', 'first_name', 'last_name'],
+                );
+                if ($form === null) {
+                    return self::error(400);
+                }
+                if (!$this->session->csrfValid($form['_csrf'])) {
+                    return self::error(403);
+                }
+                try {
+                    if (!$this->profiles->save($userId, $form['first_name'], $form['last_name'])) {
+                        return self::error(403);
+                    }
+                } catch (InvalidArgumentException) {
+                    return self::html(AccountViews::profile(
+                        $this->session->csrfToken(), $profile, true,
+                    ), 400);
+                }
+                $this->session->rotateCsrf();
+                return self::redirect('/account');
+            }
+            return self::html(AccountViews::profile($this->session->csrfToken(), $profile));
+        }
+
         $sections = [
             '/account' => 'overview',
             '/account/provider' => 'provider',
@@ -114,12 +154,20 @@ final readonly class AccountBrowserAdapter
             if ($data === null) {
                 return self::error(403);
             }
+            $profile = $this->profiles?->forUser($userId);
+            $profileComplete = $profile['complete'] ?? true;
+            $displayName = $profileComplete && $profile !== null
+                ? trim($profile['first_name'] . ' ' . $profile['last_name']) : '';
+            if ($path === '/account' && !$profileComplete) {
+                return self::redirect('/account/profile');
+            }
             return self::html(AccountViews::dashboard(
                 $this->session->csrfToken(), $data, $this->credentials !== null,
                 $this->integration !== null, $this->integration?->summary($userId) ?? [],
                 $sections[$path],
                 $this->googleAvailable
                     && $this->googleIdentities?->linked($userId) !== null,
+                $profileComplete, $displayName,
             ));
         }
 

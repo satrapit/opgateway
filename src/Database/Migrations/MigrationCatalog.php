@@ -25,6 +25,7 @@ final class MigrationCatalog
             new CreatePasswordResetTokens(),
             new CreateGoogleIdentities(),
             new EnableOptionalPasswords(),
+            new AddUserNames(),
         ];
 
         $versions = array_map(static fn (Migration $migration): string => $migration->version(), $migrations);

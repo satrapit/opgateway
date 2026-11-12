@@ -43,6 +43,7 @@ SQL);
     /** @return array{status:string,user_id?:int,session_stamp?:string} */
     public function loginOrRegister(
         string $subject, string $email, bool $emailAuthoritative = false,
+        ?string $givenName = null, ?string $familyName = null,
     ): array
     {
         self::assertIdentity($subject, $email);
@@ -84,11 +85,15 @@ SQL);
                 $create = $this->pdo->prepare(<<<'SQL'
 INSERT INTO users (
     email, password_hash, status, email_verified_at, approved_at,
-    signup_source, created_at, updated_at
+    signup_source, first_name, last_name, created_at, updated_at
 ) VALUES (?, NULL, 'active', UTC_TIMESTAMP(6), UTC_TIMESTAMP(6), 'google',
-          UTC_TIMESTAMP(6), UTC_TIMESTAMP(6))
+          ?, ?, UTC_TIMESTAMP(6), UTC_TIMESTAMP(6))
 SQL);
-                $create->execute([$email]);
+                $create->execute([
+                    $email,
+                    is_string($givenName) ? PdoUserProfile::cleanName($givenName) : null,
+                    is_string($familyName) ? PdoUserProfile::cleanName($familyName) : null,
+                ]);
                 $userId = (int) $this->pdo->lastInsertId();
                 if ($userId < 1) {
                     throw new \RuntimeException('Google account creation failed.');
