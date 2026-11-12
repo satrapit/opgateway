@@ -36,7 +36,7 @@ final readonly class GmailVerificationAction
                 && strlen($body) <= 1024) {
                 $form = StrictForm::decode($body, ['confirmed']);
                 if ($form !== null && $form['confirmed'] === 'Approved') {
-                    $status = $this->verification->verify($matches[1]) ? 200 : 410;
+                    $status = $this->verification->verify($matches[1]) ? 200 : 400;
                 }
             }
         }
