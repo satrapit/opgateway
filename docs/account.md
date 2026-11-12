@@ -100,3 +100,8 @@ specific account and action. The step-up request requires Google's signed
 No Google access/refresh token is stored.
 
 Requires administrator Google settings and migrations 007–008. Not released.
+
+
+## First and last name
+
+The single `users` table holds identity records for both administrators and account users. Migration 009 adds nullable first_name and last_name. New Google users may receive both from signed OIDC `given_name` and `family_name` claims (scope `profile`); otherwise the user completes `/account/profile`. Password users complete these fields after verification and login. Incomplete account profiles cannot perform account mutations, and the dashboard displays a persistent completion link.
