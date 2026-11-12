@@ -50,6 +50,22 @@ final class UserProfilePolicyTest extends TestCase
         self::assertStringContainsString('name="first_name"', $html);
         self::assertStringContainsString('name="last_name"', $html);
         self::assertStringContainsString('Complete your profile', $html);
+        $incomplete = AccountViews::dashboard(str_repeat('a', 64), [
+            'email' => 'user@example.test', 'clients' => [],
+            'credentials' => [], 'ips' => [],
+        ], false, false, [], 'overview', false, false);
+        self::assertStringContainsString('Complete your profile to use account features', $incomplete);
+        self::assertStringContainsString('href="/account/profile"', $incomplete);
+    }
+
+    public function testAccountMutationsAreGatedInCentralEntrypoint(): void
+    {
+        $source = file_get_contents(dirname(__DIR__) . '/src/Http/AccountWebEntry.php');
+        self::assertIsString($source);
+        self::assertStringContainsString('!$profiles->complete($actorId)', $source);
+        self::assertStringContainsString("'/account/profile'", $source);
+        self::assertStringContainsString("'/account/logout'", $source);
+        self::assertStringContainsString("'/account/reset-password'", $source);
     }
 
     public function testProfileRepositoryChecksEligibilityAndSavesOnlyOwnRow(): void
