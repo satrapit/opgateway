@@ -167,6 +167,7 @@ final class AccountViews
         string $csrfToken, array $overview, bool $keysEnabled,
         bool $integrationEnabled = false, array $provider = [], string $section = 'overview',
         bool $googleStepUp = false,
+        bool $profileComplete = true,
     ): string {
         self::validateCsrf($csrfToken);
         $sections = [
@@ -193,6 +194,26 @@ final class AccountViews
             'integration_enabled' => $integrationEnabled,
             'provider' => $provider,
             'google_step_up' => $googleStepUp,
+            'profile_complete' => $profileComplete,
+        ]);
+    }
+
+    /** @param array{first_name:string,last_name:string,complete:bool} $profile */
+    public static function profile(string $csrfToken, array $profile, bool $error = false): string
+    {
+        self::validateCsrf($csrfToken);
+        return self::render('account/profile.html.twig', [
+            'section_title' => 'My profile',
+            'active_section' => 'profile',
+            'csrf_token' => $csrfToken,
+            'workspace_home' => '/account',
+            'workspace_name' => 'Account',
+            'workspace_footer' => 'OPGateway · Account',
+            'logout_path' => '/account/logout',
+            'user_label' => 'My profile',
+            'profile' => $profile,
+            'profile_complete' => $profile['complete'],
+            'profile_error' => $error,
         ]);
     }
 
