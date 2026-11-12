@@ -17,7 +17,7 @@ final class GoogleOidcIdTokenVerifier
 
     /**
      * @param array<string,string> $certificates Fixed-URL Google kid=>PEM data.
-     * @return array{sub:string,email:string,email_verified:bool,email_authoritative:bool}|null
+     * @return array{sub:string,email:string,email_verified:bool,email_authoritative:bool,given_name?:string,family_name?:string}|null
      */
     public function verify(
         string $token, string $clientId, string $expectedNonce,
