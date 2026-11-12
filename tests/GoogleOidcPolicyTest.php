@@ -94,7 +94,7 @@ final class GoogleOidcPolicyTest extends TestCase
         parse_str($query, $params);
         self::assertSame('code', $params['response_type']);
         self::assertSame('S256', $params['code_challenge_method']);
-        self::assertSame('openid email', $params['scope']);
+        self::assertSame('openid email profile', $params['scope']);
         self::assertSame('https://opgateway.test/account/google/callback',
             $params['redirect_uri']);
         self::assertSame($flow['state'], $params['state']);
