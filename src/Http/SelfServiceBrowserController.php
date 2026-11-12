@@ -49,11 +49,12 @@ final readonly class SelfServiceBrowserController
     public function dispatch(
         string $method, string $path, ?string $contentType, ?string $body,
         string $sourceIp, string $requestId, string $rawQuery,
+        string $userAgent = '',
     ): array {
         if ($path === '/account/verify/gmail') {
             return $this->gmailAction?->handle(
                 $method, $contentType, $body, $rawQuery,
-                (string) ($_SERVER['HTTP_USER_AGENT'] ?? ''),
+                $userAgent,
             ) ?? self::error(404);
         }
         if (in_array($path, ['/account/forgot-password', '/account/reset-password'], true)) {
