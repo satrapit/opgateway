@@ -102,7 +102,6 @@ final class UserProfilePolicyTest extends TestCase
         $profile = new PdoUserProfile($pdo);
         self::assertFalse($profile->complete(7));
         self::assertTrue($profile->save(7, 'Majid', 'Barkhordari'));
-        self::assertSame([7], $profile->forUser(7) === null ? [] : [7]);
         self::assertTrue($profile->complete(7));
         self::assertSame('Majid', $profile->forUser(7)['first_name']);
         self::assertSame(7, $pdo->parameters[0]);
