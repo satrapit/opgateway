@@ -89,7 +89,7 @@ header('X-Frame-Options: DENY');
 // cross-origin referrer disclosures.
 $noReferrerPaths = [
     '/account/google/callback', '/account/google/confirm',
-    '/account/reset-password', '/account/verify',
+    '/account/reset-password', '/account/verify', '/account/verify/gmail',
 ];
 header('Referrer-Policy: ' . (in_array($path, $noReferrerPaths, true)
     ? 'no-referrer' : 'same-origin'));
