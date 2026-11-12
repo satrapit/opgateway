@@ -255,6 +255,7 @@ final readonly class AccountWebEntry
                 isset($server['CONTENT_TYPE']) ? (string) $server['CONTENT_TYPE'] : null,
                 $body, (string) ($server['REMOTE_ADDR'] ?? ''),
                 bin2hex(random_bytes(16)), (string) ($server['QUERY_STRING'] ?? ''),
+                (string) ($server['HTTP_USER_AGENT'] ?? ''),
             );
         } else {
             $response = $adapter->dispatch(
