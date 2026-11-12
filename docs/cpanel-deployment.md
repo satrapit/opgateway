@@ -140,3 +140,8 @@ are managed by the existing admin role.
 No `*_ENABLED` switches or extra administration roles are required.
 Never deploy the new source against an un-migrated production database.
 See [onboarding](gateway-onboarding.md).
+
+
+## Shared user-name migration 009 (manual)
+
+Profile completion requires additive migration `202611120002_add_user_names` (nullable `users.first_name` and `users.last_name`). Back up the eight-migration DB and private key, execute `database/sql/upgrade_202611120002.sql` in phpMyAdmin once, verify nine completed migration records and unchanged user count, then deploy matching `main` PHP/assets using cPanel Git Version Control. Do not deploy the profile-gated release before 009 or downgrade to an eight-migration codebase after applying it.
