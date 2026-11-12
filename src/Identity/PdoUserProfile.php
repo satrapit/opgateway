@@ -35,7 +35,8 @@ SQL);
         return [
             'first_name' => $first,
             'last_name' => $last,
-            'complete' => $first !== '' && $last !== '',
+            'complete' => self::cleanName($first) !== null
+                && self::cleanName($last) !== null,
         ];
     }
 
@@ -66,8 +67,10 @@ SQL);
     public static function cleanName(string $value): ?string
     {
         $value = trim($value);
-        if ($value === '' || strlen($value) > 100
+        if ($value === '' || strlen($value) > 400
             || preg_match('//u', $value) !== 1
+            || preg_match_all('/./us', $value) > 100
+            || preg_match('/^\s+$/u', $value) === 1
             || preg_match('/[\p{C}<>]/u', $value) === 1) {
             return null;
         }
