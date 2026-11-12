@@ -175,9 +175,37 @@ final class GoogleOidcPolicyTest extends TestCase
         $certs = ['test-key' => $publicKey];
         self::assertSame(
             ['sub' => '100000000000000000001', 'email' => 'user@example.com',
-                'email_verified' => true],
+                'email_verified' => true, 'email_authoritative' => false],
             $verifier->verify($make($claims), self::CLIENT_ID, $nonce, $certs),
         );
+        self::assertSame(
+            ['sub' => '100000000000000000001', 'email' => 'user@gmail.com',
+                'email_verified' => true, 'email_authoritative' => true],
+            $verifier->verify(
+                $make([...$claims, 'email' => 'User@Gmail.com']),
+                self::CLIENT_ID, $nonce, $certs,
+            ),
+        );
+        self::assertSame(
+            ['sub' => '100000000000000000001', 'email' => 'user@team.example',
+                'email_verified' => true, 'email_authoritative' => true],
+            $verifier->verify(
+                $make([...$claims, 'email' => 'user@team.example', 'hd' => 'team.example']),
+                self::CLIENT_ID, $nonce, $certs,
+            ),
+        );
+        self::assertSame(
+            ['sub' => '100000000000000000001', 'email' => 'user@external.example',
+                'email_verified' => true, 'email_authoritative' => false],
+            $verifier->verify(
+                $make([...$claims, 'email' => 'user@external.example', 'hd' => 'team.example']),
+                self::CLIENT_ID, $nonce, $certs,
+            ),
+        );
+        self::assertNull($verifier->verify(
+            $make([...$claims, 'hd' => 'not a domain']),
+            self::CLIENT_ID, $nonce, $certs,
+        ));
         self::assertNull($verifier->verify(
             $make($claims), self::CLIENT_ID, str_repeat('b', 64), $certs,
         ));
@@ -206,7 +234,7 @@ final class GoogleOidcPolicyTest extends TestCase
         ));
         self::assertSame(
             ['sub' => '100000000000000000001', 'email' => 'user@example.com',
-                'email_verified' => true],
+                'email_verified' => true, 'email_authoritative' => false],
             $verifier->verify(
                 $make([...$claims, 'auth_time' => $now - 299]),
                 self::CLIENT_ID, $nonce, $certs, true,

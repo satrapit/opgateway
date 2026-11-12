@@ -3,6 +3,7 @@ import Alpine from '@alpinejs/csp';
 import { initializeAdminDialogs } from './admin-dialogs.js';
 import { initializeRowMenus } from './row-menus.js';
 import { initializeFormSubmissionLock } from './form-submissions.js';
+import { initializeEmailVerification } from './email-verification.js';
 
 
 /**
@@ -111,3 +112,4 @@ initializeRowMenus();
 initializeAdminDialogs();
 // Install after dialog handlers so canceled confirmations never lock a form.
 initializeFormSubmissionLock();
+initializeEmailVerification();

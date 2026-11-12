@@ -323,6 +323,7 @@ final readonly class GoogleOidcBrowserController
         try {
             $result = $this->identities->loginOrRegister(
                 $google['sub'], $google['email'],
+                (bool) ($google['email_authoritative'] ?? false),
             );
         } catch (Throwable) {
             $this->record('google_login_denied', $requestId);
@@ -336,10 +337,19 @@ final readonly class GoogleOidcBrowserController
             );
             return self::redirect('/account');
         }
+        if ($result['status'] === 'linked') {
+            $this->record('google_linked', $requestId);
+            $this->session->authenticate(
+                (int) $result['user_id'], (string) $result['session_stamp'],
+            );
+            return self::redirect('/account');
+        }
         if ($result['status'] === 'created') {
             $this->record('google_signup_created', $requestId);
-            return self::googleError('Account awaiting approval',
-                'Your verified Google account is registered. An administrator must approve access before you can sign in.', 403);
+            $this->session->authenticate(
+                (int) $result['user_id'], (string) $result['session_stamp'],
+            );
+            return self::redirect('/account');
         }
         if ($result['status'] === 'pending') {
             $this->record('google_login_denied', $requestId);

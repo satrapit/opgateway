@@ -172,12 +172,25 @@ final class SelfServiceControllerPolicyTest extends TestCase
         self::assertStringContainsString("hash_equals(\$form['password'], \$form['password_confirmation'])", $source);
     }
 
-    public function testEmailLinkIsNotAutomaticallyConsumedOnGet(): void
+    public function testEmailLinkUsesLocalAutoPostWithAccessibleFallback(): void
     {
         $html = AccountViews::verifyForm(str_repeat('a', 64), str_repeat('b', 64));
         self::assertStringContainsString('action="/account/verify"', $html);
         self::assertStringContainsString('method="post"', $html);
-        self::assertStringContainsString('Confirm email', $html);
+        self::assertStringContainsString('data-opg-auto-submit="email-verification"', $html);
+        self::assertStringContainsString('Verify email', $html);
         self::assertStringNotContainsString('https://cdn.', $html);
+    }
+
+    public function testEmailVerificationSuccessDirectsUserToSignIn(): void
+    {
+        $html = AccountViews::verified(true);
+        self::assertStringContainsString('Email verified', $html);
+        self::assertStringContainsString(
+            'Your email address has been verified successfully. You can now sign in.',
+            $html,
+        );
+        self::assertStringContainsString('href="/account/login"', $html);
+        self::assertStringContainsString('>Sign in</a>', $html);
     }
 }

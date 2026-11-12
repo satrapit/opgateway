@@ -32,10 +32,15 @@ obtained privately from Google Cloud Console. The fixed redirect URI is
 through the admin page, never in Git or .env. The secret is encrypted under
 the `google:oauth` context using private `storage/app-secret.key`.
 Google SSO can be disabled without deleting its credentials. Continue with
-Google can create a verified pending account with no local password. Google
-subject IDs, not merely matching emails, identify linked users. An existing
-email collision requires a separate one-time mailbox confirmation before the
-subject is linked. Password recovery remains available when Google is disabled.
+Google creates a verified, approved active account with no local password and
+signs it in immediately. Google subject IDs, not merely matching emails,
+identify linked users. Signed Gmail addresses and signed Google Workspace `hd`
+claims that exactly match the email domain are provider-authoritative and may
+link an eligible exact-email account without another message; the local
+password is preserved and existing sessions are revoked. External-domain
+collisions require the separate one-time mailbox confirmation before the
+subject is linked. Disabled, suspended and manual-pending accounts are not
+reactivated by Google. Password recovery remains available when Google is disabled.
 Google SSO is available for approved account users, not an alternate
 administrator sign-in route.
 
@@ -90,7 +95,7 @@ or unauthenticated bypass to change settings.
 ## Verification before any single-domain release
 
 Run the PHP lint, targeted and full PHPUnit, 10 smoke checks, npm lint,
-10 frontend tests and Webpack build. Regenerate the production-only
+12 frontend tests and Webpack build. Regenerate the production-only
 Composer autoloader on Mac, review/commit the two generated classmap
 files and built CSS assets only (never development vendor dependencies).
 Test real admin/account login, offline challenge replay/expiry/abuse

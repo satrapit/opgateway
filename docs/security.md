@@ -70,10 +70,25 @@ requires a server-side CSRF token, account eligibility and password
 reauthentication where appropriate. The callback consumes a session-bound,
 short-lived, single-use `state` and verifies the signed ID token, nonce and
 `email_verified`. Subject mapping identifies repeat users. A mailbox collision
-uses a separate hashed, expiring email confirmation token bound to the consumed
-OIDC transaction; mailbox equality alone is never login authority.
+is linked directly only when the fully validated signed token proves a Gmail
+address or carries a syntactically valid Workspace `hd` claim that exactly
+matches the email domain, and the local account is eligible (or is a pending
+public self-service account). Linking increments `auth_session_version` before
+authentication. Other domains use a separate hashed, expiring email
+confirmation token bound to the consumed OIDC transaction; mailbox equality
+alone is never login authority. Disabled, suspended and manual-pending accounts
+remain blocked.
 Sensitive-action step-up additionally requests and validates Google's signed
 `auth_time`, rejecting authentication older than five minutes before issuing a
 single-use, account- and action-bound session grant.
 Do not change this to `SameSite=None`, enable client-driven redirects, or
 remove CSRF protections. See docs/testing.md for real-browser validation.
+
+Email-verification links preserve a non-mutating GET. A local CSP-compatible
+script automatically submits the server-rendered CSRF-protected POST in a
+visible browser, while the button remains available without JavaScript. This
+prevents ordinary mail-prefetch GETs from consuming the token, but it cannot
+cryptographically distinguish a person from a scanner that executes JavaScript
+and submits forms. Eliminating that residual risk requires an explicit user
+action. Tokens remain hashed, expiring, single-use and transactionally consumed;
+verification never creates a login session.

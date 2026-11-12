@@ -2,11 +2,11 @@
 {% block referrer_policy %}no-referrer{% endblock %}
 {% block account_form %}
   <section class="opg-panel p-6 sm:p-7" aria-label="Email verification confirmation">
-    <p class="mb-5 text-sm leading-6 text-gray-600 dark:text-gray-300">This one-time link expires after 30 minutes. Confirm below to activate your account.</p>
-    <form method="post" action="/account/verify">
+    <p class="mb-5 text-sm leading-6 text-gray-600 dark:text-gray-300" role="status" aria-live="polite">Verification starts automatically in supported browsers. If it does not start, use the button below.</p>
+    <form method="post" action="/account/verify" data-opg-auto-submit="email-verification">
       <input type="hidden" name="_csrf" value="{{ csrf_token }}">
       <input type="hidden" name="token" value="{{ token }}">
-      <button type="submit" class="opg-primary-button w-full">Confirm email</button>
+      <button type="submit" class="opg-primary-button w-full">Verify email</button>
     </form>
   </section>
 {% endblock %}
