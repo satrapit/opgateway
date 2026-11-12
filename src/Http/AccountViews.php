@@ -52,7 +52,7 @@ final class AccountViews
         ]);
     }
 
-    public static function forgotPassword(string $csrfToken): string
+    public static function forgotPassword(string $csrfToken, array $captcha = [], bool $failed = false): string
     {
         self::validateCsrf($csrfToken);
         return self::render('account/forgot-password.html.twig', [
@@ -60,6 +60,8 @@ final class AccountViews
             'page_eyebrow' => 'Account recovery',
             'page_description' => 'Enter your email to receive a reset link.',
             'csrf_token' => $csrfToken,
+            'captcha' => $captcha,
+            'show_error' => $failed,
         ]);
     }
 
