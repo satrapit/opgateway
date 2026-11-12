@@ -6,7 +6,7 @@
   "scripts": {
     "build": "webpack --config webpack.config.cjs && node scripts/normalize-css.mjs && node scripts/verify-assets.mjs",
     "test": "node --test tests/*.test.mjs",
-    "lint": "node --check src/js/app.js && node --check src/js/admin-dialogs.js && node --check src/js/row-menus.js && node --check src/js/form-submissions.js && node --check src/js/theme-init.js && node --check scripts/normalize-css.mjs && node --check scripts/verify-assets.mjs"
+    "lint": "node --check src/js/app.js && node --check src/js/admin-dialogs.js && node --check src/js/row-menus.js && node --check src/js/form-submissions.js && node --check src/js/email-verification.js && node --check src/js/theme-init.js && node --check scripts/normalize-css.mjs && node --check scripts/verify-assets.mjs"
   },
   "dependencies": {
     "@alpinejs/csp": "^3.17.5",

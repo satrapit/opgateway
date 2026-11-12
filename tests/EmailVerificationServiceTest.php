@@ -17,6 +17,7 @@ final class EmailVerificationServiceTest extends TestCase
             public string $storedHash = '';
             public int $expiresIn = 0;
             public bool $used = false;
+            public int $issued = 0;
 
             public function issue(int $userId, string $tokenHash, int $ttlSeconds): void
             {
@@ -25,6 +26,7 @@ final class EmailVerificationServiceTest extends TestCase
                 }
                 $this->storedHash = $tokenHash;
                 $this->expiresIn = $ttlSeconds;
+                $this->issued++;
             }
 
             public function consume(string $tokenHash): bool
@@ -43,6 +45,7 @@ final class EmailVerificationServiceTest extends TestCase
         self::assertNotSame($rawToken, $repo->storedHash);
         self::assertSame(EmailVerificationToken::hash($rawToken), $repo->storedHash);
         self::assertSame(1800, $repo->expiresIn);
+        self::assertSame(1, $repo->issued);
         self::assertTrue($service->verify($rawToken));
         self::assertFalse($service->verify($rawToken));
         self::assertFalse($service->verify('invalid'));

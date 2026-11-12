@@ -51,6 +51,9 @@ final class GoogleOidcBrowserFlowTest extends TestCase
             public bool $googleConfigured = true;
             public string $userStatus = 'active';
             public string $userEmail = 'owner@example.com';
+            public ?string $emailVerifiedAt = '2026-01-01';
+            public ?string $approvedAt = '2026-01-01';
+            public string $signupSource = 'self_service';
             public string $lastSql = '';
             public array $lastParams = [];
 
@@ -97,6 +100,10 @@ final class GoogleOidcBrowserFlowTest extends TestCase
                         if (str_starts_with(trim($this->query), 'INSERT INTO users')) {
                             $this->db->userExists = true;
                             $this->db->passwordHash = null;
+                            $this->db->userStatus = 'active';
+                            $this->db->emailVerifiedAt = '2026-01-01';
+                            $this->db->approvedAt = '2026-01-01';
+                            $this->db->signupSource = 'google';
                         }
                         if (str_starts_with(trim($this->query), 'INSERT INTO google_identities')) {
                             if ($this->db->identityConflict) {
@@ -138,6 +145,16 @@ final class GoogleOidcBrowserFlowTest extends TestCase
                             'UPDATE users SET email_verified_at = COALESCE')) {
                             $this->db->version = (int) $this->db->lastParams[0];
                         }
+                        if (str_contains($this->query,
+                            "status = CASE WHEN status = 'pending'")) {
+                            $this->db->version = (int) $this->db->lastParams[0];
+                            if ($this->db->userStatus === 'pending'
+                                && $this->db->signupSource === 'self_service') {
+                                $this->db->userStatus = 'active';
+                                $this->db->emailVerifiedAt ??= '2026-01-01';
+                                $this->db->approvedAt ??= '2026-01-01';
+                            }
+                        }
                         return true;
                     }
                     public function fetchAll(int $mode = PDO::FETCH_DEFAULT, mixed ...$args): array
@@ -173,13 +190,23 @@ final class GoogleOidcBrowserFlowTest extends TestCase
                         int $cursorOrientation = PDO::FETCH_ORI_NEXT,
                         int $cursorOffset = 0,
                     ): mixed {
+                        if (str_contains($this->query,
+                            'FROM users WHERE email = ? LIMIT 1 FOR UPDATE')) {
+                            return $this->db->userExists ? [
+                                'id' => 17, 'status' => $this->db->userStatus,
+                                'email_verified_at' => $this->db->emailVerifiedAt,
+                                'approved_at' => $this->db->approvedAt,
+                                'signup_source' => $this->db->signupSource,
+                                'auth_session_version' => $this->db->version,
+                            ] : false;
+                        }
                         if (str_contains($this->query, 'WHERE g.google_sub = ?')
                             && $this->db->googleSub !== null
                             && ($this->db->lastParams[0] ?? '') === $this->db->googleSub) {
                             return [
                                 'id' => 17, 'status' => $this->db->userStatus,
-                                'email_verified_at' => '2026-01-01',
-                                'approved_at' => '2026-01-01',
+                                'email_verified_at' => $this->db->emailVerifiedAt,
+                                'approved_at' => $this->db->approvedAt,
                                 'auth_session_version' => $this->db->version,
                             ];
                         }
@@ -242,6 +269,7 @@ final class GoogleOidcBrowserFlowTest extends TestCase
         $provider = new class implements GoogleOidcProvider {
             public string $email = 'owner@example.com';
             public bool $verified = true;
+            public bool $authoritative = false;
             public int $calls = 0;
             public ?bool $recentAuthenticationRequired = null;
             public function exchange(
@@ -257,7 +285,8 @@ final class GoogleOidcBrowserFlowTest extends TestCase
                     throw new \RuntimeException('Unexpected callback data.');
                 }
                 return ['sub' => 'google-sub-123', 'email' => $this->email,
-                    'email_verified' => $this->verified];
+                    'email_verified' => $this->verified,
+                    'email_authoritative' => $this->authoritative];
             }
         };
         $mailer = new class implements GoogleIdentityConfirmationMailer {
@@ -412,6 +441,99 @@ final class GoogleOidcBrowserFlowTest extends TestCase
 
     #[RunInSeparateProcess]
     #[PreserveGlobalState(false)]
+    public function testAuthoritativeGmailCollisionLinksEligibleAccountAndSignsIn(): void
+    {
+        [$controller, $db, $session, $accounts, $provider, $mailer] = $this->harness();
+        $db->userEmail = 'owner@gmail.com';
+        $provider->email = 'owner@gmail.com';
+        $provider->authoritative = true;
+        $start = $controller->dispatch('GET', '/account/google/start', null, null,
+            '192.0.2.3', str_repeat('a', 32), '');
+        $response = $controller->dispatch('GET', '/account/google/callback', null, null,
+            '192.0.2.3', str_repeat('b', 32),
+            'state=' . self::state($start['location']) . '&code=test-code');
+
+        self::assertSame(303, $response['status']);
+        self::assertSame('/account', $response['location']);
+        self::assertSame('google-sub-123', $db->googleSub);
+        self::assertSame(2, $db->version);
+        self::assertNull($mailer->recipient);
+        self::assertSame(17, $session->currentUserId($accounts));
+        self::assertTrue(session_destroy());
+    }
+
+    #[RunInSeparateProcess]
+    #[PreserveGlobalState(false)]
+    public function testAuthoritativeGoogleCompletesPendingSelfServiceAccount(): void
+    {
+        [$controller, $db, $session, $accounts, $provider] = $this->harness();
+        $db->userEmail = 'owner@gmail.com';
+        $db->userStatus = 'pending';
+        $db->emailVerifiedAt = null;
+        $db->approvedAt = null;
+        $provider->email = 'owner@gmail.com';
+        $provider->authoritative = true;
+        $start = $controller->dispatch('GET', '/account/google/start', null, null,
+            '192.0.2.3', str_repeat('a', 32), '');
+        $response = $controller->dispatch('GET', '/account/google/callback', null, null,
+            '192.0.2.3', str_repeat('b', 32),
+            'state=' . self::state($start['location']) . '&code=test-code');
+
+        self::assertSame(303, $response['status']);
+        self::assertSame('active', $db->userStatus);
+        self::assertNotNull($db->emailVerifiedAt);
+        self::assertNotNull($db->approvedAt);
+        self::assertSame(17, $session->currentUserId($accounts));
+        self::assertTrue(session_destroy());
+    }
+
+    #[RunInSeparateProcess]
+    #[PreserveGlobalState(false)]
+    public function testAuthoritativeGoogleCannotReactivateDisabledAccount(): void
+    {
+        [$controller, $db, $session, $accounts, $provider, $mailer] = $this->harness();
+        $db->userEmail = 'owner@gmail.com';
+        $db->userStatus = 'disabled';
+        $provider->email = 'owner@gmail.com';
+        $provider->authoritative = true;
+        $start = $controller->dispatch('GET', '/account/google/start', null, null,
+            '192.0.2.3', str_repeat('a', 32), '');
+        $response = $controller->dispatch('GET', '/account/google/callback', null, null,
+            '192.0.2.3', str_repeat('b', 32),
+            'state=' . self::state($start['location']) . '&code=test-code');
+
+        self::assertSame(403, $response['status']);
+        self::assertNull($db->googleSub);
+        self::assertNull($mailer->recipient);
+        self::assertNull($session->currentUserId($accounts));
+        self::assertTrue(session_destroy());
+    }
+
+    #[RunInSeparateProcess]
+    #[PreserveGlobalState(false)]
+    public function testAuthoritativeGoogleCannotApproveManualPendingAccount(): void
+    {
+        [$controller, $db, $session, $accounts, $provider] = $this->harness();
+        $db->userEmail = 'owner@gmail.com';
+        $db->userStatus = 'pending';
+        $db->signupSource = 'manual';
+        $provider->email = 'owner@gmail.com';
+        $provider->authoritative = true;
+        $start = $controller->dispatch('GET', '/account/google/start', null, null,
+            '192.0.2.3', str_repeat('a', 32), '');
+        $response = $controller->dispatch('GET', '/account/google/callback', null, null,
+            '192.0.2.3', str_repeat('b', 32),
+            'state=' . self::state($start['location']) . '&code=test-code');
+
+        self::assertSame(403, $response['status']);
+        self::assertSame('pending', $db->userStatus);
+        self::assertNull($db->googleSub);
+        self::assertNull($session->currentUserId($accounts));
+        self::assertTrue(session_destroy());
+    }
+
+    #[RunInSeparateProcess]
+    #[PreserveGlobalState(false)]
     public function testUnverifiedProviderEmailNeverReachesIdentityStorage(): void
     {
         [$controller, $db, $session, $accounts, $provider] = $this->harness(false);
@@ -429,7 +551,7 @@ final class GoogleOidcBrowserFlowTest extends TestCase
 
     #[RunInSeparateProcess]
     #[PreserveGlobalState(false)]
-    public function testFirstGoogleRegistrationCreatesNoPasswordAndWaitsForApproval(): void
+    public function testFirstGoogleRegistrationCreatesActiveAccountAndSignsIn(): void
     {
         [$controller, $db, $session, $accounts] = $this->harness(false);
         $start = $controller->dispatch('GET', '/account/google/start', null, null,
@@ -437,12 +559,16 @@ final class GoogleOidcBrowserFlowTest extends TestCase
         $response = $controller->dispatch('GET', '/account/google/callback', null, null,
             '192.0.2.3', str_repeat('a', 32),
             'state=' . self::state($start['location']) . '&code=test-code');
-        self::assertSame(403, $response['status']);
-        self::assertStringContainsString('Account awaiting approval', $response['body']);
+        self::assertSame(303, $response['status']);
+        self::assertSame('/account', $response['location']);
         self::assertTrue($db->userExists);
         self::assertNull($db->passwordHash);
+        self::assertSame('active', $db->userStatus);
+        self::assertNotNull($db->emailVerifiedAt);
+        self::assertNotNull($db->approvedAt);
+        self::assertSame('google', $db->signupSource);
         self::assertSame('google-sub-123', $db->googleSub);
-        self::assertNull($session->currentUserId($accounts));
+        self::assertSame(17, $session->currentUserId($accounts));
         self::assertTrue(session_destroy());
     }
 

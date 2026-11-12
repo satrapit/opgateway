@@ -129,9 +129,9 @@ final class AccountViews
             return self::verified(false);
         }
         return self::render('account/verify.html.twig', [
-            'page_title' => 'Confirm email',
+            'page_title' => 'Verifying your email',
             'page_eyebrow' => 'Email verification',
-            'page_description' => 'One more step to activate your account securely.',
+            'page_description' => 'Keep this page open while we verify your email address.',
             'csrf_token' => $csrfToken,
             'token' => strtolower($token),
         ]);
@@ -142,7 +142,7 @@ final class AccountViews
         return $success
             ? self::status(
                 'Email verified', 'Registration complete',
-                'Your email has been confirmed. You can now sign in to your account.',
+                'Your email address has been verified successfully. You can now sign in.',
                 '/account/login', 'Sign in',
             )
             : self::status(

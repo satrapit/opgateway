@@ -20,10 +20,11 @@ composer install --no-dev --prefer-dist --optimize-autoloader
 git status --short
 ```
 
-The Google-first branch adds nullable-password, onboarding, collision,
-revocation, action-step-up and Account Security coverage. Do not copy a prior
+The Google-first branch adds nullable-password, immediate onboarding,
+provider-authoritative versus external-domain collision handling, revocation,
+action-step-up and Account Security coverage. Do not copy a prior
 test count into release notes: record the fresh PHPUnit, 10 smoke checks and
-10 frontend tests from the exact reviewed commit.
+12 frontend tests from the exact reviewed commit.
 
 For the prepared Migration 008 code-only rollback, run
 `tests/Migration008RollbackCompatibilityTest.php` together with the Google
@@ -32,13 +33,12 @@ full suite. The exact rollback snapshot must deny an unknown Google subject
 without creating or joining a user while continuing subject login for an
 already linked Google-only account.
 
-Local automated result on 2026-11-12 for this working tree: 256 PHPUnit tests
-with 2012 assertions, 10/10 smoke checks and 10/10 Node frontend tests; Composer
-validation, PHP lint, npm lint, production Webpack build and asset allowlist
-inspection completed successfully. The separate migration runner also passed
-on a disposable MySQL 8.0.46 container (1 test, 31 assertions), including the
-first seven migrations, seeded pre-008 account/hash/identity preservation,
-migration 008, idempotency, the advisory lock and exact schema postconditions.
+Local automated result on 2026-11-12 for this working tree: 268 PHPUnit tests
+with 2123 assertions, 10/10 smoke checks and 12/12 Node frontend tests; Composer
+validation and locked dependency audit, PHP lint, npm lint, production Webpack
+build and asset allowlist inspection completed successfully. The separate
+migration runner was not rerun because this change has no schema migration; a
+prior recorded disposable-MySQL result remains 1 test with 31 assertions.
 This is not a restored-backup rehearsal, real-browser,
 SMTP or Google-provider acceptance result; those release gates remain open.
 
@@ -121,8 +121,8 @@ cookie after Google's top-level GET redirect. It uses explicit
 `SameSite=Lax; Secure; HttpOnly`, not Strict or None; session-bound state,
 nonce and all POST CSRF checks remain mandatory.
 
-Browser acceptance: register with local password, verify email and receive
-admin approval; sign in with password; confirm password to connect Google;
+Browser acceptance: register with local password, verify email and sign in
+without admin approval; confirm password to connect Google;
 consent with the Google account using the same verified email; sign out and
 sign back in using Google, then verify local password still works. Test
 unlinked accounts, email mismatch, duplicate subjects, expired/replayed
@@ -139,6 +139,18 @@ transport failure separately; each must return a generic response, cancel any
 issued token when possible and write only its dedicated metadata event.
 No automatic account linking by email. Inspect no-store, CSP, session
 cookies and no-referrer for the Google callback.
+
+Also test a first-time Google registration (immediate `/account` session), a
+returning subject, an eligible exact-email Gmail collision, a signed Workspace
+`hd` claim matching the email domain, and an external-domain collision that
+still requires mailbox proof. Verify mismatched/malformed `hd`, conflicting
+subjects, disabled users and manual-pending users cannot be linked or activated.
+For password signup, confirm the verification-link GET itself does not consume
+the token, the local script submits the CSRF-protected POST once, the success
+page says Email verified and links to sign-in, and no session is created.
+Repeat with JavaScript disabled using the visible Verify email button. Test a
+GET-only prefetch client and a JavaScript-capable scanner; document that only a
+deliberate second action can fully distinguish the latter from a user.
 
 Unit tests cannot substitute for real Google, MySQL and browser integration.
 Do not merge/deploy the feature before these checks pass.

@@ -16,7 +16,7 @@ final class GoogleOidcIdTokenVerifier
 
     /**
      * @param array<string,string> $certificates Fixed-URL Google kid=>PEM data.
-     * @return array{sub:string,email:string,email_verified:bool}|null
+     * @return array{sub:string,email:string,email_verified:bool,email_authoritative:bool}|null
      */
     public function verify(
         string $token, string $clientId, string $expectedNonce,
@@ -87,10 +87,24 @@ final class GoogleOidcIdTokenVerifier
                 || $claims['auth_time'] < $now - self::RECENT_AUTHENTICATION_SECONDS)) {
             return null;
         }
+        $email = strtolower($claims['email']);
+        $emailDomain = substr($email, (int) strrpos($email, '@') + 1);
+        $hostedDomain = $claims['hd'] ?? null;
+        if ($hostedDomain !== null && (!is_string($hostedDomain)
+            || strlen($hostedDomain) > 253
+            || preg_match('/^(?=.{1,253}$)(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?$/iD',
+                $hostedDomain) !== 1)) {
+            return null;
+        }
+        $hostedDomain = is_string($hostedDomain) ? strtolower($hostedDomain) : null;
+        $authoritative = $emailDomain === 'gmail.com'
+            || ($hostedDomain !== null && hash_equals($emailDomain, $hostedDomain));
+
         return [
             'sub' => $claims['sub'],
-            'email' => strtolower($claims['email']),
+            'email' => $email,
             'email_verified' => true,
+            'email_authoritative' => $authoritative,
         ];
     }
 

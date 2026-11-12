@@ -1,5 +1,26 @@
 # Changelog
 
+## Unreleased — simplified Google onboarding and email verification (2026-11-12)
+
+- Create first-time Google users as passwordless, verified, approved active
+  accounts and establish the browser session immediately; returning users
+  continue to authenticate by the stable Google subject.
+- Treat only fully validated Gmail addresses and signed, matching Google
+  Workspace hosted-domain claims as provider-authoritative for exact-email
+  collision linking. Preserve local passwords, increment the authentication
+  session version, and keep external-domain collisions behind mailbox proof.
+- Keep disabled, suspended and manual-pending accounts blocked; eligible
+  pending public self-service accounts may complete onboarding through an
+  authoritative Google identity.
+- Make password-signup verification one-click in normal browsers by
+  automatically submitting the local CSRF-protected POST while retaining an
+  accessible no-JavaScript button. GET remains non-mutating, and verification
+  never authenticates the user.
+- Document that GET-prefetch scanners cannot consume verification tokens, but
+  scanners that execute page JavaScript are indistinguishable without another
+  deliberate user action. No migration, deployment or production data change
+  is part of this work.
+
 ## Unreleased — Google authentication hotfix (2026-11-12)
 
 - Route password-confirmed Google account linking through a one-use,

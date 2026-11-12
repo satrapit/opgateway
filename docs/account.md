@@ -14,8 +14,9 @@ additional UI feature flags or new login endpoints are introduced.
 Password registration POST requires `password_confirmation` and rejects
 mismatched passwords server-side before creating an account. When Google is
 configured, Continue with Google is also a first-registration path and creates
-a verified pending user with `password_hash = NULL`; it never creates a dummy
-password or bypasses approval. Account sections `/account`, `/account/provider`,
+a verified, approved, active user with `password_hash = NULL`, links the signed
+Google subject transactionally and signs the user in immediately. It never
+creates a dummy password. Account sections `/account`, `/account/provider`,
 `/account/clients`, `/account/keys` and `/account/ips` are separate routes and
 render distinct Twig sections, not a single anchor-based page.
 
@@ -62,10 +63,26 @@ session version and revokes older browser sessions.
 Continue with Google validates issuer, audience, signature, nonce, PKCE,
 one-time state and `email_verified`. Stored `sub` is the only repeat-login
 identifier. A new subject with no local email row creates a passwordless,
-verified pending account. If the verified Google email collides with an
-existing unlinked user, the system sends a 15-minute single-use confirmation
-to that address and binds it to the consumed OIDC transaction and intended
-user. Email equality alone never authenticates or links.
+verified, approved active account and signs in immediately. A signed Gmail
+address, or a signed Google Workspace `hd` claim that exactly matches the email
+domain, is provider-authoritative: it may link an otherwise eligible account
+with that exact email, preserve its password, increment the authentication
+session version and sign in. It may also finish a pending public self-service
+account. Manual/invited pending accounts and disabled or suspended accounts are
+never activated by this path. Other verified-email collisions still require a
+15-minute single-use mailbox confirmation bound to the consumed OIDC
+transaction and intended user. Email equality alone never authenticates or
+links an external-domain account.
+
+Password-registration verification links do not mutate state on their initial
+GET. The rendered same-origin page automatically submits the existing
+CSRF-protected POST using the local bundled script, so the normal browser flow
+is one click; a visible Verify email button remains for browsers without
+JavaScript. Verification activates only eligible `self_service` accounts and
+does not sign the user in. Basic GET-prefetch scanners cannot consume the
+token. A scanner that executes page JavaScript and submits forms cannot be
+reliably distinguished from a person without requiring a deliberate second
+action, so that residual limitation remains a release-acceptance consideration.
 
 The password-confirmed Connect Google POST redirects only to the same-origin
 `/account/google/continue` page. A five-minute, one-use session grant is checked

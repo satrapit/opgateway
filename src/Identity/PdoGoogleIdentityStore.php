@@ -41,7 +41,9 @@ SQL);
     }
 
     /** @return array{status:string,user_id?:int,session_stamp?:string} */
-    public function loginOrRegister(string $subject, string $email): array
+    public function loginOrRegister(
+        string $subject, string $email, bool $emailAuthoritative = false,
+    ): array
     {
         self::assertIdentity($subject, $email);
         $email = strtolower($email);
@@ -57,21 +59,33 @@ SQL);
                     return self::loginResult($linked);
                 }
 
-                $findEmail = $this->pdo->prepare(
-                    'SELECT id FROM users WHERE email = ? LIMIT 1 FOR UPDATE',
-                );
+                $findEmail = $this->pdo->prepare(<<<'SQL'
+SELECT id, status, email_verified_at, approved_at, signup_source,
+       auth_session_version
+FROM users WHERE email = ? LIMIT 1 FOR UPDATE
+SQL);
                 $findEmail->execute([$email]);
-                $existingId = $findEmail->fetchColumn();
-                if ($existingId !== false) {
+                $existing = $findEmail->fetch(PDO::FETCH_ASSOC);
+                if (is_array($existing)) {
+                    if (!$emailAuthoritative) {
+                        $this->pdo->commit();
+                        return in_array($existing['status'] ?? null, ['active', 'pending'], true)
+                            ? ['status' => 'confirmation_required',
+                                'user_id' => (int) $existing['id']]
+                            : ['status' => 'denied'];
+                    }
+                    $linked = $this->linkAuthoritativeCollision(
+                        $existing, $subject, $email,
+                    );
                     $this->pdo->commit();
-                    return ['status' => 'confirmation_required', 'user_id' => (int) $existingId];
+                    return $linked;
                 }
 
                 $create = $this->pdo->prepare(<<<'SQL'
 INSERT INTO users (
-    email, password_hash, status, email_verified_at, signup_source,
-    created_at, updated_at
-) VALUES (?, NULL, 'pending', UTC_TIMESTAMP(6), 'google',
+    email, password_hash, status, email_verified_at, approved_at,
+    signup_source, created_at, updated_at
+) VALUES (?, NULL, 'active', UTC_TIMESTAMP(6), UTC_TIMESTAMP(6), 'google',
           UTC_TIMESTAMP(6), UTC_TIMESTAMP(6))
 SQL);
                 $create->execute([$email]);
@@ -81,13 +95,19 @@ SQL);
                 }
                 $this->insertIdentity($userId, $subject, $email);
                 $this->pdo->commit();
-                return ['status' => 'created', 'user_id' => $userId];
+                return [
+                    'status' => 'created', 'user_id' => $userId,
+                    'session_stamp' => AuthenticationSessionVersion::stamp(1),
+                ];
             } catch (PDOException $error) {
                 if ($this->pdo->inTransaction()) {
                     $this->pdo->rollBack();
                 }
                 if ((string) $error->getCode() === '23000' && $attempt === 0) {
                     continue;
+                }
+                if ((string) $error->getCode() === '23000') {
+                    return ['status' => 'denied'];
                 }
                 throw $error;
             } catch (Throwable $error) {
@@ -412,6 +432,54 @@ SQL);
             return ['status' => 'pending', 'user_id' => $userId];
         }
         return ['status' => 'denied'];
+    }
+
+    /**
+     * Link only identities for which the signed provider claims are
+     * authoritative. Existing active accounts must already be eligible;
+     * pending public self-service accounts may finish onboarding because the
+     * provider has proved mailbox control. Manual/invited pending accounts and
+     * disabled states retain their administrator-controlled lifecycle.
+     *
+     * @param array<string,mixed> $row
+     * @return array{status:string,user_id?:int,session_stamp?:string}
+     */
+    private function linkAuthoritativeCollision(
+        array $row, string $subject, string $email,
+    ): array {
+        $userId = (int) ($row['id'] ?? 0);
+        $version = (int) ($row['auth_session_version'] ?? 0);
+        $eligible = ($row['status'] ?? null) === 'active'
+            && $row['email_verified_at'] !== null
+            && $row['approved_at'] !== null;
+        $selfServicePending = ($row['status'] ?? null) === 'pending'
+            && ($row['signup_source'] ?? null) === 'self_service';
+        if ($userId < 1 || $version < 1 || (!$eligible && !$selfServicePending)) {
+            return ['status' => 'denied'];
+        }
+
+        $this->insertIdentity($userId, $subject, $email);
+        $version++;
+        $update = $this->pdo->prepare(<<<'SQL'
+UPDATE users
+SET email_verified_at = CASE
+        WHEN status = 'pending' AND signup_source = 'self_service'
+        THEN COALESCE(email_verified_at, UTC_TIMESTAMP(6)) ELSE email_verified_at END,
+    approved_at = CASE WHEN status = 'pending' AND signup_source = 'self_service'
+        THEN COALESCE(approved_at, UTC_TIMESTAMP(6)) ELSE approved_at END,
+    status = CASE WHEN status = 'pending' AND signup_source = 'self_service'
+        THEN 'active' ELSE status END,
+    auth_session_version = ?, updated_at = UTC_TIMESTAMP(6)
+WHERE id = ?
+SQL);
+        $update->execute([$version, $userId]);
+        if ($update->rowCount() !== 1) {
+            throw new \RuntimeException('Google collision link revocation failed.');
+        }
+        return [
+            'status' => 'linked', 'user_id' => $userId,
+            'session_stamp' => AuthenticationSessionVersion::stamp($version),
+        ];
     }
 
     private function insertIdentity(int $userId, string $subject, string $email): void
