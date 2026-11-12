@@ -33,7 +33,8 @@ final readonly class PhpMailerVerificationMailer implements VerificationMailer, 
             . "\n\nThis link expires in 30 minutes. An administrator must approve"
             . " your account after verification. Once approved, use"
             . " Forgot password to set your own password.\n"
-            . "If you did not expect this invitation, ignore this message.");
+            . "If you did not expect this invitation, ignore this message.",
+            $origin, $token);
     }
 
     public function sendPasswordReset(string $email, string $token, string $origin): void
@@ -68,7 +69,10 @@ final readonly class PhpMailerVerificationMailer implements VerificationMailer, 
         }
     }
 
-    private function send(string $email, string $subject, string $message): void
+    private function send(
+        string $email, string $subject, string $message,
+        ?string $gmailOrigin = null, ?string $gmailToken = null,
+    ): void
     {
         try {
             $config = $this->settings->connection();
@@ -102,6 +106,18 @@ final readonly class PhpMailerVerificationMailer implements VerificationMailer, 
             $mailer->Subject = $subject;
             $mailer->Body = $message;
             $mailer->isHTML(false);
+            if ($gmailOrigin !== null && $gmailToken !== null
+                && $this->settings->gmailActionsEnabled()) {
+                // A real HTML MIME part is required for Gmail JSON-LD actions.
+                // AltBody preserves the original plain-text verification link.
+                $mailer->isHTML(true);
+                $mailer->AltBody = $message;
+                $escaped = htmlspecialchars($message, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
+                $mailer->Body = '<!doctype html><html><body><p>'
+                    . nl2br($escaped) . '</p>'
+                    . GmailVerificationMarkup::render($gmailOrigin, $gmailToken)
+                    . '</body></html>';
+            }
             if (!$mailer->send()) {
                 throw new SmtpDeliveryException('SMTP delivery failed.');
             }
