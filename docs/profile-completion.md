@@ -2,7 +2,7 @@
 
 Administrators and account owners authenticate against the existing `users` table. Roles remain in `roles` and `user_roles`; there is no separate administrator identity table.
 
-Migration 009 adds nullable `first_name` and `last_name`. Existing user data and administrator roles are preserved. No fallback or dummy names are assigned.
+Migration 009 adds nullable `first_name` and `last_name`. Existing user data and administrator roles are preserved. No fallback or dummy names are assigned. Names are validated as UTF-8 and limited to 100 Unicode characters each.
 
 Authenticated account owners may view their dashboard and visit `/account/profile`. Until both names are valid and non-empty, account mutations (client creation, IP changes, API key issuance/revocation, provider updates and security mutations) are blocked server-side with a redirect to profile completion. The dashboard shows a reminder.
 
