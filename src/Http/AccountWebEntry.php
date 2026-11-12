@@ -223,7 +223,7 @@ final readonly class AccountWebEntry
                 new AccountSecurityService(
                     $pdo, new PasswordHasher(),
                     new PdoCredentialActionLimiter($pdo, $secret), $events,
-                ), $events,
+                ), $events, $profiles,
             ))->dispatch(
                 $method, $path,
                 isset($server['CONTENT_TYPE']) ? (string) $server['CONTENT_TYPE'] : null,
