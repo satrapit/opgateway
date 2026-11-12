@@ -11,3 +11,5 @@ Google OIDC may provide verified-token `given_name` and `family_name` to prefill
 The recovery form enforces the configured offline image CAPTCHA or Google reCAPTCHA before requesting a reset email. Password reset link consumption is unchanged.
 
 **Deployment:** back up the existing eight-migration database and private secret; review and execute the additive SQL upgrade 009 manually in phpMyAdmin BEFORE deploying the updated PHP code. Confirm nine completed migrations and unchanged user counts. Do not rerun the full initial schema or edit previous migration checksums.
+
+Completed names appear in the account workspace header instead of the email address. Existing administrators share the same profile columns without changing their roles or privileges.
