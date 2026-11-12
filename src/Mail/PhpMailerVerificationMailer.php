@@ -21,7 +21,8 @@ final readonly class PhpMailerVerificationMailer implements VerificationMailer, 
         $this->validateLink($email, $token, $appUrl);
         $this->send($email, 'Verify your OPGateway email address',
             "Verify your email using this one-time link:\n" . $appUrl . '/account/verify?token=' . $token
-            . "\n\nThe link expires in 30 minutes.\nIf you did not register, ignore this message.");
+            . "\n\nThe link expires in 30 minutes.\nIf you did not register, ignore this message.",
+            $appUrl, $token);
     }
 
     public function sendInvitation(string $email, string $token, string $origin): void
