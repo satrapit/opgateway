@@ -34,7 +34,7 @@ final readonly class SmtpAdminController
     /** @return array{status:int,content_type:string,body:string,location?:string} */
     public function handle(
         string $method, ?string $contentType, ?string $body,
-        string $sourceIp, string $requestId,
+        string $sourceIp, string $requestId, bool $gmailSettings = false,
     ): array {
         $id = $this->session->currentUserId($this->accounts);
         if ($id === null) {
@@ -50,6 +50,7 @@ final readonly class SmtpAdminController
                 'administrator_label' => 'Administrator',
                 'csrf_token' => $this->session->csrfToken(),
                 'smtp' => $this->settings->summary(),
+                'gmail_actions_enabled' => $this->settings->gmailActionsEnabled(),
             ]);
             return ['status' => 200, 'content_type' => 'text/html; charset=utf-8', 'body' => $html];
         }
@@ -62,12 +63,33 @@ final readonly class SmtpAdminController
         ) !== 1) {
             return self::error(415);
         }
-        $form = $body === null ? null : StrictForm::decode($body, [
-            '_csrf', 'host', 'port', 'encryption', 'username', 'password',
-            'from_email', 'from_name',
-        ]);
+        $form = $body === null ? null : StrictForm::decode($body, $gmailSettings
+            ? ['_csrf', 'enabled']
+            : ['_csrf', 'host', 'port', 'encryption', 'username', 'password',
+                'from_email', 'from_name']
+        );
         if ($form === null || !$this->session->csrfValid($form['_csrf'])) {
             return self::error($form === null ? 400 : 403);
+        }
+        if ($gmailSettings) {
+            if (!in_array($form['enabled'], ['0', '1'], true)) {
+                return self::error(400);
+            }
+            $this->pdo->beginTransaction();
+            try {
+                $this->settings->saveGmailActions($form['enabled'] === '1');
+                (new PdoSecurityEventRecorder($this->pdo))->record(
+                    'gmail_verification_action_changed', $requestId,
+                );
+                $this->pdo->commit();
+            } catch (Throwable $exception) {
+                if ($this->pdo->inTransaction()) {
+                    $this->pdo->rollBack();
+                }
+                throw $exception;
+            }
+            $this->session->rotateCsrf();
+            return self::redirect('/admin/settings/smtp');
         }
         if (strlen($form['password']) > 4096) {
             return self::error(400);

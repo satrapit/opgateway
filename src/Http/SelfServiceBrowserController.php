@@ -31,6 +31,7 @@ final readonly class SelfServiceBrowserController
         private ?PasswordResetService $passwordReset = null,
         private bool $googleAvailable = false,
         private ?LoginCaptcha $captcha = null,
+        private ?GmailVerificationAction $gmailAction = null,
     ) {
     }
 
@@ -38,6 +39,7 @@ final readonly class SelfServiceBrowserController
     {
         return in_array($path, [
             '/account/register', '/account/verify', '/account/verify/resend',
+            '/account/verify/gmail',
             '/account/forgot-password', '/account/reset-password',
             '/account/provider/save', '/account/clients/create', '/account/ips/request',
         ], true);
@@ -47,7 +49,14 @@ final readonly class SelfServiceBrowserController
     public function dispatch(
         string $method, string $path, ?string $contentType, ?string $body,
         string $sourceIp, string $requestId, string $rawQuery,
+        string $userAgent = '',
     ): array {
+        if ($path === '/account/verify/gmail') {
+            return $this->gmailAction?->handle(
+                $method, $contentType, $body, $rawQuery,
+                $userAgent,
+            ) ?? self::error(404);
+        }
         if (in_array($path, ['/account/forgot-password', '/account/reset-password'], true)) {
             if ($this->passwordReset === null) {
                 return self::error(404);

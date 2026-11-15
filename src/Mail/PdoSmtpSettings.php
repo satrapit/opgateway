@@ -39,6 +39,26 @@ final readonly class PdoSmtpSettings
         ];
     }
 
+    /** Inbox action is disabled until an administrator opts in and Google approves sender markup. */
+    public function gmailActionsEnabled(): bool
+    {
+        $stmt = $this->pdo->prepare(
+            "SELECT setting_value FROM settings WHERE setting_key = 'smtp.gmail_actions_enabled' LIMIT 1"
+        );
+        $stmt->execute();
+        return $stmt->fetchColumn() === '1';
+    }
+
+    public function saveGmailActions(bool $enabled): void
+    {
+        $this->pdo->prepare(
+            "INSERT INTO settings (setting_key, setting_value, updated_at) "
+            . "VALUES ('smtp.gmail_actions_enabled', ?, UTC_TIMESTAMP(6)) "
+            . "ON DUPLICATE KEY UPDATE setting_value = VALUES(setting_value), "
+            . "updated_at = UTC_TIMESTAMP(6)"
+        )->execute([$enabled ? '1' : '0']);
+    }
+
     public function configured(): bool
     {
         return $this->row() !== null;
