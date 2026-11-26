@@ -15,7 +15,9 @@ Google alone controls whether the inbox action appears.
 3. Send a real verification email from production SMTP to your own Gmail inbox,
    with the **Gmail inbox verification** setting temporarily enabled in
    **Admin → SMTP settings**. The HTML message includes JSON-LD for a Gmail
-   `ConfirmAction`; the ordinary verification link still works.
+   `ConfirmAction`; the ordinary verification link still works. Do **not** expect
+   Gmail to show the button before sender approval; inspect the message's
+   original HTML and test its schema instead.
 4. Validate the message with Google's Email Markup Tester and send a real
    markup-bearing sample **directly** from the production sender to
    `schema.whitelisting+sample@gmail.com` (not forwarded). Submit Google's
@@ -28,6 +30,7 @@ Google typically requires an authenticated/aligned sender, static `From`
 address, sustained Gmail volume (hundreds of daily messages for weeks), low
 spam complaints, and approval. A low-volume service may not qualify.
 Sending markup without sender registration **does not guarantee** a button.
+Do not include real verification tokens in public screenshots, tickets, or logs.
 
 ## Implementation and threat model
 
