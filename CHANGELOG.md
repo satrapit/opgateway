@@ -1,6 +1,6 @@
 # Changelog
 
-## [0.1.0-alpha.5] — 2026-11-26 (development release; tag pending)
+## [0.1.0-alpha.5] — 2026-11-26 (development snapshot)
 
 - Consolidate the current `main` snapshot with Google-first sign-in,
   profile completion, browser session safeguards, image CAPTCHA and shared
