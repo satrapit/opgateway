@@ -59,6 +59,39 @@ final class PdoSmtpSettingsTest extends TestCase
         );
     }
 
+    public function testGmailActionFlagDefaultsOffAndCanBeToggled(): void
+    {
+        $stored = false;
+        $read = $this->createStub(PDOStatement::class);
+        $read->method('execute')->willReturn(true);
+        $read->method('fetchColumn')->willReturnCallback(
+            static function () use (&$stored): string|false { return $stored; },
+        );
+
+        $write = $this->createMock(PDOStatement::class);
+        $write->expects(self::exactly(2))->method('execute')
+            ->willReturnCallback(static function (?array $params = null) use (&$stored): bool {
+                self::assertIsArray($params);
+                self::assertCount(1, $params);
+                self::assertContains($params[0], ['0', '1']);
+                $stored = $params[0];
+                return true;
+            });
+        $pdo = $this->createStub(PDO::class);
+        $pdo->method('prepare')->willReturnCallback(
+            static function (string $sql) use ($read, $write): PDOStatement {
+                self::assertStringContainsString('smtp.gmail_actions_enabled', $sql);
+                return str_starts_with($sql, 'SELECT') ? $read : $write;
+            },
+        );
+        $settings = new PdoSmtpSettings($pdo, new SealedSecret(str_repeat('a1', 32)));
+        self::assertFalse($settings->gmailActionsEnabled());
+        $settings->saveGmailActions(true);
+        self::assertTrue($settings->gmailActionsEnabled());
+        $settings->saveGmailActions(false);
+        self::assertFalse($settings->gmailActionsEnabled());
+    }
+
     public function testIncompleteSettingsFailClosed(): void
     {
         $statement = $this->createStub(PDOStatement::class);
