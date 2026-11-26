@@ -43,6 +43,9 @@ final readonly class SmtpAdminController
         if (!$this->admins->isAdministrator($id)) {
             return self::error(403);
         }
+        if ($gmailSettings && $method !== 'POST') {
+            return self::error(404);
+        }
         if ($method === 'GET') {
             $html = $this->twig->render('admin/smtp.html.twig', [
                 'active_section' => 'smtp',
