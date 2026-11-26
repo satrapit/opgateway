@@ -22,9 +22,11 @@ Google alone controls whether the inbox action appears.
    markup-bearing sample **directly** from the production sender to
    `schema.whitelisting+sample@gmail.com` (not forwarded). Submit Google's
    [sender registration form](https://developers.google.com/workspace/gmail/markup/registering-with-google).
-5. Once approved, enable the toggle for production use. Disable it to stop
-   emitting action markup on newly sent emails. Previously issued tokens
-   remain single-use and expire after 30 minutes.
+5. Once approved, enable the toggle for production use. Disabling the
+   setting both stops emitting action markup on newly sent emails **and blocks
+   pending Gmail one-click POST actions** in previously sent emails. The
+   ordinary verification link remains available; tokens remain single-use
+   and expire after 30 minutes.
 
 Google typically requires an authenticated/aligned sender, static `From`
 address, sustained Gmail volume (hundreds of daily messages for weeks), low
