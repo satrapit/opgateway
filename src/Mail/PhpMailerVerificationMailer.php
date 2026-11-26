@@ -113,15 +113,9 @@ final readonly class PhpMailerVerificationMailer implements VerificationMailer, 
                 // AltBody preserves the original plain-text verification link.
                 $mailer->isHTML(true);
                 $mailer->AltBody = $message;
-                $escaped = htmlspecialchars($message, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
-                $verificationUrl = $gmailOrigin . '/account/verify?token=' . $gmailToken;
-                $safeUrl = htmlspecialchars($verificationUrl, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
-                $escaped = str_replace($safeUrl,
-                    '<a href="' . $safeUrl . '">Verify your email</a>', $escaped);
-                $mailer->Body = '<!doctype html><html><body><p>'
-                    . nl2br($escaped) . '</p>'
-                    . GmailVerificationMarkup::render($gmailOrigin, $gmailToken)
-                    . '</body></html>';
+                $mailer->Body = GmailVerificationMarkup::renderEmail(
+                    $message, $gmailOrigin, $gmailToken,
+                );
             }
             if (!$mailer->send()) {
                 throw new SmtpDeliveryException('SMTP delivery failed.');
