@@ -49,6 +49,16 @@ a substitute for real DB, SMTP, Openprovider and browser integration.
 
 ## Existing opgateway.test database: read-only acceptance
 
+**Verified on 2026-11-26 against the existing local MySQL database:** the
+isolated worktree at `478e529` ran `LocalDatabaseReadOnlyTest` successfully:
+**1 test, 21 assertions**, PHP 8.3.30 / PHPUnit 12.5.43. The
+`/health`, `/account/login` and `/admin/login` endpoints each returned
+HTTP 200 on `https://opgateway.test/`. This confirms schema/read-only
+readiness, **not** email delivery, authenticated browser flows, or SMTP
+acceptance. The separate DDL-running MySQL integration test has not been
+executed in this environment.
+
+
 The developer already has an HTTPS `https://opgateway.test/` installation
 with a populated local MySQL database. **Do not** run
 `MigrationRunnerIntegrationTest.php` against that database: it performs DDL,
@@ -58,8 +68,8 @@ To validate the existing local data **without changing any rows or tables**,
 from the local repository checkout with its current .env file run:
 
 ```sh
-OPGATEWAY_TEST_LOCAL_READONLY=1 \\
-  ./vendor/bin/phpunit tests-integration/LocalDatabaseReadOnlyTest.php \\
+OPGATEWAY_TEST_LOCAL_READONLY=1 \
+  ./vendor/bin/phpunit tests-integration/LocalDatabaseReadOnlyTest.php \
   --display-phpunit-notices
 ```
 
@@ -67,9 +77,9 @@ When PHP dependencies are installed in a separate QA worktree and the site's
 ignored `.env` is only present in the main local checkout, use:
 
 ```sh
-OPGATEWAY_TEST_LOCAL_READONLY=1 \\
-OPGATEWAY_LOCAL_DB_ENV="$HOME/Sites/opgateway/.env" \\
-  ./vendor/bin/phpunit tests-integration/LocalDatabaseReadOnlyTest.php \\
+OPGATEWAY_TEST_LOCAL_READONLY=1 \
+OPGATEWAY_LOCAL_DB_ENV="$HOME/Sites/opgateway/.env" \
+  ./vendor/bin/phpunit tests-integration/LocalDatabaseReadOnlyTest.php \
   --display-phpunit-notices
 ```
 
