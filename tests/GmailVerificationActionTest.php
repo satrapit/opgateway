@@ -34,6 +34,21 @@ final class GmailVerificationActionTest extends TestCase
         self::assertStringNotContainsString('<script>alert', $markup);
     }
 
+    public function testHtmlMailKeepsClickableFallbackAndEscapesUntrustedText(): void
+    {
+        $token = str_repeat('a', 64);
+        $url = 'https://opgateway.arsamnet.com/account/verify?token=' . $token;
+        $message = "Confirm: <script>alert('oops')</script>\\n" . $url;
+        $html = GmailVerificationMarkup::renderEmail(
+            $message, 'https://opgateway.arsamnet.com', $token,
+        );
+        self::assertStringContainsString('<a href="' . $url . '">Verify your email</a>', $html);
+        self::assertStringContainsString('application/ld+json', $html);
+        self::assertStringContainsString('&lt;script&gt;', $html);
+        self::assertStringNotContainsString("<script>alert('oops')</script>", $html);
+        self::assertStringContainsString('/account/verify/gmail?token=' . $token, $html);
+    }
+
     public function testMarkupRejectsNonHttpsAndInvalidTokens(): void
     {
         foreach (['http://example.test', 'https://example.test/path'] as $origin) {
