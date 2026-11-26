@@ -388,6 +388,7 @@ final class LoginSettingsPolicyTest extends TestCase
             ]],
             ['admin/smtp.html.twig', [
                 'active_section' => 'smtp',
+                'gmail_actions_enabled' => false,
                 'smtp' => ['host' => '', 'port' => 587, 'encryption' => 'starttls',
                     'username' => '', 'from_email' => '', 'from_name' => '',
                     'password_set' => false],
