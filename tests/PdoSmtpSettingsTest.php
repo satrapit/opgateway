@@ -8,6 +8,7 @@ use OPGateway\Mail\PdoSmtpSettings;
 use OPGateway\Mail\PhpMailerVerificationMailer;
 use OPGateway\Mail\SmtpConfigurationException;
 use OPGateway\Security\SealedSecret;
+use OPGateway\Security\PdoSecurityEventRecorder;
 use PDO;
 use PDOStatement;
 use PHPUnit\Framework\TestCase;
@@ -90,6 +91,20 @@ final class PdoSmtpSettingsTest extends TestCase
         self::assertTrue($settings->gmailActionsEnabled());
         $settings->saveGmailActions(false);
         self::assertFalse($settings->gmailActionsEnabled());
+    }
+
+    public function testGmailToggleAuditEventIsAccepted(): void
+    {
+        $stmt = $this->createMock(PDOStatement::class);
+        $requestId = str_repeat('a', 32);
+        $stmt->expects(self::once())->method('execute')
+            ->with(['gmail_verification_action_changed', $requestId])
+            ->willReturn(true);
+        $pdo = $this->createStub(PDO::class);
+        $pdo->method('prepare')->willReturn($stmt);
+        (new PdoSecurityEventRecorder($pdo))->record(
+            'gmail_verification_action_changed', $requestId,
+        );
     }
 
     public function testIncompleteSettingsFailClosed(): void
