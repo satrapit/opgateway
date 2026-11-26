@@ -261,7 +261,7 @@ final readonly class AdministrativeWebEntry
                 isset($server['CONTENT_TYPE']) ? (string) $server['CONTENT_TYPE'] : null,
                 $body, (string) ($server['REMOTE_ADDR'] ?? ''), bin2hex(random_bytes(16)),
             );
-        } elseif ($path === '/admin/settings/smtp') {
+        } elseif (in_array($path, ['/admin/settings/smtp', '/admin/settings/smtp/gmail-actions'], true)) {
             $response = (new SmtpAdminController(
                 $session, $accounts, $admins,
                 new PdoSmtpSettings($pdo, $vault),
@@ -271,6 +271,7 @@ final readonly class AdministrativeWebEntry
                 $method,
                 isset($server['CONTENT_TYPE']) ? (string) $server['CONTENT_TYPE'] : null,
                 $body, (string) ($server['REMOTE_ADDR'] ?? ''), bin2hex(random_bytes(16)),
+                $path === '/admin/settings/smtp/gmail-actions',
             );
         } else {
             $response = $adapter->dispatch(

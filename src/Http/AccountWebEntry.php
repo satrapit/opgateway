@@ -200,6 +200,7 @@ final readonly class AccountWebEntry
         $profileExempt = [
             '/account/profile', '/account/login', '/account/logout',
             '/account/register', '/account/verify', '/account/verify/resend',
+            '/account/verify/gmail',
             '/account/forgot-password', '/account/reset-password',
         ];
         if ($method === 'POST' && str_starts_with($path, '/account/')
@@ -245,11 +246,16 @@ final readonly class AccountWebEntry
             $response = (new SelfServiceBrowserController(
                 $session, $accounts, $registration, $integration, $origin,
                 $login, $ownerOverview, $passwordReset, $googleAvailable, $captcha,
+                $registration === null ? null : new GmailVerificationAction(
+                    new EmailVerificationService(new PdoEmailVerificationRepository($pdo, true)),
+                    $smtp->gmailActionsEnabled(),
+                ),
             ))->dispatch(
                 $method, $path,
                 isset($server['CONTENT_TYPE']) ? (string) $server['CONTENT_TYPE'] : null,
                 $body, (string) ($server['REMOTE_ADDR'] ?? ''),
                 bin2hex(random_bytes(16)), (string) ($server['QUERY_STRING'] ?? ''),
+                (string) ($server['HTTP_USER_AGENT'] ?? ''),
             );
         } else {
             $response = $adapter->dispatch(

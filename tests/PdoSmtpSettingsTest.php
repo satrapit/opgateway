@@ -8,6 +8,7 @@ use OPGateway\Mail\PdoSmtpSettings;
 use OPGateway\Mail\PhpMailerVerificationMailer;
 use OPGateway\Mail\SmtpConfigurationException;
 use OPGateway\Security\SealedSecret;
+use OPGateway\Security\PdoSecurityEventRecorder;
 use PDO;
 use PDOStatement;
 use PHPUnit\Framework\TestCase;
@@ -56,6 +57,53 @@ final class PdoSmtpSettingsTest extends TestCase
         $smtp->save(
             'smtp.example.net', 587, 'starttls', 'mailer@example.net',
             'secret-test-password', 'from@example.net', 'Gateway',
+        );
+    }
+
+    public function testGmailActionFlagDefaultsOffAndCanBeToggled(): void
+    {
+        $stored = false;
+        $read = $this->createStub(PDOStatement::class);
+        $read->method('execute')->willReturn(true);
+        $read->method('fetchColumn')->willReturnCallback(
+            static function () use (&$stored): string|false { return $stored; },
+        );
+
+        $write = $this->createMock(PDOStatement::class);
+        $write->expects(self::exactly(2))->method('execute')
+            ->willReturnCallback(static function (?array $params = null) use (&$stored): bool {
+                self::assertIsArray($params);
+                self::assertCount(1, $params);
+                self::assertContains($params[0], ['0', '1']);
+                $stored = $params[0];
+                return true;
+            });
+        $pdo = $this->createStub(PDO::class);
+        $pdo->method('prepare')->willReturnCallback(
+            static function (string $sql) use ($read, $write): PDOStatement {
+                self::assertStringContainsString('smtp.gmail_actions_enabled', $sql);
+                return str_starts_with($sql, 'SELECT') ? $read : $write;
+            },
+        );
+        $settings = new PdoSmtpSettings($pdo, new SealedSecret(str_repeat('a1', 32)));
+        self::assertFalse($settings->gmailActionsEnabled());
+        $settings->saveGmailActions(true);
+        self::assertTrue($settings->gmailActionsEnabled());
+        $settings->saveGmailActions(false);
+        self::assertFalse($settings->gmailActionsEnabled());
+    }
+
+    public function testGmailToggleAuditEventIsAccepted(): void
+    {
+        $stmt = $this->createMock(PDOStatement::class);
+        $requestId = str_repeat('a', 32);
+        $stmt->expects(self::once())->method('execute')
+            ->with(['gmail_verification_action_changed', $requestId])
+            ->willReturn(true);
+        $pdo = $this->createStub(PDO::class);
+        $pdo->method('prepare')->willReturn($stmt);
+        (new PdoSecurityEventRecorder($pdo))->record(
+            'gmail_verification_action_changed', $requestId,
         );
     }
 
