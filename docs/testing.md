@@ -47,6 +47,40 @@ The smoke script probes real gateway admission (missing bearer and
 denied mutating route), health, IP helper and safe logging. It is not
 a substitute for real DB, SMTP, Openprovider and browser integration.
 
+## Existing opgateway.test database: read-only acceptance
+
+The developer already has an HTTPS `https://opgateway.test/` installation
+with a populated local MySQL database. **Do not** run
+`MigrationRunnerIntegrationTest.php` against that database: it performs DDL,
+inserts test users and requires a completely empty schema.
+
+To validate the existing local data **without changing any rows or tables**,
+from the local repository checkout with its current .env file run:
+
+```sh
+OPGATEWAY_TEST_LOCAL_READONLY=1 \\
+  ./vendor/bin/phpunit tests-integration/LocalDatabaseReadOnlyTest.php \\
+  --display-phpunit-notices
+```
+
+When PHP dependencies are installed in a separate QA worktree and the site's
+ignored `.env` is only present in the main local checkout, use:
+
+```sh
+OPGATEWAY_TEST_LOCAL_READONLY=1 \\
+OPGATEWAY_LOCAL_DB_ENV="$HOME/Sites/opgateway/.env" \\
+  ./vendor/bin/phpunit tests-integration/LocalDatabaseReadOnlyTest.php \\
+  --display-phpunit-notices
+```
+
+The test rejects non-loopback database hosts and starts a MySQL read-only
+transaction. It inspects the migration ledger and checksums, 15 tables,
+required identity/profile columns and the optional Gmail setting. It never
+reads SMTP passwords or generates verification tokens. A missing migration
+is a signal to review backups and migration plans **manually**, not to run
+an automatic repair. The local HTTPS site's browser/login flows still require
+separate acceptance testing.
+
 ## Isolated database and mail test
 
 Use only an explicitly disposable empty database or restored backup clone,
