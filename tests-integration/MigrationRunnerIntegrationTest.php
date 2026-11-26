@@ -45,11 +45,19 @@ final class MigrationRunnerIntegrationTest extends TestCase
         $versions = array_map(static fn ($migration): string => $migration->version(), $catalog);
         $preOptional = array_slice($catalog, 0, -1);
         $preOptionalVersions = array_slice($versions, 0, -1);
+        self::assertCount(9, $catalog, 'Current development schema contains nine migrations.');
+        self::assertSame('202611120002_add_user_names', end($versions));
 
         self::assertSame('utf8mb4_unicode_ci', $pdo->query(
             'SELECT @@collation_connection'
         )->fetchColumn());
         self::assertSame($preOptionalVersions, $runner->run($preOptional));
+        self::assertCount(8, $preOptionalVersions);
+        self::assertFalse($pdo->query(<<<'SQL'
+SELECT COLUMN_NAME FROM information_schema.COLUMNS
+WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'users'
+AND COLUMN_NAME = 'first_name'
+SQL)->fetchColumn(), 'Profile columns must be added by migration 009, not earlier.');
 
         $existingHash = password_hash('integration-existing-password', PASSWORD_DEFAULT);
         self::assertIsString($existingHash);
@@ -67,6 +75,7 @@ INSERT INTO google_identities (user_id, google_sub, google_email, linked_at)
 VALUES (?, 'integration-stable-subject', 'existing@example.test', UTC_TIMESTAMP(6))
 SQL);
         $identity->execute([$userId]);
+        $usersBefore = (int) $pdo->query('SELECT COUNT(*) FROM users')->fetchColumn();
 
         self::assertSame([end($versions)], $runner->run($catalog));
         self::assertSame([], $runner->run($catalog), 'Re-running completed migrations must be a no-op.');
@@ -83,7 +92,7 @@ SQL);
         self::assertContains('provider_connections', $tables);
         self::assertContains('settings', $tables);
         self::assertNotContains('smtp_settings', $tables);
-        self::assertSame(8, (int) $pdo->query(
+        self::assertSame(9, (int) $pdo->query(
             "SELECT COUNT(*) FROM schema_migrations WHERE status = 'completed'"
         )->fetchColumn());
         self::assertSame('completed', $pdo->query(
@@ -95,6 +104,22 @@ WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'users'
 AND COLUMN_NAME = 'password_hash'
 SQL)->fetchColumn();
         self::assertSame('YES', $passwordColumn);
+        foreach (['first_name', 'last_name'] as $nameColumn) {
+            $column = $pdo->prepare(<<<'SQL'
+SELECT COLUMN_TYPE, IS_NULLABLE FROM information_schema.COLUMNS
+WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'users'
+AND COLUMN_NAME = ?
+SQL);
+            $column->execute([$nameColumn]);
+            self::assertSame([
+                'COLUMN_TYPE' => 'varchar(100)',
+                'IS_NULLABLE' => 'YES',
+            ], $column->fetch(PDO::FETCH_ASSOC),
+                'Migration 009 must create nullable profile name fields.');
+        }
+        self::assertSame($usersBefore, (int) $pdo->query(
+            'SELECT COUNT(*) FROM users'
+        )->fetchColumn(), 'Migration 009 must preserve all existing users.');
         $versionColumn = $pdo->query(<<<'SQL'
 SELECT CONCAT(COLUMN_TYPE, ':', IS_NULLABLE, ':', COLUMN_DEFAULT)
 FROM information_schema.COLUMNS
@@ -103,12 +128,14 @@ AND COLUMN_NAME = 'auth_session_version'
 SQL)->fetchColumn();
         self::assertSame('bigint unsigned:NO:1', $versionColumn);
         $preserved = $pdo->prepare(
-            'SELECT password_hash, auth_session_version FROM users WHERE id = ?',
+            'SELECT password_hash, auth_session_version, first_name, last_name FROM users WHERE id = ?',
         );
         $preserved->execute([$userId]);
         self::assertSame([
             'password_hash' => $existingHash,
             'auth_session_version' => 1,
+            'first_name' => null,
+            'last_name' => null,
         ], $preserved->fetch(PDO::FETCH_ASSOC));
         self::assertSame(1, (int) $pdo->query(
             'SELECT COUNT(*) FROM google_identities'
