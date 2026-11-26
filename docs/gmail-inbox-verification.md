@@ -64,6 +64,7 @@ After checking out the feature branch:
 ```sh
 php scripts/lint.php
 ./vendor/bin/phpunit tests/GmailVerificationActionTest.php
+./vendor/bin/phpunit tests/PdoSmtpSettingsTest.php
 ./vendor/bin/phpunit --display-phpunit-notices
 php scripts/smoke.php
 ```
