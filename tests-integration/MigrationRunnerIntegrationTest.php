@@ -176,10 +176,12 @@ SQL);
             $pendingUserId = (int) $pdo->lastInsertId();
             $rawToken = $verification->issueForUser($pendingUserId);
             self::assertSame(64, strlen($rawToken));
-            self::assertSame(0, (int) $pdo->query(
-                "SELECT COUNT(*) FROM email_verification_tokens WHERE token_hash = "
-                . $pdo->quote($rawToken)
-            )->fetchColumn(), 'Raw bearer tokens must never be persisted.');
+            $rawTokenLookup = $pdo->prepare(
+                'SELECT COUNT(*) FROM email_verification_tokens WHERE token_hash = ?'
+            );
+            $rawTokenLookup->execute([$rawToken]);
+            self::assertSame(0, (int) $rawTokenLookup->fetchColumn(),
+                'Raw bearer tokens must never be persisted.');
             self::assertTrue($verification->verify($rawToken));
             self::assertFalse($verification->verify($rawToken),
                 'A consumed token must not be reusable.');
