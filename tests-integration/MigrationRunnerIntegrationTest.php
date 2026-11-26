@@ -7,6 +7,10 @@ namespace OPGateway\Tests\Integration;
 use OPGateway\Database\Migrations\MigrationCatalog;
 use OPGateway\Database\Migrations\MigrationRunner;
 use OPGateway\Database\PdoConnectionFactory;
+use OPGateway\Identity\EmailVerificationService;
+use OPGateway\Identity\PdoEmailVerificationRepository;
+use OPGateway\Mail\PdoSmtpSettings;
+use OPGateway\Security\SealedSecret;
 use PDO;
 use PHPUnit\Framework\TestCase;
 use RuntimeException;
@@ -143,6 +147,55 @@ SQL)->fetchColumn();
         self::assertSame(0, (int) $pdo->query(
             'SELECT COUNT(*) FROM google_identity_confirmations'
         )->fetchColumn());
+
+        // Real PDO/MySQL settings toggle: default off, persisted, and reversible.
+        $smtpSettings = new PdoSmtpSettings(
+            $pdo, new SealedSecret(bin2hex(random_bytes(32))),
+        );
+        self::assertFalse($smtpSettings->gmailActionsEnabled());
+        $smtpSettings->saveGmailActions(true);
+        self::assertTrue($smtpSettings->gmailActionsEnabled());
+        $smtpSettings->saveGmailActions(false);
+        self::assertFalse($smtpSettings->gmailActionsEnabled());
+
+        // Real InnoDB token consumption: self-service is approved once,
+        // while a manual invitation still requires administrator review.
+        $insertPending = $pdo->prepare(<<<'SQL'
+INSERT INTO users (
+    email, password_hash, status, signup_source, created_at, updated_at
+) VALUES (?, NULL, 'pending', ?, UTC_TIMESTAMP(6), UTC_TIMESTAMP(6))
+SQL);
+        $verification = new EmailVerificationService(
+            new PdoEmailVerificationRepository($pdo, true),
+        );
+        foreach ([
+            ['self-service-integration@example.test', 'self_service', 'active'],
+            ['invited-integration@example.test', 'manual', 'pending'],
+        ] as [$email, $source, $expectedStatus]) {
+            $insertPending->execute([$email, $source]);
+            $pendingUserId = (int) $pdo->lastInsertId();
+            $rawToken = $verification->issueForUser($pendingUserId);
+            self::assertSame(64, strlen($rawToken));
+            self::assertSame(0, (int) $pdo->query(
+                "SELECT COUNT(*) FROM email_verification_tokens WHERE token_hash = "
+                . $pdo->quote($rawToken)
+            )->fetchColumn(), 'Raw bearer tokens must never be persisted.');
+            self::assertTrue($verification->verify($rawToken));
+            self::assertFalse($verification->verify($rawToken),
+                'A consumed token must not be reusable.');
+            $account = $pdo->prepare(
+                'SELECT status, email_verified_at, approved_at FROM users WHERE id = ?'
+            );
+            $account->execute([$pendingUserId]);
+            $row = $account->fetch(PDO::FETCH_ASSOC);
+            self::assertSame($expectedStatus, $row['status']);
+            self::assertNotNull($row['email_verified_at']);
+            if ($source === 'self_service') {
+                self::assertNotNull($row['approved_at']);
+            } else {
+                self::assertNull($row['approved_at']);
+            }
+        }
 
         $other = PdoConnectionFactory::open($config);
         self::assertSame(1, (int) $other->query(
