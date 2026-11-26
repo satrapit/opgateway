@@ -49,6 +49,7 @@ final class GmailVerificationMarkup
                 'handler' => [
                     '@type' => 'HttpActionHandler',
                     'url' => $origin . '/account/verify/gmail?token=' . $token,
+                    'method' => 'http://schema.org/HttpRequestMethod/POST',
                 ],
             ],
             'description' => 'Verify your OPGateway email address',
