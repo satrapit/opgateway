@@ -3,13 +3,12 @@
 PHP 8.3 / MySQL Openprovider gateway for cPanel shared hosting, with a
 shared TailAdmin/Twig design system for both admin and self-service account portals.
 
-> **Release boundary:** tagged `v0.1.0-alpha.4.1` is the tested
-> pre-Google rollback base with six required migrations and explicit
-> compatibility for migration 007. The current `main` also includes the
-> subsequent database-only .env cleanup. Google sign-in is still in
-> Draft PR #9. The replacement TailAdmin menu, image CAPTCHA and
-> creation workflows are being reviewed in the independent branch
-> `feat/admin-settings-users-image-captcha`. Neither is deployed.
+> **Development release candidate (2026-11-26):** `main` includes Google
+> onboarding, shared account profiles, the CAPTCHA safeguards, and optional
+> Gmail inbox verification from merged PR #13. The next proposed tag is
+> `v0.1.0-alpha.5`. No production deployment is implied. The earlier
+> `v0.1.0-alpha.4.1` tag is a rollback-compatible pre-Google baseline,
+> **not** a rollback target for all later schema migrations.
 
 ## One application, no feature-flag maze
 
@@ -30,13 +29,12 @@ Configuration is deliberately small. **Only MySQL connection values belong in
 `DB_PASSWORD`). All global application settings live in a single key/value `settings`
 table (`setting_key`, `setting_value`, `updated_at`), including encrypted
 `smtp.password`. The `admin` role manages SMTP; individual owner credentials
-remain separate in `provider_connections` for access control. The application has no `*_ENABLED` switches.
-Security policy is enforced by authentication/authorization, not runtime flags.
-Under development: TailAdmin-style Settings parent with separate
-`/admin/settings/security`, `/admin/settings/login/google` and
-`/admin/settings/smtp` pages.
-Google SSO and password-login CAPTCHA are configured in MySQL by an
-authorized administrator with current-password confirmation.
+remain separate in `provider_connections` for access control. Authorization
+rules cannot be disabled by feature flags. The optional
+`smtp.gmail_actions_enabled` flag defaults to off and affects only Gmail
+verification markup and its dedicated one-click endpoint.
+Security, Google sign-in and SMTP configuration are managed in authenticated
+administrator settings with session CSRF protection.
 See [configuration locations and .env cleanup](docs/configuration.md)
 and [authentication settings](docs/authentication-settings.md).
 
@@ -51,13 +49,12 @@ backed up**; never save this key in MySQL, Git or the public directory.
 1. Run `composer install` on PHP 8.3 with MySQL extensions.
 2. Copy `.env.example` to private `.env` and provide **local** DB credentials.
    If upgrading a local checkout, remove retired non-DB entries from .env.
-3. For an empty database on this Google-first development branch, import the
-   complete schema once (8 migration records), but only after confirming it
-   has no existing data. For an existing alpha.3 database, alpha.4 requires
-   applying 004, 005 and 006 in order after a verified backup. The Google
-   original Google feature requires migration 007. Google-first optional
-   passwords additionally require migration 008, reviewed and tested only on
-   a disposable/local backup before any production change.
+3. For an **empty disposable development database only**, use the full schema
+   with nine completed migration records. For any existing database, back up
+   first and apply only the reviewed missing migrations in sequence; the
+   current account profile code requires migration 009. Never import the full
+   schema over existing data, and never run migrations automatically in
+   production. See [deployment](docs/cpanel-deployment.md).
 4. On first run create an admin using the existing reviewed SQL in
    [database documentation](docs/database.md), if none exists.
 5. Use HTTPS at a correctly configured canonical virtual host.
@@ -84,22 +81,22 @@ Document Root. No GitHub Actions, auto migrations or server-side Composer.
 
 ### Single-domain Google rollout
 
-The only cPanel deployment is `https://opgateway.arsamnet.com`. There
-is no staging hostname. Before migrating its database to 007, verify and
-deploy the **tagged** rollback-compatible pre-Google alpha.4.1
-release first. Verify the production backup, apply 007 once,
-then deploy the locally tested Google feature from a reviewed main merge.
-The original alpha.4 code will reject a database already on migration 007;
-only alpha.4.1 can serve as the code-only fallback after that upgrade.
-Use the exact OAuth redirect URI
-`https://opgateway.arsamnet.com/account/google/callback`.
+The only cPanel deployment target is `https://opgateway.arsamnet.com`;
+there is no separate staging hostname. The approved Google OAuth redirect URI
+is `https://opgateway.arsamnet.com/account/google/callback`.
 
-The Google-first branch supports first registration without a local password,
-one-time mailbox confirmation for collisions with existing accounts, and a
-separate Account Security page. It is unreleased and must not be deployed or
-merged until migration 008 and its rollback plan receive independent review.
+The `main` branch includes Google-first onboarding, passwordless accounts,
+mailbox-confirmed collision handling, a separate Account Security page and
+optional Gmail inbox `ConfirmAction` for signup and invitation emails. Gmail
+inbox actions default to **disabled** until sender validation and Google
+registration are complete; normal email verification remains available.
 
-Google account connection leaves the password-confirmation POST through a
-one-use same-origin continuation document. The document then navigates to the
-fixed Google authorization origin and retains a visible link as an accessible
-fallback, so the strict `form-action 'self'` policy remains unchanged.
+Before **any** manual deployment, verify a database and private-key backup,
+check the production migration ledger against the nine-schema-migration
+requirement, and rehearse a compatible rollback. Alpha.4.1 is not a safe
+rollback against later schemas without additional compatibility work.
+Browser/Google, SMTP and database integration acceptance remain outstanding
+even after local unit, smoke and frontend test gates pass. See
+[deployment guidance](docs/cpanel-deployment.md),
+[testing](docs/testing.md) and
+[Gmail inbox verification](docs/gmail-inbox-verification.md).
