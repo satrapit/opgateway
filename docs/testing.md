@@ -2,7 +2,7 @@
 
 ## Regular local validation
 
-From the feature branch on the developer's Mac:
+From a dedicated, disposable Git worktree of the reviewed `main` commit on a trusted Mac:
 
 ```bash
 composer install --prefer-dist
@@ -16,15 +16,15 @@ npm run lint
 npm test
 npm run build
 cd ..
-composer install --no-dev --prefer-dist --optimize-autoloader
+git diff --check
+git diff --exit-code -- public/assets/admin
 git status --short
 ```
 
-The Google-first branch adds nullable-password, immediate onboarding,
+The current `main` includes nullable-password Google-first onboarding,
 provider-authoritative versus external-domain collision handling, revocation,
-action-step-up and Account Security coverage. Do not copy a prior
-test count into release notes: record the fresh PHPUnit, 10 smoke checks and
-12 frontend tests from the exact reviewed commit.
+action-step-up, Account Security and optional Gmail inbox actions (disabled
+by default). Record test counts only for the exact commit actually tested.
 
 For the prepared Migration 008 code-only rollback, run
 `tests/Migration008RollbackCompatibilityTest.php` together with the Google
@@ -33,14 +33,15 @@ full suite. The exact rollback snapshot must deny an unknown Google subject
 without creating or joining a user while continuing subject login for an
 already linked Google-only account.
 
-Local automated result on 2026-11-12 for this working tree: 268 PHPUnit tests
-with 2123 assertions, 10/10 smoke checks and 12/12 Node frontend tests; Composer
-validation and locked dependency audit, PHP lint, npm lint, production Webpack
-build and asset allowlist inspection completed successfully. The separate
-migration runner was not rerun because this change has no schema migration; a
-prior recorded disposable-MySQL result remains 1 test with 31 assertions.
-This is not a restored-backup rehearsal, real-browser,
-SMTP or Google-provider acceptance result; those release gates remain open.
+Local QA on 2026-11-26 for commit `86171ad` (the code snapshot in
+`v0.1.0-alpha.5`): **282 PHPUnit tests / 2,236 assertions**,
+**10/10 smoke checks**, **12/12 Node frontend tests**, PHP lint,
+strict Composer validation, frontend lint, npm audit and production
+Webpack build passed. The next changes in `main` update the separate
+real-MySQL integration test for migration 009 and SMTP/email token behavior;
+these post-tag changes require their own execution.
+No restored-backup rehearsal, real Gmail/SMTP acceptance, full browser audit,
+or fresh disposable-MySQL integration result is claimed.
 
 The smoke script probes real gateway admission (missing bearer and
 denied mutating route), health, IP helper and safe logging. It is not
@@ -49,17 +50,21 @@ a substitute for real DB, SMTP, Openprovider and browser integration.
 ## Isolated database and mail test
 
 Use only an explicitly disposable empty database or restored backup clone,
-never a working or production database. On this branch, apply migrations 004
-through 008 in catalog order and verify 8 completed ledger entries and 15 final
-tables. Test admin SMTP UI, verified email signup, expired/replayed
-links, owner account, disabled client/IP, approvals, one-time key issue
-and revoke, denied wrong source IP and actual safe upstream read. Verify
-metadata logs do not contain secrets.
+never an existing working or production database. The current migration
+catalog contains **nine** entries (001–009) and yields **15** tables.
+`tests-integration/MigrationRunnerIntegrationTest.php` runs the first
+eight migrations, seeds an existing Google-linked account, applies 009,
+checks idempotency and data preservation, verifies the Gmail SMTP setting,
+and exercises actual one-use token consumption and manual-invite approvals.
+The test also checks MySQL advisory migration locks.
 
 `tests-integration/MigrationRunnerIntegrationTest.php` is separate
-from the standard suite because it performs database DDL. It is
-suitable only for an explicitly disposable MySQL instance, never a
-working or production database. No automated migration on cPanel.
+from the standard suite because it performs database DDL. It is suitable only for an explicitly disposable **empty MySQL 8** database
+named `opgateway_integration_test` at `127.0.0.1:13306` using
+`opgateway_test` and the ephemeral
+`OPGATEWAY_TEST_MYSQL_PASSWORD` environment variable. The test performs
+DDL and requires a completely empty schema. No automatic migration on cPanel.
+Never point a port-forward or alternate server at a production database.
 
 ## Shared Account/Admin UI test gate
 
@@ -92,12 +97,12 @@ Test successful recovery in one browser while another logged-in browser has
 an Account session and (separately) an Admin session. Confirm both old sessions
 are redirected to login and freshly signed-in sessions work. No migration.
 
-## Google-first OIDC browser flow — unreleased feature branch only
+## Google-first OIDC browser flow — manual production acceptance pending
 
-Google sign-in is NOT part of the production pilot. On this branch, run PHP
-lint, PHPUnit and smoke after reviewed migrations 007 and 008 on a disposable
-**local backup copy**. A fresh install needs 8 migration entries and 15 final
-tables. Never deploy this source against production or run its migrations there.
+Google-first sign-in is merged into `main`, but a successful merge does
+not mean it has been deployed or accepted against the real provider.
+Use a disposable local backup copy at **migration 009** for browser
+acceptance and never run schema changes against production from a test.
 
 For the sole deployed hostname `opgateway.arsamnet.com`, first verify and
 deploy the compatibility-only pre-Google release (planned alpha.4.1 from
@@ -153,7 +158,8 @@ GET-only prefetch client and a JavaScript-capable scanner; document that only a
 deliberate second action can fully distinguish the latter from a user.
 
 Unit tests cannot substitute for real Google, MySQL and browser integration.
-Do not merge/deploy the feature before these checks pass.
+Do not deploy or enable the relevant production features before these
+provider/browser acceptance checks pass.
 
 ## UI and release review
 
