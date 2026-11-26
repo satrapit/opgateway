@@ -27,6 +27,8 @@ final class GmailVerificationActionTest extends TestCase
         self::assertSame('ConfirmAction', $data['potentialAction']['@type']);
         self::assertSame('Verify Email', $data['potentialAction']['name']);
         self::assertSame('HttpActionHandler', $data['potentialAction']['handler']['@type']);
+        self::assertSame('http://schema.org/HttpRequestMethod/POST',
+            $data['potentialAction']['handler']['method']);
         self::assertSame(
             'https://opgateway.arsamnet.com/account/verify/gmail?token=' . $token,
             $data['potentialAction']['handler']['url'],
