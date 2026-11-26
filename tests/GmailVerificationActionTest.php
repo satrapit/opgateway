@@ -95,10 +95,21 @@ final class GmailVerificationActionTest extends TestCase
         self::assertSame(404, $action->handle('GET', $type, $payload, $query, self::GMAIL_UA)['status']);
         self::assertSame(400, $action->handle('POST', $type, $payload, $query, 'curl/8.0')['status']);
         self::assertSame(400, $action->handle('POST', 'application/json', $payload, $query, self::GMAIL_UA)['status']);
+        self::assertSame(400, $action->handle('POST', $type,
+            'confirmed=Approved&confirmed=Approved', $query, self::GMAIL_UA)['status']);
+        self::assertSame(400, $action->handle('POST', $type,
+            'confirmed%5B%5D=Approved', $query, self::GMAIL_UA)['status']);
+        self::assertSame(400, $action->handle('POST', $type,
+            'confirmed=Approved', $query . '&extra=1', self::GMAIL_UA)['status']);
+        self::assertSame(400, $action->handle('POST', $type,
+            'confirmed=Approved%00', $query, self::GMAIL_UA)['status']);
+
         self::assertSame(400, $action->handle('POST', $type, 'confirmed=No', $query, self::GMAIL_UA)['status']);
         self::assertSame(400, $action->handle('POST', $type, $payload, 'token=bad', self::GMAIL_UA)['status']);
         self::assertFalse($repo->used);
-        self::assertSame(200, $action->handle('POST', $type, $payload, $query, self::GMAIL_UA)['status']);
+        self::assertSame(200, $action->handle('POST',
+            'application/x-www-form-urlencoded; charset=utf-8',
+            $payload, $query, self::GMAIL_UA)['status']);
         self::assertTrue($repo->used);
         self::assertSame(400, $action->handle('POST', $type, $payload, $query, self::GMAIL_UA)['status']);
     }
