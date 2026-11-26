@@ -12,6 +12,27 @@ use InvalidArgumentException;
  */
 final class GmailVerificationMarkup
 {
+    /**
+     * Keep a conventional, clickable HTTPS link in the HTML MIME part.
+     * Plain-text callers retain their original message as AltBody.
+     */
+    public static function renderEmail(string $message, string $origin, string $token): string
+    {
+        $markup = self::render($origin, $token);
+        $url = $origin . '/account/verify?token=' . $token;
+        $safeUrl = htmlspecialchars($url, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
+        $escapedMessage = htmlspecialchars($message, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
+        $escapedMessage = str_replace(
+            $safeUrl,
+            '<a href="' . $safeUrl . '">Verify your email</a>',
+            $escapedMessage,
+        );
+
+        return '<!doctype html><html><body><div>'
+            . nl2br($escapedMessage, false) . '</div>' . $markup
+            . '</body></html>';
+    }
+
     public static function render(string $origin, string $token): string
     {
         if (preg_match('~^https://[a-z0-9.-]+(?::[0-9]{1,5})?$~iD', $origin) !== 1
