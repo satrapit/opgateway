@@ -1,3 +1,32 @@
+# Changelog
+
+## [0.1.0-alpha.5] — 2026-11-26 (development release; tag pending)
+
+- Consolidate the current `main` snapshot with Google-first sign-in,
+  profile completion, browser session safeguards, image CAPTCHA and shared
+  TailAdmin/Twig account and administrator pages.
+- Add opt-in Gmail inbox `ConfirmAction` for signup verification and
+  administrator invitations with a clickable conventional link and
+  plain-text alternative. Gmail action markup defaults to **disabled**.
+- Fix the strict-Twig SMTP test fixture to supply
+  `gmail_actions_enabled` without changing production behavior.
+- Confirm local PHP 8.3.30 quality gates on 2026-11-26 for the code
+  snapshot at `86171ad`: **282 PHPUnit tests / 2,236 assertions**,
+  **10/10 smoke checks**, **12/12 frontend tests**, PHP lint, strict Composer
+  validation, npm lint, production Webpack build and exact asset diff.
+- No additional database migration is introduced by Gmail inbox actions;
+  the combined current application requires previously defined migrations
+  through **009**. No automatic production deployment or schema change.
+- Real SMTP/Gmail sender acceptance, browser validation and disposable-MySQL
+  integration/migration rehearsal remain open release gates. This tag is
+  a development snapshot, **not production acceptance**.
+
+## Historical development notes
+
+The entries below were written as work progressed and retained for context.
+Their original "Unreleased" labels refer to their state **at that time**;
+the changes integrated into this development snapshot are summarized above.
+
 ## Unreleased — Gmail inbox email verification actions
 
 - Add optional Gmail `ConfirmAction` markup to signup and invitation emails, retaining ordinary verification links and plain-text alternatives.
@@ -12,7 +41,6 @@
 - Prefill first and last name from verified signed Google profile claims when available; otherwise require completion inside the account panel.
 - Add an account profile form, completion reminder and server-side mutation gate; existing user and administrator records are preserved.
 
-# Changelog
 
 ## Unreleased — simplified Google onboarding and email verification (2026-11-12)
 
