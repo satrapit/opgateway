@@ -43,6 +43,7 @@ final readonly class PdoSecurityEventRecorder implements SecurityEventRecorder
         'credential_revoke_denied',
         'credential_action_throttled',
         'smtp_settings_changed',
+        'gmail_verification_action_changed',
         'google_settings_changed',
         'google_login_allowed',
         'google_login_denied',
