@@ -105,7 +105,7 @@ and is unavailable unless the trusted server hostname is exactly
 and `DB_HOST` is loopback. Production responds with 404 and does not
 display a QA navigation link.
 
-PHP syntax checks use shared `OPGateway\\Quality\\PhpSyntax::scanRoot()`
+PHP syntax checks use shared `OPGateway\Quality\PhpSyntax::scanRoot()`
 with native `token_get_all(..., TOKEN_PARSE)`, without running application
 source or invoking any subprocess. The existing `scripts/lint.php` now uses
 the same parser, so it no longer invokes a shell. Database checks are read-only on the
