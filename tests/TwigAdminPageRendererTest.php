@@ -101,6 +101,18 @@ final class TwigAdminPageRendererTest extends TestCase
         self::assertStringNotContainsString('action="/admin/provision"', $readOnly);
     }
 
+    public function testLocalQaNavigationRequiresExplicitPresentationFlag(): void
+    {
+        $renderer = new TwigRenderer(dirname(__DIR__) . '/templates');
+        $hidden = (new TwigAdminPageRenderer($renderer))->dashboard(self::CSRF, 'Administrator');
+        self::assertStringNotContainsString('href="/admin/qa"', $hidden);
+
+        $visible = (new TwigAdminPageRenderer($renderer, true))
+            ->dashboard(self::CSRF, 'Administrator');
+        self::assertStringContainsString('href="/admin/qa"', $visible);
+        self::assertStringNotContainsString('aria-current="page" href="/admin/qa"', $visible);
+    }
+
     public function testUnrecognizedSectionCannotSelectTemplate(): void
     {
         $pages = new TwigAdminPageRenderer(new TwigRenderer(dirname(__DIR__) . '/templates'));
