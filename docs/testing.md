@@ -196,6 +196,20 @@ and client disabling, verifies owner-scoped views, then disables one owner's
 client and checks the API key becomes unusable. It does not perform any
 business operation against real Openprovider services or production.
 
+### Verified local integration result (2026-11-27)
+
+On the operator's Mac, a fresh `opgateway_integration_test` database was
+used with TCP `127.0.0.1:3306` and explicitly opted-in passwordless local
+root. The complete integration test passed: **1 test, 88 assertions**,
+PHP 8.3.30, PHPUnit 12.5.43; no errors or skipped cases.
+
+The integration checks include migrations 001–009, real two-owner scoped
+Client/IP/API credential checks, credential invalidation on client disable,
+and single-use verification token persistence. This is a database integration
+gate, **not** an authenticated multi-user HTTP/browser or Openprovider
+end-to-end acceptance. The disposable test schema is now populated and must
+not be used again with the migration test's empty-schema precondition.
+
 For already-populated `opgateway.test`, use only the
 `LocalDatabaseReadOnlyTest.php` and `LocalOwnerIsolationReadOnlyTest.php`
 suites and report SKIPPED tests separately.
