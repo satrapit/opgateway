@@ -141,8 +141,8 @@ the QA worktree; the path comes from the **working** `opgateway.test`
 database connection:
 
 ```sh
-MYSQL_SOCKET="$(php -r 'require "src/autoload.php"; $c=\\OPGateway\\Config\\Environment::load(getenv("HOME")."/Sites/opgateway/.env"); $p=\\OPGateway\\Database\\PdoConnectionFactory::open($c); echo $p->query("SELECT @@socket")->fetchColumn();')"
-printf 'Active server socket: %s\\n' "$MYSQL_SOCKET"
+MYSQL_SOCKET="$(php -r 'require "src/autoload.php"; $c=\OPGateway\Config\Environment::load(getenv("HOME")."/Sites/opgateway/.env"); $p=\OPGateway\Database\PdoConnectionFactory::open($c); echo $p->query("SELECT @@socket")->fetchColumn();')"
+printf 'Active server socket: %s\n' "$MYSQL_SOCKET"
 mysql --protocol=SOCKET --socket="$MYSQL_SOCKET" -u root -Nse 'SELECT CURRENT_USER()'
 mysql --protocol=SOCKET --socket="$MYSQL_SOCKET" -u root -e "CREATE DATABASE IF NOT EXISTS opgateway_integration_test CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci"
 ```
