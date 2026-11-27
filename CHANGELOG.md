@@ -1,5 +1,22 @@
 # Changelog
 
+## Unreleased — local authorization QA (2026-11-27)
+
+- Verified the populated local `opgateway.test` schema (9 migrations,
+  15 tables, 1 test / 21 assertions) without modifying database content.
+- Verified 10/10 local HTTPS probes and 18/18 anonymous authorization/
+  secure-cookie probes. The previous PHP QA commit `88fc24a` passed
+  **284 PHPUnit tests / 2,253 assertions** and 10/10 code smoke checks.
+- Added read-only MySQL owner isolation tests: 3 passed, 1 skipped
+  (two eligible owners with API clients were unavailable), 11 assertions;
+  this is **not** proof of complete two-owner isolation.
+- Prepared isolated-schema MySQL integration tests for cross-owner
+  client, IP and key operations, runnable on the existing local MySQL 3306
+  with explicit opt-in, a dedicated account and an initially empty schema.
+  This **new writable integration gate has not been run**.
+- No production deployment, external SMTP retest, schema change to the
+  working database, Docker requirement, or additional Git branch.
+
 ## [0.1.0-alpha.5] — 2026-11-26 (development snapshot)
 
 - Consolidate the current `main` snapshot with Google-first sign-in,
