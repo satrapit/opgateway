@@ -22,21 +22,35 @@ use RuntimeException;
  * Real-MySQL integration test. Intentionally excluded from the default suite.
  *
  * Uses a dedicated, empty local MySQL schema named opgateway_integration_test.
- * Port 13306 is the default; another existing local MySQL port requires
- * explicit opt-in. Only the dedicated opgateway_test user is accepted.
+ * Defaults to the dedicated opgateway_test user on 127.0.0.1:13306.
+ * Explicit opt-in permits localhost root with a blank password over a local
+ * MySQL socket, exclusively for this disposable test schema.
  * Never point this test at a working or production database: it mutates rows.
  */
 final class MigrationRunnerIntegrationTest extends TestCase
 {
     public function testMigrationExecutionAndSafetyGates(): void
     {
+        $useLocalRoot = getenv('OPGATEWAY_TEST_USE_LOCAL_ROOT') === '1';
         $password = getenv('OPGATEWAY_TEST_MYSQL_PASSWORD');
-        if (!is_string($password) || $password === '') {
-            throw new RuntimeException('Set OPGATEWAY_TEST_MYSQL_PASSWORD for the isolated test schema.');
+
+        if ($useLocalRoot) {
+            // Root is permitted ONLY with two explicit test-only flags.
+            // A local Unix socket is preferred over TCP for localhost root.
+            if (getenv('OPGATEWAY_TEST_ALLOW_SHARED_LOCAL_MYSQL') !== '1') {
+                throw new RuntimeException('Local root requires explicit shared-MySQL opt-in.');
+            }
+            if (is_string($password) && $password !== '') {
+                throw new RuntimeException('Local root test mode requires a blank password.');
+            }
+            $password = '';
+        } elseif (!is_string($password) || $password === '') {
+            throw new RuntimeException('Set OPGATEWAY_TEST_MYSQL_PASSWORD for the isolated test user.');
         }
 
         $port = getenv('OPGATEWAY_TEST_MYSQL_PORT');
-        $port = is_string($port) && $port !== '' ? $port : '13306';
+        $port = is_string($port) && $port !== ''
+            ? $port : ($useLocalRoot ? '3306' : '13306');
         if (preg_match('/^[1-9][0-9]{0,4}$/D', $port) !== 1 || (int) $port > 65535) {
             throw new RuntimeException('Invalid local integration test port.');
         }
@@ -45,14 +59,20 @@ final class MigrationRunnerIntegrationTest extends TestCase
         }
 
         $config = [
-            'DB_HOST' => '127.0.0.1',
+            'DB_HOST' => $useLocalRoot ? 'localhost' : '127.0.0.1',
             'DB_PORT' => $port,
             'DB_NAME' => 'opgateway_integration_test',
-            'DB_USER' => 'opgateway_test',
+            'DB_USER' => $useLocalRoot ? 'root' : 'opgateway_test',
             'DB_PASSWORD' => $password,
         ];
         $pdo = PdoConnectionFactory::open($config);
         self::assertSame('opgateway_integration_test', $pdo->query('SELECT DATABASE()')->fetchColumn());
+
+        if ($useLocalRoot) {
+            $sqlAccount = (string) $pdo->query('SELECT CURRENT_USER()')->fetchColumn();
+            self::assertStringStartsWith('root@', $sqlAccount,
+                'Local test root mode must not silently authenticate as a different MySQL identity.');
+        }
 
         // Never overwrite or drop tables from a nonempty database.
         self::assertSame([], $pdo->query('SHOW TABLES')->fetchAll(PDO::FETCH_COLUMN),
