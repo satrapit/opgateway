@@ -107,7 +107,8 @@ OPGateway database. Keep its test-only password out of Git, terminal logs,
 chat and screenshots.
 
 Port `13306` is the existing isolated-server default. For the locally
-installed MySQL listening on port `3306`, explicitly set all three:
+installed MySQL (for example port `3306`, or your actual `.env` DB_PORT),
+explicitly opt in and set the test port:
 
 ```sh
 export OPGATEWAY_TEST_MYSQL_PORT=3306
