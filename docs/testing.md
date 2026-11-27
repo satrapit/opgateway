@@ -114,7 +114,7 @@ export OPGATEWAY_TEST_MYSQL_PORT=3306
 export OPGATEWAY_TEST_ALLOW_SHARED_LOCAL_MYSQL=1
 printf 'Isolated DB password: '
 IFS= read -rs OPGATEWAY_TEST_MYSQL_PASSWORD
-printf '\\n'
+printf '\n'
 export OPGATEWAY_TEST_MYSQL_PASSWORD
 ./vendor/bin/phpunit tests-integration/MigrationRunnerIntegrationTest.php --display-phpunit-notices
 unset OPGATEWAY_TEST_MYSQL_PASSWORD OPGATEWAY_TEST_ALLOW_SHARED_LOCAL_MYSQL OPGATEWAY_TEST_MYSQL_PORT
