@@ -15,8 +15,10 @@ use InvalidArgumentException;
  */
 final readonly class TwigAdminPageRenderer implements AdminPageRenderer
 {
-    public function __construct(private TwigRenderer $twig)
-    {
+    public function __construct(
+        private TwigRenderer $twig,
+        private bool $localQaAvailable = false,
+    ) {
     }
 
     public function login(string $csrfToken, bool $showError = false, array $captcha = []): string
@@ -81,6 +83,7 @@ final readonly class TwigAdminPageRenderer implements AdminPageRenderer
 
         return $this->twig->render('admin/dashboard.html.twig', [
             'active_section' => $section,
+            'qa_available' => $this->localQaAvailable,
             'section_title' => $titles[$section],
             'csrf_token' => $csrfToken,
             'administrator_label' => $email,
