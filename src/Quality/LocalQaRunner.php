@@ -42,6 +42,35 @@ final class LocalQaRunner
                 return 'PHP 8.3+ and required PHP extensions are available.';
             });
 
+            $checks[] = $this->check('PHP source syntax', static function (): string {
+                $root = dirname(__DIR__, 2);
+                $parsed = 0;
+                foreach (['src', 'public', 'tests', 'tests-integration', 'scripts'] as $directory) {
+                    $location = $root . '/' . $directory;
+                    $iterator = new \RecursiveIteratorIterator(
+                        new \RecursiveDirectoryIterator($location),
+                    );
+                    foreach ($iterator as $file) {
+                        if (!$file->isFile() || $file->getExtension() !== 'php'
+                            || is_link($file->getPathname())) {
+                            continue;
+                        }
+                        $source = file_get_contents($file->getPathname());
+                        if (!is_string($source)) {
+                            throw new RuntimeException('Unreadable PHP source.');
+                        }
+                        // TOKEN_PARSE invokes PHP's parser without evaluating code,
+                        // shelling out, loading PHPUnit, or executing test fixtures.
+                        token_get_all($source, TOKEN_PARSE);
+                        $parsed++;
+                    }
+                }
+                if ($parsed === 0) {
+                    throw new RuntimeException('No PHP source files were found.');
+                }
+                return $parsed . ' PHP files parsed successfully without execution.';
+            });
+
             $checks[] = $this->check('Migration history', static function () use ($pdo): string {
                 $catalog = MigrationCatalog::all();
                 $status = (new SchemaReadiness($pdo))->inspect($catalog);
