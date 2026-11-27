@@ -173,6 +173,37 @@ The successful anonymous checks on 2026-11-27 were **18/18** at
 HTTP acceptance and actual cross-owner MySQL records remain unverified. Do
 not confuse mocked role revocation coverage with end-to-end authorization.
 
+## Existing MySQL owner-isolation gate (read-only)
+
+`tests-integration/LocalOwnerIsolationReadOnlyTest.php` checks the live
+local MySQL schema's ownership foreign keys, exercises actual owner-scoped
+dashboard queries, verifies that visible client/credential/IP records belong
+to the requesting owner, and compares two eligible owners when the local data
+contains them. It also verifies ineligible users cannot load a dashboard.
+
+Execute from the isolated QA worktree using the installed PHPUnit:
+
+```sh
+OPGATEWAY_TEST_LOCAL_READONLY=1 \
+OPGATEWAY_LOCAL_DB_ENV="$HOME/Sites/opgateway/.env" \
+  ./vendor/bin/phpunit tests-integration/LocalOwnerIsolationReadOnlyTest.php \
+  --display-phpunit-notices
+```
+
+The suite runs with a MySQL READ ONLY transaction and does not create test
+accounts, email, API keys, or IP entries. If the existing database lacks
+owners, clients, or two eligible owners with client records, individual
+data-dependent tests are marked **SKIPPED**, not treated as evidence of
+two-owner isolation. The foreign-key test still checks schema ownership
+invariants. Do not add fake data to the populated local installation merely
+to make this suite pass. This does not test cross-owner writes, which need
+separate disposable fixtures.
+
+Previously confirmed on local QA at `88fc24a`: **284 PHPUnit tests,
+2,253 assertions**, **10/10** code smoke checks, and **18/18** anonymous
+HTTP authorization checks. These counts do not cover this new test file
+until it is executed.
+
 ## Shared Account/Admin UI test gate
 
 The owner portal now uses the same Twig/TailAdmin CSS and CSP-safe Alpine
