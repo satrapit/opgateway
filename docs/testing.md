@@ -151,6 +151,28 @@ diagnostics may be created by the web server. It checks rejection at the
 HTTP boundary, not authenticated business workflows or CSRF under a logged-in
 session; those still require dedicated tests on an isolated account.
 
+## Authenticated role and session invalidation (no external services)
+
+`tests/AuthenticatedRoleIsolationTest.php` adds two isolated PHP session
+regressions: an authenticated owner must not inherit administrator privileges
+and removing the administrator role must deny the **same active session** on
+its next protected request; changing the owner authentication session stamp
+must block API-key issuance **before** the credential manager runs and must
+invalidate the old CSRF token. These tests use stubs and never mutate MySQL.
+
+Run in the QA worktree with installed dev dependencies:
+
+```sh
+./vendor/bin/phpunit tests/AuthenticatedRoleIsolationTest.php --display-phpunit-notices
+./vendor/bin/phpunit --display-phpunit-notices
+php scripts/smoke.php
+```
+
+The successful anonymous checks on 2026-11-27 were **18/18** at
+`https://opgateway.test/` with commit `625dee8`. Authenticated multi-user
+HTTP acceptance and actual cross-owner MySQL records remain unverified. Do
+not confuse mocked role revocation coverage with end-to-end authorization.
+
 ## Shared Account/Admin UI test gate
 
 The owner portal now uses the same Twig/TailAdmin CSS and CSP-safe Alpine
