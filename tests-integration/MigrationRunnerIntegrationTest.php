@@ -23,8 +23,9 @@ use RuntimeException;
  *
  * Uses a dedicated, empty local MySQL schema named opgateway_integration_test.
  * Defaults to the dedicated opgateway_test user on 127.0.0.1:13306.
- * Explicit opt-in permits localhost root with a blank password over a local
- * MySQL socket, exclusively for this disposable test schema.
+ * Explicit opt-in permits root with an empty password on 127.0.0.1 TCP,
+ * or over an explicitly provided local Unix socket path. The only possible
+ * target schema is the disposable opgateway_integration_test database.
  * Never point this test at a working or production database: it mutates rows.
  */
 final class MigrationRunnerIntegrationTest extends TestCase
@@ -36,7 +37,8 @@ final class MigrationRunnerIntegrationTest extends TestCase
 
         if ($useLocalRoot) {
             // Root is permitted ONLY with two explicit test-only flags.
-            // A local Unix socket is preferred over TCP for localhost root.
+            // Use 127.0.0.1 TCP by default; 'localhost' silently selects a
+            // client-specific Unix socket (often the wrong path on macOS).
             if (getenv('OPGATEWAY_TEST_ALLOW_SHARED_LOCAL_MYSQL') !== '1') {
                 throw new RuntimeException('Local root requires explicit shared-MySQL opt-in.');
             }
@@ -58,14 +60,42 @@ final class MigrationRunnerIntegrationTest extends TestCase
             throw new RuntimeException('Explicitly opt in before using a shared local MySQL port.');
         }
 
+        $socket = getenv('OPGATEWAY_TEST_MYSQL_SOCKET');
+        $socket = is_string($socket) ? trim($socket) : '';
+        if ($socket !== '' && !$useLocalRoot) {
+            throw new RuntimeException('An explicit local socket is only supported in opted-in root test mode.');
+        }
+        if ($socket !== '' && (preg_match('~^/[a-zA-Z0-9._/-]{1,253}$~D', $socket) !== 1
+            || !file_exists($socket) || is_link($socket))) {
+            throw new RuntimeException('Invalid local MySQL socket path.');
+        }
+
         $config = [
-            'DB_HOST' => $useLocalRoot ? 'localhost' : '127.0.0.1',
+            'DB_HOST' => '127.0.0.1',
             'DB_PORT' => $port,
             'DB_NAME' => 'opgateway_integration_test',
             'DB_USER' => $useLocalRoot ? 'root' : 'opgateway_test',
             'DB_PASSWORD' => $password,
         ];
-        $pdo = PdoConnectionFactory::open($config);
+        if ($socket !== '') {
+            // Test-only explicit socket: bypass the production DSN factory
+            // without altering its validated TCP connection policy.
+            $pdo = new PDO(
+                'mysql:unix_socket=' . $socket
+                . ';dbname=opgateway_integration_test;charset=utf8mb4',
+                'root',
+                '',
+                [
+                    PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
+                    PDO::ATTR_EMULATE_PREPARES => false,
+                    PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
+                    PDO::MYSQL_ATTR_INIT_COMMAND =>
+                        'SET NAMES utf8mb4 COLLATE utf8mb4_unicode_ci',
+                ],
+            );
+        } else {
+            $pdo = PdoConnectionFactory::open($config);
+        }
         self::assertSame('opgateway_integration_test', $pdo->query('SELECT DATABASE()')->fetchColumn());
 
         if ($useLocalRoot) {
