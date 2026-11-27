@@ -15,9 +15,11 @@
   identity is a dedicated test user; an explicitly opted-in socket-local
   passwordless root mode is available for the same **empty test-only schema**.
   Correct macOS `localhost` socket-path mismatch using TCP `127.0.0.1`
-  by default and an explicit Unix socket path fallback. The prior root/socket
-  attempt failed before opening a database; the **writable integration gate
-  has not yet been run successfully**.
+  by default and an explicit Unix socket path fallback. The operator's real
+  local MySQL 3306 run on the isolated, initially empty schema passed:
+  **1 integration test, 88 assertions, 0 failures** on PHP 8.3.30 with
+  PHPUnit 12.5.43. The disposable schema is now populated; do not rerun its
+  empty-schema migration suite without preparing a fresh isolated schema.
 - No production deployment, external SMTP retest, schema change to the
   working database, Docker requirement, or additional Git branch.
 
