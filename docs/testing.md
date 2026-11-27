@@ -105,10 +105,12 @@ and is unavailable unless the trusted server hostname is exactly
 and `DB_HOST` is loopback. Production responds with 404 and does not
 display a QA navigation link.
 
-Checks are read-only on the **current local application database** using
-`SET TRANSACTION READ ONLY` followed by a database transaction and
-`ROLLBACK` in `finally`: runtime extensions, migration history,
-required tables, foreign keys, owner-scoped client/key/IP views,
+Checks use native `token_get_all(..., TOKEN_PARSE)` for PHP source
+syntax without running code. Database checks are read-only on the
+**current local application database** using `SET TRANSACTION READ ONLY`
+followed by a database transaction and `ROLLBACK` in `finally`:
+runtime extensions, migration history, required tables, foreign keys,
+owner-scoped client/key/IP views,
 two-owner separation (when suitable real data exists), and inactive-user
 denial. Existing user data and credentials are never shown in the
 report. Inapplicable data-dependent checks show `SKIP`, not `PASS`.
