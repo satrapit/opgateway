@@ -105,8 +105,10 @@ and is unavailable unless the trusted server hostname is exactly
 and `DB_HOST` is loopback. Production responds with 404 and does not
 display a QA navigation link.
 
-Checks use native `token_get_all(..., TOKEN_PARSE)` for PHP source
-syntax without running code. Database checks are read-only on the
+PHP syntax checks use shared `OPGateway\\Quality\\PhpSyntax::scanRoot()`
+with native `token_get_all(..., TOKEN_PARSE)`, without running application
+source or invoking any subprocess. The existing `scripts/lint.php` now uses
+the same parser, so it no longer invokes a shell. Database checks are read-only on the
 **current local application database** using `SET TRANSACTION READ ONLY`
 followed by a database transaction and `ROLLBACK` in `finally`:
 runtime extensions, migration history, required tables, foreign keys,
