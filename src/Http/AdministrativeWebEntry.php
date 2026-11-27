@@ -156,8 +156,13 @@ final readonly class AdministrativeWebEntry
             $captchaSettings, $pdo, $key,
             CanonicalOrigin::fromServer($server) ?? '', 'admin',
         );
+        $qaEnabled = \OPGateway\Quality\LocalQaGate::allowed($server)
+            && in_array(strtolower($this->config['DB_HOST'] ?? ''), [
+                '127.0.0.1', 'localhost', '::1',
+            ], true);
         $pages = new TwigAdminPageRenderer(
             new TwigRenderer(dirname(__DIR__, 2) . '/templates'),
+            $qaEnabled,
         );
 
         $adapter = new PrivateBrowserAdapter(
@@ -182,7 +187,41 @@ final readonly class AdministrativeWebEntry
             }
         }
 
-        if (in_array($path, ['/admin/clients/create', '/admin/ips/request'], true)) {
+        if ($path === '/admin/qa') {
+            if (!$qaEnabled || $method !== 'GET') {
+                $response = self::error(404);
+            } elseif (($administratorId = $session->currentUserId($accounts)) === null) {
+                $response = [
+                    'status' => 303, 'content_type' => 'text/plain; charset=utf-8',
+                    'body' => '', 'location' => '/admin/login',
+                ];
+            } elseif (!$admins->isAdministrator($administratorId)) {
+                $response = [
+                    'status' => 403, 'content_type' => 'application/json; charset=utf-8',
+                    'body' => '{"error":"forbidden"}',
+                ];
+            } else {
+                try {
+                    $qaReport = (new \OPGateway\Quality\LocalQaRunner())->run($pdo);
+                    $response = [
+                        'status' => 200,
+                        'content_type' => 'text/html; charset=utf-8',
+                        'body' => (new TwigRenderer(dirname(__DIR__, 2) . '/templates'))
+                            ->render('admin/qa.html.twig', [
+                                'active_section' => 'qa',
+                                'section_title' => 'Local QA',
+                                'administrator_label' => 'Administrator',
+                                'csrf_token' => $session->csrfToken(),
+                                'qa_available' => true,
+                                'report' => $qaReport,
+                            ]),
+                    ];
+                } catch (Throwable $exception) {
+                    DiagnosticLog::record('admin.local_qa_failed', 503, $exception);
+                    $response = self::error(503);
+                }
+            }
+        } elseif (in_array($path, ['/admin/clients/create', '/admin/ips/request'], true)) {
             $response = (new AdminProvisionPageController(
                 $session, $accounts, $admins,
                 new AdminOverviewRepository($pdo), $review,
