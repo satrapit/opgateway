@@ -106,6 +106,43 @@ CREATE, ALTER, DROP, INDEX and REFERENCES. Never grant access to the working
 OPGateway database. Keep its test-only password out of Git, terminal logs,
 chat and screenshots.
 
+### Local root with an empty password (explicit opt-in)
+
+If your Mac's MySQL has a passwordless local `root` account, you may use it
+**only for this isolated disposable test schema**. It is not recommended as
+the default automation identity because root has broad server privileges.
+Do not enable passwordless root or change root authentication just for
+testing. The working OPGateway schema and its private `.env` remain untouched.
+
+Prepare the schema once using a local MySQL CLI session (do not create or
+drop the real application database):
+
+```sh
+mysql -u root -h localhost -e "CREATE DATABASE IF NOT EXISTS opgateway_integration_test CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci"
+```
+
+From the **QA worktree** containing a fully installed PHPUnit, run:
+
+```sh
+unset OPGATEWAY_TEST_MYSQL_PASSWORD
+OPGATEWAY_TEST_USE_LOCAL_ROOT=1 \
+OPGATEWAY_TEST_ALLOW_SHARED_LOCAL_MYSQL=1 \
+OPGATEWAY_TEST_MYSQL_PORT=3306 \
+  ./vendor/bin/phpunit tests-integration/MigrationRunnerIntegrationTest.php --display-phpunit-notices
+```
+
+The test uses `DB_HOST=localhost`, which typically selects the local MySQL
+Unix socket, `DB_USER=root`, a **blank** password, and the exact database
+`opgateway_integration_test`. It insists on both opt-in flags, validates
+`CURRENT_USER()` is root, and checks the target schema is **empty** before
+any migrations or inserts. Root's general privileges do not loosen these
+guards. If your local root authentication requires a password or a different
+socket, the connection will fail: do not weaken database authentication or
+point this integration suite at the app's populated database. The suite
+cannot be rerun against the same schema after a successful or partial run,
+because it intentionally creates tables. Use an independently prepared fresh
+test database for later reruns.
+
 Port `13306` is the existing isolated-server default. For the locally
 installed MySQL (for example port `3306`, or your actual `.env` DB_PORT),
 explicitly opt in and set the test port:
