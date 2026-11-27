@@ -108,40 +108,62 @@ chat and screenshots.
 
 ### Local root with an empty password (explicit opt-in)
 
-If your Mac's MySQL has a passwordless local `root` account, you may use it
-**only for this isolated disposable test schema**. It is not recommended as
-the default automation identity because root has broad server privileges.
-Do not enable passwordless root or change root authentication just for
-testing. The working OPGateway schema and its private `.env` remain untouched.
+Only use this mode if the already-installed Mac MySQL has a passwordless
+local root account. Do **not** disable authentication, change root credentials,
+or run this suite against the populated application database. The suite
+uses a fixed disposable schema, `opgateway_integration_test`, and refuses
+a nonempty schema before making any change. Root is not recommended as a
+general test user because of its broad privileges.
 
-Prepare the schema once using a local MySQL CLI session (do not create or
-drop the real application database):
+macOS MySQL clients may look for `/tmp/mysql.sock` when `-h localhost`
+is used, even if the actual server is listening on TCP 3306 or has a
+different socket path. Use TCP first:
 
 ```sh
-mysql -u root -h localhost -e "CREATE DATABASE IF NOT EXISTS opgateway_integration_test CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci"
+mysql --protocol=TCP -h 127.0.0.1 -P 3306 -u root -Nse 'SELECT CURRENT_USER(), @@port'
+mysql --protocol=TCP -h 127.0.0.1 -P 3306 -u root -e "CREATE DATABASE IF NOT EXISTS opgateway_integration_test CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci"
 ```
 
-From the **QA worktree** containing a fully installed PHPUnit, run:
+Check the first result is a root MySQL identity before running the second
+statement. Then from the installed **QA worktree**:
 
 ```sh
-unset OPGATEWAY_TEST_MYSQL_PASSWORD
+unset OPGATEWAY_TEST_MYSQL_PASSWORD OPGATEWAY_TEST_MYSQL_SOCKET
 OPGATEWAY_TEST_USE_LOCAL_ROOT=1 \
 OPGATEWAY_TEST_ALLOW_SHARED_LOCAL_MYSQL=1 \
 OPGATEWAY_TEST_MYSQL_PORT=3306 \
   ./vendor/bin/phpunit tests-integration/MigrationRunnerIntegrationTest.php --display-phpunit-notices
 ```
 
-The test uses `DB_HOST=localhost`, which typically selects the local MySQL
-Unix socket, `DB_USER=root`, a **blank** password, and the exact database
-`opgateway_integration_test`. It insists on both opt-in flags, validates
-`CURRENT_USER()` is root, and checks the target schema is **empty** before
-any migrations or inserts. Root's general privileges do not loosen these
-guards. If your local root authentication requires a password or a different
-socket, the connection will fail: do not weaken database authentication or
-point this integration suite at the app's populated database. The suite
-cannot be rerun against the same schema after a successful or partial run,
-because it intentionally creates tables. Use an independently prepared fresh
-test database for later reruns.
+If root TCP is denied (e.g. error 1045), discover the actual server socket
+without displaying the application database password. Run the following in
+the QA worktree; the path comes from the **working** `opgateway.test`
+database connection:
+
+```sh
+MYSQL_SOCKET="$(php -r 'require "src/autoload.php"; $c=\\OPGateway\\Config\\Environment::load(getenv("HOME")."/Sites/opgateway/.env"); $p=\\OPGateway\\Database\\PdoConnectionFactory::open($c); echo $p->query("SELECT @@socket")->fetchColumn();')"
+printf 'Active server socket: %s\\n' "$MYSQL_SOCKET"
+mysql --protocol=SOCKET --socket="$MYSQL_SOCKET" -u root -Nse 'SELECT CURRENT_USER()'
+mysql --protocol=SOCKET --socket="$MYSQL_SOCKET" -u root -e "CREATE DATABASE IF NOT EXISTS opgateway_integration_test CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci"
+```
+
+Only after verifying the root socket login and creating the exact test
+schema, run the integration test with that explicit socket:
+
+```sh
+unset OPGATEWAY_TEST_MYSQL_PASSWORD
+OPGATEWAY_TEST_USE_LOCAL_ROOT=1 \
+OPGATEWAY_TEST_ALLOW_SHARED_LOCAL_MYSQL=1 \
+OPGATEWAY_TEST_MYSQL_SOCKET="$MYSQL_SOCKET" \
+  ./vendor/bin/phpunit tests-integration/MigrationRunnerIntegrationTest.php --display-phpunit-notices
+```
+
+The test validates the connected database name, expects a root MySQL
+identity in root mode, and asserts `SHOW TABLES` is empty **before** any
+DDL or inserts. A successful or partial run leaves tables in the disposable
+schema; do not rerun without intentionally preparing a new empty isolated
+schema. Neither mode performs any operation on the populated application's
+database, and no mail is sent.
 
 Port `13306` is the existing isolated-server default. For the locally
 installed MySQL (for example port `3306`, or your actual `.env` DB_PORT),
