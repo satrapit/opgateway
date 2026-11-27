@@ -91,24 +91,52 @@ is a signal to review backups and migration plans **manually**, not to run
 an automatic repair. The local HTTPS site's browser/login flows still require
 separate acceptance testing.
 
-## Isolated database and mail test
+## Isolated MySQL integration (no Docker required)
 
-Use only an explicitly disposable empty database or restored backup clone,
-never an existing working or production database. The current migration
-catalog contains **nine** entries (001–009) and yields **15** tables.
-`tests-integration/MigrationRunnerIntegrationTest.php` runs the first
-eight migrations, seeds an existing Google-linked account, applies 009,
-checks idempotency and data preservation, verifies the Gmail SMTP setting,
-and exercises actual one-use token consumption and manual-invite approvals.
-The test also checks MySQL advisory migration locks.
+The **existing** `https://opgateway.test/` schema is never an integration
+test target: it has data and must remain unchanged. The disposable integration
+suite uses a **different, initially empty** MySQL database
+`opgateway_integration_test`, accessed solely through a dedicated
+`opgateway_test` account (no production or app credentials).
 
-`tests-integration/MigrationRunnerIntegrationTest.php` is separate
-from the standard suite because it performs database DDL. It is suitable only for an explicitly disposable **empty MySQL 8** database
-named `opgateway_integration_test` at `127.0.0.1:13306` using
-`opgateway_test` and the ephemeral
-`OPGATEWAY_TEST_MYSQL_PASSWORD` environment variable. The test performs
-DDL and requires a completely empty schema. No automatic migration on cPanel.
-Never point a port-forward or alternate server at a production database.
+The same local MySQL server can host this separate schema. Create the schema
+once using an administrative MySQL client and grant the dedicated account only
+the privileges needed within that schema: SELECT, INSERT, UPDATE, DELETE,
+CREATE, ALTER, DROP, INDEX and REFERENCES. Never grant access to the working
+OPGateway database. Keep its test-only password out of Git, terminal logs,
+chat and screenshots.
+
+Port `13306` is the existing isolated-server default. For the locally
+installed MySQL listening on port `3306`, explicitly set all three:
+
+```sh
+export OPGATEWAY_TEST_MYSQL_PORT=3306
+export OPGATEWAY_TEST_ALLOW_SHARED_LOCAL_MYSQL=1
+export OPGATEWAY_TEST_MYSQL_PASSWORD='value obtained securely and never committed'
+./vendor/bin/phpunit tests-integration/MigrationRunnerIntegrationTest.php --display-phpunit-notices
+unset OPGATEWAY_TEST_MYSQL_PASSWORD OPGATEWAY_TEST_ALLOW_SHARED_LOCAL_MYSQL OPGATEWAY_TEST_MYSQL_PORT
+```
+
+Do **not** use the example literal password above. Enter it privately in
+your shell, e.g. using silent terminal input, instead of pasting it into a
+shared command or committing it. The test validates the **exact** test
+schema name and asserts `SHOW TABLES` is empty **before any DDL**; it does
+not DROP any schema, but it intentionally creates tables and test records,
+so a completed run leaves this isolated schema nonempty. Subsequent runs
+require a new empty test schema prepared by the operator.
+
+The test runs all nine migrations, checks the Google-linked existing user
+survives migration 009, verifies mail-token single-use behavior and the
+Gmail-actions setting using **database state only** (no SMTP delivery), and
+checks the migration advisory lock. It creates two independent **test owners**
+and clients, attempts cross-owner IP requests, credential issuance, revocation
+and client disabling, verifies owner-scoped views, then disables one owner's
+client and checks the API key becomes unusable. It does not perform any
+business operation against real Openprovider services or production.
+
+For already-populated `opgateway.test`, use only the
+`LocalDatabaseReadOnlyTest.php` and `LocalOwnerIsolationReadOnlyTest.php`
+suites and report SKIPPED tests separately.
 
 ## Local HTTPS acceptance without mail delivery
 
