@@ -110,6 +110,28 @@ named `opgateway_integration_test` at `127.0.0.1:13306` using
 DDL and requires a completely empty schema. No automatic migration on cPanel.
 Never point a port-forward or alternate server at a production database.
 
+## Local HTTPS acceptance without mail delivery
+
+For the existing `https://opgateway.test/` site, run the small, unauthenticated
+HTTP smoke script directly from the local checkout:
+
+```sh
+php scripts/local-http-smoke.php
+```
+
+This script checks 10 real GET responses: health, public admin/account
+login and registration/recovery forms, session-CSRF markup, restricted
+admin/account page redirects, unknown routes and common security headers.
+It validates TLS certificates and never bypasses local HTTPS verification,
+creates accounts, requests email, logs in, or invokes mutating POST routes.
+GET browser pages may still initialize ephemeral PHP sessions/CAPTCHA
+challenges. **It is not a substitute for authenticated browser acceptance.**
+
+SMTP delivery is intentionally excluded from this local stage because it
+has been verified separately in production by the operator. This does
+not establish that email delivery from `opgateway.test` works; retain that
+distinction in release reports.
+
 ## Shared Account/Admin UI test gate
 
 The owner portal now uses the same Twig/TailAdmin CSS and CSP-safe Alpine
