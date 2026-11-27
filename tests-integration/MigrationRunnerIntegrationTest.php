@@ -7,6 +7,9 @@ namespace OPGateway\Tests\Integration;
 use OPGateway\Database\Migrations\MigrationCatalog;
 use OPGateway\Database\Migrations\MigrationRunner;
 use OPGateway\Database\PdoConnectionFactory;
+use OPGateway\Clients\ClientManagementService;
+use OPGateway\Http\OwnerOverviewRepository;
+use OPGateway\Security\PdoApiCredentialStore;
 use OPGateway\Identity\EmailVerificationService;
 use OPGateway\Identity\PdoEmailVerificationRepository;
 use OPGateway\Mail\PdoSmtpSettings;
@@ -18,8 +21,10 @@ use RuntimeException;
 /**
  * Real-MySQL integration test. Intentionally excluded from the default suite.
  *
- * Uses one disposable, empty database exposed on localhost port 13306 only.
- * Never point this test at a production database: the database is mutated.
+ * Uses a dedicated, empty local MySQL schema named opgateway_integration_test.
+ * Port 13306 is the default; existing local MySQL port 3306 requires explicit
+ * opt-in. Only the dedicated opgateway_test user is accepted.
+ * Never point this test at a working or production database: it mutates rows.
  */
 final class MigrationRunnerIntegrationTest extends TestCase
 {
@@ -27,12 +32,21 @@ final class MigrationRunnerIntegrationTest extends TestCase
     {
         $password = getenv('OPGATEWAY_TEST_MYSQL_PASSWORD');
         if (!is_string($password) || $password === '') {
-            throw new RuntimeException('Set OPGATEWAY_TEST_MYSQL_PASSWORD for the disposable container.');
+            throw new RuntimeException('Set OPGATEWAY_TEST_MYSQL_PASSWORD for the isolated test schema.');
+        }
+
+        $port = getenv('OPGATEWAY_TEST_MYSQL_PORT');
+        $port = is_string($port) && $port !== '' ? $port : '13306';
+        if (!in_array($port, ['13306', '3306'], true)) {
+            throw new RuntimeException('Unsupported integration test port.');
+        }
+        if ($port === '3306' && getenv('OPGATEWAY_TEST_ALLOW_SHARED_LOCAL_MYSQL') !== '1') {
+            throw new RuntimeException('Explicitly opt in before using the shared local MySQL server.');
         }
 
         $config = [
             'DB_HOST' => '127.0.0.1',
-            'DB_PORT' => '13306',
+            'DB_PORT' => $port,
             'DB_NAME' => 'opgateway_integration_test',
             'DB_USER' => 'opgateway_test',
             'DB_PASSWORD' => $password,
@@ -198,6 +212,92 @@ SQL);
                 self::assertNull($row['approved_at']);
             }
         }
+
+
+        // Cross-owner authorization is exercised against real MySQL using
+        // independent disposable identities created ONLY in this empty schema.
+        $seed->execute([
+            'owner-two-integration@example.test',
+            password_hash('isolated-owner-two-password', PASSWORD_DEFAULT),
+        ]);
+        $ownerTwoId = (int) $pdo->lastInsertId();
+        self::assertNotSame($userId, $ownerTwoId);
+
+        $clients = new ClientManagementService($pdo);
+        $ownerOneClient = $clients->create($userId, 'Owner A isolated client');
+        $ownerTwoClient = $clients->create($ownerTwoId, 'Owner B isolated client');
+        self::assertIsInt($ownerOneClient);
+        self::assertIsInt($ownerTwoClient);
+        self::assertNotSame($ownerOneClient, $ownerTwoClient);
+
+        // Fixture setup ONLY: mark both newly-created disposable clients active.
+        // This deliberately does not test the separate admin approval workflow.
+        $activateFixtures = $pdo->prepare(
+            "UPDATE api_clients SET status = 'active', updated_at = UTC_TIMESTAMP(6) "
+            . "WHERE id IN (?, ?)"
+        );
+        $activateFixtures->execute([$ownerOneClient, $ownerTwoClient]);
+        self::assertSame(2, $activateFixtures->rowCount());
+
+        self::assertTrue($clients->requestIp($userId, $ownerOneClient, '192.0.2.11'));
+        self::assertTrue($clients->requestIp($ownerTwoId, $ownerTwoClient, '192.0.2.22'));
+        self::assertFalse($clients->requestIp($userId, $ownerTwoClient, '192.0.2.33'),
+            'Owner A must not request IP access for owner B client.');
+        self::assertSame(2, (int) $pdo->query(
+            'SELECT COUNT(*) FROM client_ip_whitelists'
+        )->fetchColumn());
+
+        $credentials = new PdoApiCredentialStore($pdo);
+        $prefixOne = 'opg_' . bin2hex(random_bytes(8));
+        $prefixTwo = 'opg_' . bin2hex(random_bytes(8));
+        $digestOne = hash('sha256', random_bytes(32));
+        $digestTwo = hash('sha256', random_bytes(32));
+        self::assertFalse($credentials->createForOwner(
+            $userId, $ownerTwoClient, 'opg_' . bin2hex(random_bytes(8)),
+            hash('sha256', random_bytes(32)),
+        ), 'Owner A must not issue credentials for owner B client.');
+        self::assertTrue($credentials->createForOwner(
+            $userId, $ownerOneClient, $prefixOne, $digestOne,
+        ));
+        self::assertTrue($credentials->createForOwner(
+            $ownerTwoId, $ownerTwoClient, $prefixTwo, $digestTwo,
+        ));
+        self::assertSame(2, (int) $pdo->query(
+            'SELECT COUNT(*) FROM api_credentials'
+        )->fetchColumn());
+
+        $overview = new OwnerOverviewRepository($pdo);
+        $ownerOneView = $overview->forUser($userId);
+        $ownerTwoView = $overview->forUser($ownerTwoId);
+        self::assertIsArray($ownerOneView);
+        self::assertIsArray($ownerTwoView);
+        foreach ([
+            [$ownerOneView, $ownerOneClient, $prefixOne],
+            [$ownerTwoView, $ownerTwoClient, $prefixTwo],
+        ] as [$view, $clientId, $prefix]) {
+            self::assertSame([$clientId], array_column($view['clients'], 'id'));
+            self::assertSame([$clientId], array_column($view['credentials'], 'client_id'));
+            self::assertSame([$prefix], array_column($view['credentials'], 'prefix'));
+            self::assertSame([$clientId], array_column($view['ips'], 'client_id'));
+            self::assertArrayNotHasKey('secret_hash', $view['credentials'][0]);
+        }
+
+        $ownerTwoCredential = (int) $pdo->query(
+            'SELECT id FROM api_credentials WHERE key_prefix = ' . $pdo->quote($prefixTwo)
+        )->fetchColumn();
+        self::assertFalse($credentials->revokeForOwner(
+            $userId, $ownerTwoClient, $ownerTwoCredential,
+        ), 'Owner A must not revoke an API key belonging to owner B.');
+        self::assertNotNull($credentials->findActiveByPrefix($prefixTwo));
+        self::assertFalse($clients->disable($userId, $ownerTwoClient),
+            'Owner A must not disable an API client belonging to owner B.');
+        self::assertTrue($clients->disable($ownerTwoId, $ownerTwoClient));
+        self::assertNull($credentials->findActiveByPrefix($prefixTwo),
+            'Disabling a client must invalidate its existing API credentials.');
+        self::assertFalse($credentials->createForOwner(
+            $ownerTwoId, $ownerTwoClient, 'opg_' . bin2hex(random_bytes(8)),
+            hash('sha256', random_bytes(32)),
+        ), 'A disabled client must not obtain new API credentials.');
 
         $other = PdoConnectionFactory::open($config);
         self::assertSame(1, (int) $other->query(
