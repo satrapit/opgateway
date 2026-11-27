@@ -112,14 +112,16 @@ installed MySQL listening on port `3306`, explicitly set all three:
 ```sh
 export OPGATEWAY_TEST_MYSQL_PORT=3306
 export OPGATEWAY_TEST_ALLOW_SHARED_LOCAL_MYSQL=1
-export OPGATEWAY_TEST_MYSQL_PASSWORD='value obtained securely and never committed'
+printf 'Isolated DB password: '
+IFS= read -rs OPGATEWAY_TEST_MYSQL_PASSWORD
+printf '\\n'
+export OPGATEWAY_TEST_MYSQL_PASSWORD
 ./vendor/bin/phpunit tests-integration/MigrationRunnerIntegrationTest.php --display-phpunit-notices
 unset OPGATEWAY_TEST_MYSQL_PASSWORD OPGATEWAY_TEST_ALLOW_SHARED_LOCAL_MYSQL OPGATEWAY_TEST_MYSQL_PORT
 ```
 
-Do **not** use the example literal password above. Enter it privately in
-your shell, e.g. using silent terminal input, instead of pasting it into a
-shared command or committing it. The test validates the **exact** test
+The password is read privately from the terminal without echo and should
+never be pasted into a shared command, chat transcript, or committed file. The test validates the **exact** test
 schema name and asserts `SHOW TABLES` is empty **before any DDL**; it does
 not DROP any schema, but it intentionally creates tables and test records,
 so a completed run leaves this isolated schema nonempty. Subsequent runs
