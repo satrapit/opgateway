@@ -282,9 +282,12 @@ SQL);
             self::assertArrayNotHasKey('secret_hash', $view['credentials'][0]);
         }
 
-        $ownerTwoCredential = (int) $pdo->query(
-            'SELECT id FROM api_credentials WHERE key_prefix = ' . $pdo->quote($prefixTwo)
-        )->fetchColumn();
+        $findOwnerTwoCredential = $pdo->prepare(
+            'SELECT id FROM api_credentials WHERE key_prefix = ?'
+        );
+        $findOwnerTwoCredential->execute([$prefixTwo]);
+        $ownerTwoCredential = (int) $findOwnerTwoCredential->fetchColumn();
+        self::assertGreaterThan(0, $ownerTwoCredential);
         self::assertFalse($credentials->revokeForOwner(
             $userId, $ownerTwoClient, $ownerTwoCredential,
         ), 'Owner A must not revoke an API key belonging to owner B.');
