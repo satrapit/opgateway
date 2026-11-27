@@ -4,8 +4,9 @@
 
 - Add `/admin/qa`: an administrator-only, loopback-only
   local PHP diagnostics page using PDO and the real local application DB
-  under `SET TRANSACTION READ ONLY`. It reports migration/ownership checks,
-  including explicit SKIP results, without PHPUnit, shell, mail or writes.
+  under `SET TRANSACTION READ ONLY`. It runs native PHP source parsing,
+  migration and ownership checks, including explicit SKIP results, without
+  PHPUnit, shell, mail or database writes.
 - Keep the existing populated application database for safe read checks only;
   mutations and disposable test fixtures remain isolated in the separate
   integration schema. The malformed PHPUnit autoload in the main checkout
