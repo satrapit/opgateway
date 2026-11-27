@@ -2,6 +2,16 @@
 
 ## Unreleased — local authorization QA (2026-11-27)
 
+- Add `/admin/qa`: an administrator-only, loopback-only
+  local PHP diagnostics page using PDO and the real local application DB
+  under `SET TRANSACTION READ ONLY`. It reports migration/ownership checks,
+  including explicit SKIP results, without PHPUnit, shell, mail or writes.
+- Keep the existing populated application database for safe read checks only;
+  mutations and disposable test fixtures remain isolated in the separate
+  integration schema. The malformed PHPUnit autoload in the main checkout
+  is not a MySQL failure and is not automatically repaired by this page.
+- New page and regression tests are committed but have **not yet been
+  verified on the operator's local browser**.
 - Verified the populated local `opgateway.test` schema (9 migrations,
   15 tables, 1 test / 21 assertions) without modifying database content.
 - Verified 10/10 local HTTPS probes and 18/18 anonymous authorization/
