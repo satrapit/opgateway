@@ -1,0 +1,58 @@
+{% extends 'layouts/admin.html.twig' %}
+{% block dashboard_content %}
+<section class="space-y-6" aria-labelledby="qa-title">
+  <div class="flex flex-wrap items-center justify-between gap-4">
+    <div>
+      <p class="mb-1 text-sm font-medium text-brand-600 dark:text-brand-300">Local development only</p>
+      <h2 id="qa-title" class="text-2xl font-semibold text-gray-900 dark:text-white">PHP quality checks</h2>
+      <p class="mt-2 text-sm text-gray-500 dark:text-gray-400">
+        Live application database · READ ONLY transaction · no mail, shell, Python, PHPUnit, writes or migrations.
+      </p>
+    </div>
+    <a class="opg-nav-link" href="/admin/qa">Run checks again</a>
+  </div>
+  <div class="grid gap-4 sm:grid-cols-3">
+    <div class="opg-stat-card">
+      <p class="text-sm text-gray-500 dark:text-gray-400">Passed</p>
+      <p class="mt-2 text-3xl font-semibold text-green-600 dark:text-green-400">{{ report.passed }}</p>
+    </div>
+    <div class="opg-stat-card">
+      <p class="text-sm text-gray-500 dark:text-gray-400">Failed</p>
+      <p class="mt-2 text-3xl font-semibold text-red-600 dark:text-red-400">{{ report.failed }}</p>
+    </div>
+    <div class="opg-stat-card">
+      <p class="text-sm text-gray-500 dark:text-gray-400">Skipped</p>
+      <p class="mt-2 text-3xl font-semibold text-gray-600 dark:text-gray-300">{{ report.skipped }}</p>
+    </div>
+  </div>
+  <div class="overflow-x-auto rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-gray-900">
+    <table class="min-w-full text-sm">
+      <thead>
+        <tr class="border-b border-gray-200 text-start text-gray-500 dark:border-gray-800 dark:text-gray-400">
+          <th class="px-5 py-4 text-start font-medium" scope="col">Check</th>
+          <th class="px-5 py-4 text-start font-medium" scope="col">Status</th>
+          <th class="px-5 py-4 text-start font-medium" scope="col">Result</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for item in report.checks %}
+          <tr class="border-b border-gray-100 last:border-0 dark:border-gray-800">
+            <th scope="row" class="px-5 py-4 text-start font-medium text-gray-900 dark:text-white">{{ item.name }}</th>
+            <td class="px-5 py-4">
+              <span class="opg-badge {{ item.status == 'pass' ? 'opg-badge-green' : 'opg-badge-neutral' }}">
+                {{ item.status|upper }}
+              </span>
+            </td>
+            <td class="px-5 py-4 text-gray-600 dark:text-gray-300">{{ item.detail }}</td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  <div class="opg-alert" role="note">
+    These are targeted checks of the existing local database. Skipped conditions
+    are not treated as passed. Full PHPUnit and real browser sign-in scenarios
+    are separate acceptance gates.
+  </div>
+</section>
+{% endblock %}
