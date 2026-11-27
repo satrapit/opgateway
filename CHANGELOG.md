@@ -11,8 +11,9 @@
   (two eligible owners with API clients were unavailable), 11 assertions;
   this is **not** proof of complete two-owner isolation.
 - Prepared isolated-schema MySQL integration tests for cross-owner
-  client, IP and key operations, runnable on the existing local MySQL 3306
-  with explicit opt-in, a dedicated account and an initially empty schema.
+  client, IP and key operations on the existing local MySQL. The default
+  identity is a dedicated test user; an explicitly opted-in socket-local
+  passwordless root mode is available for the same **empty test-only schema**.
   This **new writable integration gate has not been run**.
 - No production deployment, external SMTP retest, schema change to the
   working database, Docker requirement, or additional Git branch.
