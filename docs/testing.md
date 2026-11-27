@@ -132,6 +132,25 @@ has been verified separately in production by the operator. This does
 not establish that email delivery from `opgateway.test` works; retain that
 distinction in release reports.
 
+## Anonymous authorization and secure cookie gate
+
+After the local 10/10 GET smoke test succeeds, run:
+
+```sh
+php -l scripts/local-authz-smoke.php
+php scripts/local-authz-smoke.php
+```
+
+This separate script sends 16 **unauthenticated, deliberately invalid-CSRF**
+POST requests to protected admin/account operations, verifying exact 401 or
+303-to-login denials without retaining cookies or supplying user credentials.
+It also checks that anonymous login-page session cookies use Secure,
+HttpOnly and SameSite=Lax. It does **not** send mail, create clients, rotate
+keys or touch provider credentials. PHP session files and metadata-only
+diagnostics may be created by the web server. It checks rejection at the
+HTTP boundary, not authenticated business workflows or CSRF under a logged-in
+session; those still require dedicated tests on an isolated account.
+
 ## Shared Account/Admin UI test gate
 
 The owner portal now uses the same Twig/TailAdmin CSS and CSP-safe Alpine
