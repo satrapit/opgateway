@@ -22,8 +22,8 @@ use RuntimeException;
  * Real-MySQL integration test. Intentionally excluded from the default suite.
  *
  * Uses a dedicated, empty local MySQL schema named opgateway_integration_test.
- * Port 13306 is the default; existing local MySQL port 3306 requires explicit
- * opt-in. Only the dedicated opgateway_test user is accepted.
+ * Port 13306 is the default; another existing local MySQL port requires
+ * explicit opt-in. Only the dedicated opgateway_test user is accepted.
  * Never point this test at a working or production database: it mutates rows.
  */
 final class MigrationRunnerIntegrationTest extends TestCase
@@ -37,11 +37,11 @@ final class MigrationRunnerIntegrationTest extends TestCase
 
         $port = getenv('OPGATEWAY_TEST_MYSQL_PORT');
         $port = is_string($port) && $port !== '' ? $port : '13306';
-        if (!in_array($port, ['13306', '3306'], true)) {
-            throw new RuntimeException('Unsupported integration test port.');
+        if (preg_match('/^[1-9][0-9]{0,4}$/D', $port) !== 1 || (int) $port > 65535) {
+            throw new RuntimeException('Invalid local integration test port.');
         }
-        if ($port === '3306' && getenv('OPGATEWAY_TEST_ALLOW_SHARED_LOCAL_MYSQL') !== '1') {
-            throw new RuntimeException('Explicitly opt in before using the shared local MySQL server.');
+        if ($port !== '13306' && getenv('OPGATEWAY_TEST_ALLOW_SHARED_LOCAL_MYSQL') !== '1') {
+            throw new RuntimeException('Explicitly opt in before using a shared local MySQL port.');
         }
 
         $config = [
