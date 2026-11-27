@@ -91,6 +91,40 @@ is a signal to review backups and migration plans **manually**, not to run
 an automatic repair. The local HTTPS site's browser/login flows still require
 separate acceptance testing.
 
+## Local PHP QA page (no command-line test runner required)
+
+On the local HTTPS site, sign in as an active administrator and open
+`https://opgateway.test/admin/qa` (also linked from the Admin sidebar).
+This page uses only PHP, PDO, existing domain classes and Twig; it never
+invokes Python, npm, Composer, PHPUnit, operating-system processes, or
+external services.
+
+The route is **GET-only**, requires an eligible current admin session,
+and is unavailable unless the trusted server hostname is exactly
+`opgateway.test`, the incoming address is loopback, HTTPS is enabled,
+and `DB_HOST` is loopback. Production responds with 404 and does not
+display a QA navigation link.
+
+Checks are read-only on the **current local application database** using
+`SET TRANSACTION READ ONLY` followed by a database transaction and
+`ROLLBACK` in `finally`: runtime extensions, migration history,
+required tables, foreign keys, owner-scoped client/key/IP views,
+two-owner separation (when suitable real data exists), and inactive-user
+denial. Existing user data and credentials are never shown in the
+report. Inapplicable data-dependent checks show `SKIP`, not `PASS`.
+
+This **is not** a full replacement for PHPUnit or end-to-end browser
+testing. The local QA page is suitable for quick checks without any
+terminal commands. The existing PHPUnit test suite remains part of
+pre-release QA but a broken project-root `vendor/phpunit` autoload
+requires a separate dependency repair, not database changes.
+
+Database-changing migration and cross-owner write tests must continue to
+use a separate disposable MySQL schema with the same migration structure,
+such as `opgateway_integration_test`. Never run destructive or
+data-changing automated test fixtures against the populated application
+database merely because it is local.
+
 ## Isolated MySQL integration (no Docker required)
 
 The **existing** `https://opgateway.test/` schema is never an integration
