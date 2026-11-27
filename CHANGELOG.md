@@ -14,7 +14,10 @@
   client, IP and key operations on the existing local MySQL. The default
   identity is a dedicated test user; an explicitly opted-in socket-local
   passwordless root mode is available for the same **empty test-only schema**.
-  This **new writable integration gate has not been run**.
+  Correct macOS `localhost` socket-path mismatch using TCP `127.0.0.1`
+  by default and an explicit Unix socket path fallback. The prior root/socket
+  attempt failed before opening a database; the **writable integration gate
+  has not yet been run successfully**.
 - No production deployment, external SMTP retest, schema change to the
   working database, Docker requirement, or additional Git branch.
 
