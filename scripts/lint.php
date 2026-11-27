@@ -2,22 +2,16 @@
 
 declare(strict_types=1);
 
-$directories = [__DIR__ . '/../src', __DIR__ . '/../public', __DIR__ . '/../tests',
-    __DIR__ . '/../tests-integration', __DIR__];
-$failed = false;
-foreach ($directories as $directory) {
-    $files = new RecursiveIteratorIterator(new RecursiveDirectoryIterator($directory));
-    foreach ($files as $file) {
-        if (!$file->isFile() || $file->getExtension() !== 'php') {
-            continue;
-        }
-        $command = escapeshellarg(PHP_BINARY) . ' -l ' . escapeshellarg($file->getPathname());
-        exec($command, $output, $exitCode);
-        if ($exitCode !== 0) {
-            $failed = true;
-            fwrite(STDERR, implode("\n", $output) . "\n");
-        }
-        $output = [];
-    }
+/**
+ * PHP-native syntax check. Never starts shell commands or requires Composer.
+ * The same parser is used by the local administrator QA dashboard.
+ */
+require dirname(__DIR__) . '/src/autoload.php';
+
+try {
+    $count = \OPGateway\Quality\PhpSyntax::scanRoot(dirname(__DIR__));
+    echo "PASS: {$count} PHP files parsed without execution.\n";
+} catch (Throwable $exception) {
+    fwrite(STDERR, 'FAIL: ' . $exception->getMessage() . "\n");
+    exit(1);
 }
-exit($failed ? 1 : 0);
